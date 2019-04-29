@@ -1,8 +1,8 @@
 import torch.nn as nn
 
-from IIC.utils.utils import export
 from .net6c import ClusterNet6c, ClusterNet6cTrunk
 from .vgg import VGGNet
+from ....utils.decorator import export
 
 __all__ = ["ClusterNet6cTwoHead"]
 

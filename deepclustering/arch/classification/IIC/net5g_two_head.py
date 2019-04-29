@@ -3,6 +3,7 @@ import torch.nn as nn
 from .net5g import ClusterNet5gTrunk
 from .residual import BasicBlock, ResNet
 from ....utils.decorator import export
+
 # resnet34 and full channels
 
 __all__ = ["ClusterNet5gTwoHead"]
@@ -39,11 +40,13 @@ class ClusterNet5gTwoHeadHead(nn.Module):
 
             return self.head(x)
 
+
 @export
 class ClusterNet5gTwoHead(ResNet):
     '''
     based on resnet with two heads (multiple subheads)
     '''
+
     def __init__(self, config):
         # no saving of configs
         super(ClusterNet5gTwoHead, self).__init__()

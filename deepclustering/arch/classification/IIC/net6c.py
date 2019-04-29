@@ -1,7 +1,7 @@
 import torch.nn as nn
 
-from IIC.utils.utils import export
 from .vgg import VGGTrunk, VGGNet
+from ....utils.decorator import export
 
 # 4h but for cifar, 24x24
 
