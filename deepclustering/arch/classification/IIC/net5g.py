@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 from .residual import BasicBlock, ResNet, ResNetTrunk
-from ...utils.utils import export
+from ....utils.decorator import export
 
 # resnet34 and full channels
 

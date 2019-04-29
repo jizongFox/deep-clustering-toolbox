@@ -1,9 +1,12 @@
 from __future__ import print_function
-from PIL import Image
+
 import os
 import os.path
-import numpy as np
 import sys
+
+import numpy as np
+from PIL import Image
+
 if sys.version_info[0] == 2:
     import cPickle as pickle
 else:

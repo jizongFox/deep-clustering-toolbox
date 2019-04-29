@@ -1,7 +1,8 @@
+import errno
+import hashlib
 import os
 import os.path
-import hashlib
-import errno
+
 from torch.utils.model_zoo import tqdm
 
 
