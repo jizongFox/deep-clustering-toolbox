@@ -1,13 +1,11 @@
 import sys
 
-sys.path.append('home/se26956/projects/IIC')
 import torch.nn as nn
 
-from IIC.archs.cluster.net5g import ClusterNet5gTrunk
-from IIC.archs.cluster.net6c import ClusterNet6c, ClusterNet6cTrunk
-from IIC.archs.cluster.residual import BasicBlock, ResNet
-from IIC.archs.cluster.vgg import VGGNet
-from IIC.utils.utils import export
+from ..net5g import ClusterNet5gTrunk
+from ..net6c import ClusterNet6c, ClusterNet6cTrunk
+from ..residual import BasicBlock, ResNet
+from ..vgg import VGGNet
 
 __all__ = ["TripletsNet5g", "TripletsNet6c"]
 
@@ -49,7 +47,6 @@ class TripletsNet6cHead(nn.Module):
             return self.head(x)
 
 
-@export
 class TripletsNet5g(ResNet):
     def __init__(self, config):
         # no saving of configs
@@ -66,7 +63,6 @@ class TripletsNet5g(ResNet):
         return x
 
 
-@export
 class TripletsNet6c(VGGNet):
     def __init__(self, config):
         # no saving of configs

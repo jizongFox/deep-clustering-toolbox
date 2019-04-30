@@ -10,12 +10,10 @@ class VGGTrunk(nn.Module):
         in_channels = self.in_channels
         for tup in self.cfg:
             assert (len(tup) == 2)
-
             out, dilation = tup
             sz = self.conv_size
             stride = 1
             pad = self.pad  # to avoid shrinking
-
             if out == 'M':
                 layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
             elif out == 'A':

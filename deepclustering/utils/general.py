@@ -46,8 +46,8 @@ def one_hot(t: Tensor, axis=1) -> bool:
     '''
     check if the Tensor is Onehot
     :param t:
-    :param axis:
-    :return:
+    :param axis: default = 1
+    :return: bool
     '''
     return simplex(t, axis) and sset(t, [0, 1])
 
