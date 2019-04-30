@@ -2,14 +2,15 @@ from abc import ABC
 from typing import *
 
 import torch
-from generalframework import ModelMode
-from generalframework.arch import get_arch
 from torch import Tensor
 from torch import nn
 from torch import optim
 from torch.nn import NLLLoss
 from torch.nn import functional as F
 from torch.optim import lr_scheduler
+
+from deepclustering import ModelMode
+from deepclustering.arch import get_arch
 
 
 class Model(ABC):
@@ -19,9 +20,10 @@ class Model(ABC):
         self.arch_dict = arch_dict
         self.optim_dict = optim_dict
         self.scheduler_dict = scheduler_dict
-        self.torchnet, self.optimizer, self.scheduler = self.__setup()
+        self.torchnet, self.optimizer, self.scheduler = self._setup()
+        self.to(device=torch.device('cpu'))
 
-    def __setup(self) -> Tuple[nn.Module, torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]:
+    def _setup(self) -> Tuple[nn.Module, torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]:
         self.arch_name = self.arch_dict['name']
         self.arch_params = {k: v for k, v in self.arch_dict.items() if k != 'name'}
         self.optim_name = self.optim_dict['name']
@@ -29,7 +31,8 @@ class Model(ABC):
         self.scheduler_name = self.scheduler_dict['name']
         self.scheduler_params = {k: v for k, v in self.scheduler_dict.items() if k != 'name'}
         torchnet = get_arch(self.arch_name, self.arch_params)
-        torchnet = nn.DataParallel(torchnet)
+        # this put the tensor to cuda directly, including the forward image implicitly.
+        # torchnet = nn.DataParallel(torchnet)
         optimizer: optim.Optimizer = getattr(optim, self.optim_name) \
             (torchnet.parameters(), **self.optim_params)
         scheduler: lr_scheduler.LambdaLR = getattr(lr_scheduler, self.scheduler_name) \
@@ -48,6 +51,7 @@ class Model(ABC):
 
     def update(self, img: Tensor, gt: Tensor, criterion: NLLLoss,
                mode=ModelMode.TRAIN) -> List[Tensor]:
+        # todo improve the code
         assert img.shape.__len__() == 4
         assert gt.shape.__len__() == 4
         if mode == ModelMode.TRAIN:
@@ -73,23 +77,22 @@ class Model(ABC):
 
     @property
     def state_dict(self):
-        return {'arch_dict': self.arch_dict, 'optim_dict': self.optim_dict, 'scheduler_dict': self.scheduler_dict,
-                'net_state_dict': self.torchnet.state_dict(), 'optim_state_dict': self.optimizer.state_dict(),
-                'scheduler_state_dict': self.scheduler.state_dict()}
+        return {
+            'arch_dict': self.arch_dict,
+            'optim_dict': self.optim_dict,
+            'scheduler_dict': self.scheduler_dict,
+            'net_state_dict': self.torchnet.state_dict(),
+            'optim_state_dict': self.optimizer.state_dict(),
+            'scheduler_state_dict': self.scheduler.state_dict()
+        }
 
     def load_state_dict(self, state_dict: dict):
-        try:
-            self.torchnet.load_state_dict(state_dict['net_state_dict'])
-        except:
-            self.torchnet.load_state_dict(
-                {k.replace("module.", ""): v for k, v in state_dict['net_state_dict'].items()}
-            )
+        self.torchnet.load_state_dict(state_dict['net_state_dict'])
         self.optimizer.load_state_dict(state_dict['optim_state_dict'])
         self.scheduler.load_state_dict(state_dict['scheduler_state_dict'])
 
     def to(self, device: torch.device):
         self.torchnet.to(device)
-
         for state in self.optimizer.state.values():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
@@ -107,3 +110,16 @@ class Model(ABC):
 
     def train(self):
         self.torchnet.train()
+
+    def __call__(self, img: Tensor, logit=True):
+        return self.predict(img=img, logit=logit)
+
+    @classmethod
+    def initialize_from_state_dict(cls, state_dict: Dict[str, dict]):
+        arch_dict = state_dict['arch_dict']
+        optim_dict = state_dict['optim_dict']
+        scheduler_dict = state_dict['scheduler_dict']
+        model = cls(arch_dict=arch_dict, optim_dict=optim_dict, scheduler_dict=scheduler_dict)
+        model.load_state_dict(state_dict=state_dict)
+        model.to(torch.device('cpu'))
+        return model

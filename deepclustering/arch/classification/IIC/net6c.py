@@ -5,7 +5,7 @@ from ....utils.decorator import export
 
 # 4h but for cifar, 24x24
 
-__all__ = ["ClusterNet6c"]
+__all__ = ["ClusterNet6c", "ClusterNet6c_Param"]
 
 
 class ClusterNet6cTrunk(VGGTrunk):
@@ -93,3 +93,6 @@ class ClusterNet6c(VGGNet):
             return x
         x = self.head(x, kmeans_use_features=kmeans_use_features)  # returns list
         return x
+
+
+ClusterNet6c_Param = {'num_channel': 3, 'input_size': 64, 'num_sub_heads': 5, 'output_k': 10}

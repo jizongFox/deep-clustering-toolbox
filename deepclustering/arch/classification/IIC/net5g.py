@@ -56,16 +56,12 @@ class ClusterNet5gTrunk(ResNetTrunk):
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
-
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
-
         if not penultimate_features:
-            # default
             x = self.layer4(x)
             x = self.avgpool(x)
-
         x = x.view(x.size(0), -1)
 
         return x
@@ -137,4 +133,4 @@ class ClusterNet5g(ResNet):
         return x
 
 
-ClusterNet5g_Param = {'input_size': 96, 'num_channel': 3, 'output_k': 10, 'num_sub_heads': 5}
+ClusterNet5g_Param = {'input_size': 64, 'num_channel': 3, 'output_k': 10, 'num_sub_heads': 5}

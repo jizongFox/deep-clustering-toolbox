@@ -89,5 +89,9 @@ class ClusterNet5gTwoHead(ResNet):
         return x
 
 
-ClusterNet5gTwoHead_Param = {'input_size': 96, 'num_channel': 3, 'output_k_A': 70, 'output_k_B': 10, 'num_sub_heads': 5,
+ClusterNet5gTwoHead_Param = {'input_size': 64,
+                             'num_channel': 3,
+                             'output_k_A': 70,
+                             'output_k_B': 10,
+                             'num_sub_heads': 5,
                              'semisup': False}
