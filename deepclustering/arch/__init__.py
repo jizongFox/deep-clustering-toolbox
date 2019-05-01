@@ -12,7 +12,7 @@ Package
 """
 # A Map from string to arch callables
 ARCH_CALLABLES: Dict[str, Callable] = {}
-ARCH_PARAM_DICT: Dict[str, Dict[str,Union[int, float, str]]] = {}
+ARCH_PARAM_DICT: Dict[str, Dict[str, Union[int, float, str]]] = {}
 
 
 # meta function

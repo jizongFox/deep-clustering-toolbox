@@ -4,3 +4,6 @@
 **/__pycache__/
 /.mypy_cache/
 **/*.pth
+.pytype/
+.pyre
+**/*.prc
