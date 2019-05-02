@@ -227,7 +227,7 @@ class Resize(object):
 
 
 class CenterCrop(object):
-    """Crops the given PIL Image at the center.
+    """Crops the given Tensor Image at the center.
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an

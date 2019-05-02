@@ -1,8 +1,11 @@
 import unittest
 
 import torch
+import torch.nn.functional as F
 
 from deepclustering.loss import loss
+from deepclustering.loss.IID_losses import IIDLoss
+from deepclustering.utils import simplex
 
 
 class Test_CrossEntropyLoss2D(unittest.TestCase):
@@ -28,3 +31,17 @@ class Test_CrossEntropyLoss2D(unittest.TestCase):
         self.label = self.label.cuda()
 
         self.test_weight()
+
+
+class Test_IIC(unittest.TestCase):
+    def setUp(self) -> None:
+        self.x1 = F.softmax(torch.randn(5, 10), 1)
+        self.x2 = F.softmax(torch.randn(5, 10), 1)
+        assert simplex(self.x1)
+        assert simplex(self.x2)
+
+    def test_iic(self):
+        criterion = IIDLoss(lamb=1.0)
+        loss = criterion(self.x1, self.x2)
+        with self.assertRaises(AssertionError):
+            loss = criterion(self.x1, torch.randn(5, 10))

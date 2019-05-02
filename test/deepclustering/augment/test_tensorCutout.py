@@ -8,7 +8,7 @@ from PIL import Image
 
 plt.ion()
 URL = 'https://cdn1.medicalnewstoday.com/content/images/articles/322/322868/golden-retriever-puppy.jpg'
-from deepclustering.augment.tensor_augment import TensorCutout, RandomCrop, Resize
+from deepclustering.augment.tensor_augment import TensorCutout, RandomCrop, Resize, CenterCrop
 
 
 class TestCasewithSetUp(TestCase):
@@ -79,3 +79,26 @@ class TestResize(TestCasewithSetUp):
             assert r_timg.shape[2:] == c
             r_npimg = transform(self.cimgs_np)
             assert r_npimg.shape[2:] == c
+
+
+class TestCenterCrop(TestCasewithSetUp):
+    def test_centercrop(self):
+        crop_size = (500, 700)
+        transform = CenterCrop(size=crop_size)
+        center_cimg_np = transform(self.cimg_np)
+        assert center_cimg_np.shape[2:] == crop_size
+        center_cimgs_np = transform(self.cimgs_np)
+        assert center_cimgs_np.shape[2:] == crop_size
+
+        center_timg = transform(self.timg)
+        assert center_timg.shape[2:] == crop_size
+
+        center_timgs = transform(self.timgs)
+        assert center_timgs.shape[2:] == crop_size
+
+    def test_raise_error(self):
+        crop_size = (1500, 1700)
+        transform = CenterCrop(size=crop_size)
+        with self.assertRaises(AssertionError):
+            center_cimg_np = transform(self.cimg_np)
+            assert center_cimg_np.shape[2:] == crop_size

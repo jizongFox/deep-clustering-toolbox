@@ -208,8 +208,6 @@ class Resize(object):
         return torch_img
 
 
-'''
-
 class CenterCrop(object):
     """Crops the given PIL Image at the center.
 
@@ -225,15 +223,30 @@ class CenterCrop(object):
         else:
             self.size: Tuple[int, int] = size  # type:ignore
 
-    def __call__(self, img: Image.Image) -> Image.Image:
+    @staticmethod
+    def get_parameter(img, output_size):
+        if isinstance(output_size, numbers.Number):
+            output_size = (int(output_size), int(output_size))
+        _, _, h, w = img.shape
+        th, tw = output_size
+        i = int(round((h - th) / 2.))
+        j = int(round((w - tw) / 2.))
+        return i, j, th, tw
+
+    def __call__(self, img: T) -> T:
         """
         Args:
             img (PIL Image): Image to be cropped.
         Returns:
             PIL Image: Cropped image.
         """
-        return tf.center_crop(img, self.size)
+        assert isinstance(img, _Tensor)
+        b, c, h, w = img.shape
+        assert h >= self.size[0] and w >= self.size[1],f"Image size {h} and {w}, given {self.size}."
+        r_img = img.copy() if isinstance(img, np.ndarray) else img.clone()
+        i, j, th, tw = self.get_parameter(r_img, self.size)
+
+        return r_img[:, :, i:i + th, j:j + tw]
 
     def __repr__(self) -> str:
         return self.__class__.__name__ + '(size={0})'.format(self.size)
-'''
