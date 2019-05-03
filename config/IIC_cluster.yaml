@@ -1,0 +1,29 @@
+Arch:
+  name: clusternet5g
+  output_k: 10
+  input_size: 32
+
+Optim:
+  name: Adam
+  lr: 0.0005
+
+Scheduler:
+  name: MultiStepLR
+  milestones: [10,20,30,40,50,60,70,80,90]
+  gamma: 0.7
+
+DataSet:
+  num_dataset: 3
+
+
+DataLoader:
+  batch_size: 10
+  shuffle: true
+  num_workers: 4
+
+
+Trainer:
+  max_epoch: 100
+  save_dir: runs/test
+  True: true
+

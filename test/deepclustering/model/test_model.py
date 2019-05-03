@@ -1,10 +1,10 @@
 from unittest import TestCase
 
 import torch
-
 from deepclustering.arch import ARCH_PARAM_DICT
 from deepclustering.model import Model
 from deepclustering.utils import simplex
+from pathlib2 import Path
 
 
 class TestModel(TestCase):
@@ -78,8 +78,8 @@ class TestModel(TestCase):
                                        scheduler_dict=self.scheduler_dict)
             model1.to(device=device)
             predicts = model1.predict(self.image.to(device))
-            torch.save(model1.state_dict, f'{arch_name}.pth')
-            state_dict = torch.load(f'{arch_name}.pth', map_location=torch.device('cpu'))
+            torch.save(model1.state_dict, f'{Path(__file__).parent / arch_name}.pth')
+            state_dict = torch.load(f'{Path(__file__).parent / arch_name}.pth', map_location=torch.device('cpu'))
             model2 = Model.initialize_from_state_dict(state_dict)
             model2.to(device)
             assert torch.allclose(model2(self.image.to(device))[0], predicts[0])

@@ -1,10 +1,13 @@
-from functools import partial
-from typing import Iterable, Set, Tuple, TypeVar
+import collections
+import warnings
+from copy import deepcopy as dcopy
+from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Union, Any
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import Tensor, einsum
+from torch.utils.data import DataLoader
 
 A = TypeVar("A")
 B = TypeVar("B")
@@ -122,5 +125,82 @@ def meta_dice(sum_str: str, label: Tensor, pred: Tensor, smooth: float = 1e-8) -
     return dices
 
 
-dice_coef = partial(meta_dice, "bcwh->bc")
-dice_batch = partial(meta_dice, "bcwh->c")
+# functions
+def map_(fn: Callable[[A], B], iter: Iterable[A]) -> List[B]:
+    return list(map(fn, iter))
+
+
+# no-stop dataloader
+class DataIter(object):
+    def __init__(self, dataloader: Union[DataLoader, List[Any]]) -> None:
+        super().__init__()
+        self.dataloader = dcopy(dataloader)
+        self.iter_dataloader = iter(dataloader)
+        self.cache = None
+
+    def __next__(self):
+        try:
+            self.cache = self.iter_dataloader.__next__()
+            return self.cache
+        except StopIteration:
+            self.iter_dataloader = iter(self.dataloader)
+            self.cache = self.iter_dataloader.__next__()
+            return self.cache
+
+    def __cache__(self):
+        if self.cache is not None:
+            return self.cache
+        else:
+            warnings.warn('No cache found, iterator forward')
+            return self.__next__()
+
+
+## dictionary functions
+def flatten_dict(d, parent_key='', sep='_'):
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+
+def dict_merge(dct: dict, merge_dct: dict, re=False):
+    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
+    updating only top-level keys, dict_merge recurses down into dicts nested
+    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
+    ``dct``.
+    :param dct: dict onto which the merge is executed
+    :param merge_dct: dct merged into dct
+    :return: None
+    """
+    # dct = dcopy(dct)
+    if merge_dct is None:
+        if re:
+            return dct
+        else:
+            return
+    for k, v in merge_dct.items():
+        if (k in dct and isinstance(dct[k], dict)
+                and isinstance(merge_dct[k], collections.Mapping)):
+            dict_merge(dct[k], merge_dct[k])
+        else:
+            try:
+                dct[k] = type(dct[k])(eval(merge_dct[k])) if type(dct[k]) in (bool, list) else type(dct[k])(
+                    merge_dct[k])
+            except:
+                dct[k] = merge_dct[k]
+    if re:
+        return dcopy(dct)
+
+
+def extract_from_big_dict(big_dict, keys) -> dict:
+    """ Get a small dictionary with key in `keys` and value
+        in big dict. If the key doesn't exist, give None.
+        :param big_dict: A dict
+        :param keys: A list of keys
+    """
+    #   TODO a bug has been found
+    return {key: big_dict.get(key) for key in keys if big_dict.get(key, 'not_found') != 'not_found'}

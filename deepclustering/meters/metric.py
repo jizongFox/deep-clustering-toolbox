@@ -2,6 +2,7 @@ import functools
 from typing import *
 
 import pandas as pd
+from easydict import EasyDict as edict
 
 from ..utils.decorator import export
 
@@ -124,3 +125,13 @@ class ListAggregatedMeter(object):
         for n, l in zip(self.names, self.ListAggragatedMeter):
             l.record = checkpoint[n]
         print(self.summary())
+
+    @classmethod
+    def initialize_from_state_dict(cls, checkpoint: Dict[str, dict]):
+        Meters = edict()
+        submeter_names = list(checkpoint.keys())
+        for k in submeter_names:
+            Meters[k] = AggragatedMeter()
+        wholeMeter = cls(names=submeter_names, listAggregatedMeter=list(Meters.values()))
+        wholeMeter.load_state_dict(checkpoint)
+        return wholeMeter, Meters

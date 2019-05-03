@@ -10,12 +10,14 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 from .cifar import CIFAR10
-from .. import dataset # type: ignore
+from .. import dataset  # type: ignore
 from ...augment import augment
 
 DATA_ROOT = str(Path(__file__).parents[3] / '.data')
 Path(DATA_ROOT).mkdir(exist_ok=True)
 
+
+# todo try to extend the class to support semi supervised cases ....
 
 class Cifar10ClusteringDataloaders(object):
     """
@@ -35,9 +37,10 @@ class Cifar10ClusteringDataloaders(object):
         self.num_workers = num_workers
 
     @staticmethod
-    def _creat_concatDataset(image_transform, target_transform, dataset_dict={}):
+    def _creat_concatDataset(image_transform: Callable, target_transform: Callable, dataset_dict: dict = {}):
         """
         create concat dataset with only one type of transform.
+        :rtype: dataset
         :param image_transform:
         :param target_transform:
         :param dataset_dict:
@@ -84,12 +87,8 @@ class Cifar10ClusteringDataloaders(object):
                                    num_workers=self.num_workers, drop_last=True, **dataloader_dict)
         return combineLoader
 
-    ## taken from IIC paper:
 
-
-# todo try to extend the class to support semi supervised cases ....
-
-
+## taken from IIC paper:
 r"""
 tf1=Compose(
         RandomCrop(size=(20, 20), padding=None)
