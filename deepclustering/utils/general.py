@@ -1,6 +1,7 @@
 import collections
 import warnings
 from copy import deepcopy as dcopy
+from functools import partial
 from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Union, Any
 
 import numpy as np
@@ -8,10 +9,17 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, einsum
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 A = TypeVar("A")
 B = TypeVar("B")
 T = TypeVar("T", Tensor, np.ndarray)
+
+# tqdm
+
+tqdm_ = partial(tqdm, ncols=125,
+                leave=False,
+                bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [' '{rate_fmt}{postfix}]')
 
 
 # Assert utils

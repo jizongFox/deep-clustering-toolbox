@@ -18,14 +18,12 @@ class Trainer_Initialization(object):
         pprint(self.merged_config)
 
     def return_Model(self):
-
         model = Model(arch_dict=self.merged_config['Arch'], optim_dict=self.merged_config['Optim'],
                       scheduler_dict=self.merged_config['Scheduler'])
 
         return model
 
     def return_DataLoders(self):
-
         train_loader = Cifar10ClusteringDataloaders(**self.merged_config['DataLoader']).creat_CombineDataLoader(
             default_cifar10_img_transform['tf1'],
             default_cifar10_img_transform['tf2'],
@@ -46,4 +44,5 @@ class Trainer_Initialization(object):
 
 if __name__ == '__main__':
     ti = Trainer_Initialization()
-    ti.return_Model()
+    Model = ti.return_Model()
+    train_loader, val_loader = ti.return_DataLoders()
