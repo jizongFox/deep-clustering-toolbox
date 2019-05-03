@@ -23,8 +23,14 @@ def meta_dice(sum_str: str, label: Tensor, pred: Tensor, smooth: float = 1e-8) -
 
 
 def toOneHot(pred_logit, mask):
+    """
+    :param pred_logit: logit with b,c, h, w. it is fine to pass simplex prediction or onehot.
+    :param mask: gt mask with b,h,w
+    :return: onehot presentation of prediction and mask, pred.shape == mask.shape == b,c, h , w
+    """
+    # todo
     oh_predmask = probs2one_hot(F.softmax(pred_logit, 1))
-    oh_mask = class2one_hot(mask.squeeze(1), pred_logit.shape[1])
+    oh_mask = class2one_hot(mask.squeeze(1), C=pred_logit.shape[1])
     assert oh_predmask.shape == oh_mask.shape
     return oh_predmask, oh_mask
 
@@ -81,4 +87,3 @@ class DiceMeter(Metric):
     def summary(self) -> dict:
         _, (means, _) = self.value()
         return {f'DSC{i}': means[i].item() for i in self.report_axis}
-

@@ -50,7 +50,7 @@ class ConcatDataset(Dataset):
     large-scale datasets as the concatenation operation is done in an
     on-the-fly manner.
     For example:
-    combien the training and validation dataset
+    combine the training and validation dataset
 
     Arguments:
         datasets (sequence): List of datasets to be concatenated
@@ -87,6 +87,21 @@ class ConcatDataset(Dataset):
         warnings.warn("cummulative_sizes attribute is renamed to "
                       "cumulative_sizes", DeprecationWarning, stacklevel=2)
         return self.cumulative_sizes
+
+
+class CombineDataset(Dataset):
+    """
+    Combine multiple dataset to return their values in the same time.
+    """
+    def __init__(self, *datasets):
+        self.datasets = datasets
+
+    def __getitem__(self, i):
+        return tuple(d[i] for d in self.datasets)
+
+    def __len__(self):
+        return min(len(d) for d in self.datasets)
+
 
 
 class Subset(Dataset):

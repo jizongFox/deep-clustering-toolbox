@@ -1,5 +1,8 @@
-from .metric import Metric
 import numpy as np
+
+from .metric import Metric
+
+
 class AverageValueMeter(Metric):
     def __init__(self, name='Average Meter'):
         super(AverageValueMeter, self).__init__()
@@ -39,10 +42,10 @@ class AverageValueMeter(Metric):
         self.m_s = 0.0
         self.std = np.nan
 
-    def summary(self)->dict:
-        ## this function returns a dict and tends to aggregate the historical results.
-        return {'mean':self.value()[0]}
+    def summary(self) -> dict:
+        # this function returns a dict and tends to aggregate the historical results.
+        return {'mean': self.value()[0]}
 
-    def detailed_summary(self)->dict:
-        ## this function returns a dict and tends to aggregate the historical results.
-        return {'mean':self.value()[0],'val':self.value()[1]}
+    def detailed_summary(self) -> dict:
+        # this function returns a dict and tends to aggregate the historical results.
+        return {'mean': self.value()[0], 'val': self.value()[1]}

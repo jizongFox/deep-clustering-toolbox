@@ -44,7 +44,7 @@ def simplex(t: Tensor, axis=1) -> bool:
 
 def one_hot(t: Tensor, axis=1) -> bool:
     '''
-    check if the Tensor is Onehot
+    check if the Tensor is one hot
     :param t:
     :param axis: default = 1
     :return: bool

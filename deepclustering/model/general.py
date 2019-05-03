@@ -2,15 +2,14 @@ from abc import ABC
 from typing import *
 
 import torch
+from deepclustering import ModelMode
+from deepclustering.arch import get_arch
 from torch import Tensor
 from torch import nn
 from torch import optim
 from torch.nn import NLLLoss
 from torch.nn import functional as F
 from torch.optim import lr_scheduler
-
-from deepclustering import ModelMode
-from deepclustering.arch import get_arch
 
 
 class Model(ABC):
@@ -23,7 +22,7 @@ class Model(ABC):
         self.torchnet, self.optimizer, self.scheduler = self._setup()
         self.to(device=torch.device('cpu'))
 
-    def _setup(self) -> Tuple[nn.Module, torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]:
+    def _setup(self) -> Tuple[nn.Module, optim.SGD, torch.optim.lr_scheduler.LambdaLR]:
         self.arch_name = self.arch_dict['name']
         self.arch_params = {k: v for k, v in self.arch_dict.items() if k != 'name'}
         self.optim_name = self.optim_dict['name']
@@ -33,7 +32,7 @@ class Model(ABC):
         torchnet = get_arch(self.arch_name, self.arch_params)
         # this put the tensor to cuda directly, including the forward image implicitly.
         # torchnet = nn.DataParallel(torchnet)
-        optimizer: optim.Optimizer = getattr(optim, self.optim_name) \
+        optimizer: optim.SGD = getattr(optim, self.optim_name) \
             (torchnet.parameters(), **self.optim_params)
         scheduler: lr_scheduler.LambdaLR = getattr(lr_scheduler, self.scheduler_name) \
             (optimizer, **self.scheduler_params)
@@ -70,7 +69,7 @@ class Model(ABC):
                 pred = self.predict(img)
                 loss = criterion(pred, gt.squeeze(1))
         self.train()
-        return [pred.data, loss.data]
+        return [pred.detach(), loss.detach()]
 
     def schedulerStep(self):
         self.scheduler.step()
@@ -93,7 +92,7 @@ class Model(ABC):
 
     def to(self, device: torch.device):
         self.torchnet.to(device)
-        for state in self.optimizer.state.values():
+        for state in self.optimizer.state.values():  # type: ignore
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
                     state[k] = v.to(device)

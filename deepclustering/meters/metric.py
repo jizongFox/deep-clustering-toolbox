@@ -1,9 +1,9 @@
 import functools
-from typing import List, Iterable, Union, Optional
+from typing import *
 
 import pandas as pd
 
-from ..utils import export
+from ..utils.decorator import export
 
 
 def change_dataframe_name(dataframe: pd.DataFrame, name: str):
@@ -19,13 +19,13 @@ class Metric(object):
     """
 
     def reset(self):
-        pass
+        raise NotImplementedError
 
     def add(self, **kwargs):
-        pass
+        raise NotImplementedError
 
     def value(self, **kwargs):
-        pass
+        raise NotImplementedError
 
     def summary(self) -> dict:
         raise NotImplementedError
@@ -37,7 +37,7 @@ class Metric(object):
 @export
 class AggragatedMeter(object):
     '''
-    Aggragate historical information in a List.
+    Aggregate historical information in a List.
     '''
 
     def __init__(self) -> None:
@@ -69,13 +69,16 @@ class AggragatedMeter(object):
 
         Arguments:
             state_dict (dict): scheduler state. Should be an object returned
-                from a call to :meth:`state_dict`.
+                from a call to :math:`state_dict`.
         """
         self.__dict__.update(state_dict)
 
 
 @export
 class ListAggregatedMeter(object):
+    """
+    A listed of Aggregated Meters with names, that severs to be a interface for project.
+    """
 
     def __init__(self,
                  listAggregatedMeter: List[AggragatedMeter],
@@ -92,7 +95,7 @@ class ListAggregatedMeter(object):
 
     def summary(self) -> pd.DataFrame:
         '''
-        summary on the list of subsummarys, merging them together.
+        summary on the list of sub summarys, merging them together.
         :return:
         '''
 
@@ -104,10 +107,19 @@ class ListAggregatedMeter(object):
         return pd.DataFrame(summary)
 
     @property
-    def state_dict(self):
+    def state_dict(self) -> dict:
+        """
+        to export dict
+        :return: state dict
+        """
         return {n: l.record for n, l in zip(self.names, self.ListAggragatedMeter)}
 
     def load_state_dict(self, checkpoint):
+        """
+        to load dict
+        :param checkpoint: dict
+        :return:None
+        """
         assert isinstance(checkpoint, dict)
         for n, l in zip(self.names, self.ListAggragatedMeter):
             l.record = checkpoint[n]
