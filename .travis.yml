@@ -1,0 +1,14 @@
+language: python
+
+python:
+  - "3.6"
+
+services:
+  - docker
+
+before_install:
+  - docker build -t containerimage .
+
+
+script:
+  - docker run --name testcontainer --rm containerimage nvidia-smi && pytest
