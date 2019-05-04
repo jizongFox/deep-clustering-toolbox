@@ -82,57 +82,64 @@ class MeterInterface(object):
     A listed of Aggregated Meters with names, that severs to be a interface for project.
     """
 
-    def __init__(self,
-                 listAggregatedMeter: List[AggragatedMeter],
+    def __init__(self, meter_config: Dict[str, Metric],
+                 listAggregatedMeter: List[AggragatedMeter]
+                 ,
                  names: Iterable[str] = None
                  ) -> None:
         super().__init__()
-        self.ListAggragatedMeter: List[AggragatedMeter] = listAggregatedMeter
-        self.names = names
-        assert self.ListAggragatedMeter.__len__() == self.names.__len__()
-        assert isinstance(self.ListAggragatedMeter, list), type(self.ListAggragatedMeter)
 
-    def __getitem__(self, index: int):
-        return self.ListAggragatedMeter[index]
+    self.ListAggragatedMeter: List[AggragatedMeter] = listAggregatedMeter
+    self.names = names
+    assert self.ListAggragatedMeter.__len__() == self.names.__len__()
+    assert isinstance(self.ListAggragatedMeter, list), type(self.ListAggragatedMeter)
 
-    def summary(self) -> pd.DataFrame:
-        '''
-        summary on the list of sub summarys, merging them together.
-        :return:
-        '''
 
-        list_of_summary = [change_dataframe_name(self.ListAggragatedMeter[i].summary(), n) \
-                           for i, n in enumerate(self.names)]
+def __getitem__(self, index: int):
+    return self.ListAggragatedMeter[index]
 
-        summary = functools.reduce(lambda x, y: pd.merge(x, y, left_index=True, right_index=True), list_of_summary)
 
-        return pd.DataFrame(summary)
+def summary(self) -> pd.DataFrame:
+    '''
+    summary on the list of sub summarys, merging them together.
+    :return:
+    '''
 
-    @property
-    def state_dict(self) -> dict:
-        """
-        to export dict
-        :return: state dict
-        """
-        return {n: l.record for n, l in zip(self.names, self.ListAggragatedMeter)}
+    list_of_summary = [change_dataframe_name(self.ListAggragatedMeter[i].summary(), n) \
+                       for i, n in enumerate(self.names)]
 
-    def load_state_dict(self, checkpoint):
-        """
-        to load dict
-        :param checkpoint: dict
-        :return:None
-        """
-        assert isinstance(checkpoint, dict)
-        for n, l in zip(self.names, self.ListAggragatedMeter):
-            l.record = checkpoint[n]
-        print(self.summary())
+    summary = functools.reduce(lambda x, y: pd.merge(x, y, left_index=True, right_index=True), list_of_summary)
 
-    @classmethod
-    def initialize_from_state_dict(cls, checkpoint: Dict[str, dict]):
-        Meters = edict()
-        submeter_names = list(checkpoint.keys())
-        for k in submeter_names:
-            Meters[k] = AggragatedMeter()
-        wholeMeter = cls(names=submeter_names, listAggregatedMeter=list(Meters.values()))
-        wholeMeter.load_state_dict(checkpoint)
-        return wholeMeter, Meters
+    return pd.DataFrame(summary)
+
+
+@property
+def state_dict(self) -> dict:
+    """
+    to export dict
+    :return: state dict
+    """
+    return {n: l.record for n, l in zip(self.names, self.ListAggragatedMeter)}
+
+
+def load_state_dict(self, checkpoint):
+    """
+    to load dict
+    :param checkpoint: dict
+    :return:None
+    """
+    assert isinstance(checkpoint, dict)
+    for n, l in zip(self.names, self.ListAggragatedMeter):
+        l.record = checkpoint[n]
+    print(self.summary())
+
+
+@classmethod
+def initialize_from_state_dict(cls, checkpoint: Dict[str, dict]):
+    Meters = edict()
+    submeter_names = list(checkpoint.keys())
+    for k in submeter_names:
+        Meters[k] = AggragatedMeter()
+    wholeMeter = cls(names=submeter_names, listAggregatedMeter=list(Meters.values()))
+    wholeMeter.load_state_dict(checkpoint)
+    return wholeMeter, Meters

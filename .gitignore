@@ -9,3 +9,4 @@
 **/*.prc
 /.coverage
 /.data/
+*.egg-info
