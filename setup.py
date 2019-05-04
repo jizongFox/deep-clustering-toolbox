@@ -8,5 +8,6 @@ setup(
     license='',
     author='jizong',
     author_email='',
-    description='', install_requires=['numpy', 'torchvision', 'torch', 'Pillow', 'scikit-learn']
+    description='', install_requires=['numpy', 'torchvision', 'torch', 'Pillow', 'scikit-learn', 'behave', 'requests',
+                                      'scikit-image', 'pandas', 'easydict', 'pathlib2', 'matplotlib']
 )
