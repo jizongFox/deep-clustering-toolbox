@@ -8,5 +8,5 @@ setup(
     license='',
     author='jizong',
     author_email='',
-    description='', install_requires=['numpy', 'torchvision', 'torch', 'Pillow']
+    description='', install_requires=['numpy', 'torchvision', 'torch', 'Pillow', 'scikit-learn']
 )
