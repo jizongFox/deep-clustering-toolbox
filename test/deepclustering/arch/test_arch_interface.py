@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import torch
 from deepclustering import arch
-from deepclustering.arch import get_arch, ARCH_CALLABLES,ARCH_PARAM_DICT
+from deepclustering.arch import get_arch, ARCH_CALLABLES, ARCH_PARAM_DICT
 from deepclustering.utils import simplex
 from torch import nn
 
@@ -14,6 +14,7 @@ class Test_arch_interface(TestCase):
         self.find_archs = {k: v for k, v in arch.__dict__.items() if type(v) == type}
         self.archs = {k: v for k, v in self.find_archs.items() if issubclass(v, nn.Module)}
         self.image = torch.randn(1, 3, 64, 64)
+
     #
     def test_find_arch(self):
         net1 = arch.ClusterNet5g(**arch.ClusterNet5g_Param)
@@ -47,9 +48,8 @@ class Test_arch_interface(TestCase):
         net_keys = ARCH_CALLABLES.keys()
         for k in net_keys:
             print(f'Building network {k}...')
-            net = get_arch(k,ARCH_PARAM_DICT[k])
+            net = get_arch(k, ARCH_PARAM_DICT[k])
             pred = net(self.image)
             print(pred.__len__())
             print(pred[0].shape)
             assert simplex(pred[0])
-

@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from .trainer import _Trainer
 from .. import ModelMode
 from ..loss.IID_losses import IIDLoss
-from ..meters import AggragatedMeter, ListAggregatedMeter, AverageValueMeter
+from ..meters import MeterInterface, AverageValueMeter
 from ..utils import tqdm_, flatten_dict
 from ..utils.classification.assignment_mapping import _hungarian_match, _acc
 
@@ -17,11 +17,8 @@ plt.ion()
 
 
 class IICTrainer(_Trainer):
-    METER_NAMES = ['traloss', 'val_acc']
-    Meters = edict()
-    for k in METER_NAMES:
-        Meters[k] = AggragatedMeter()
-    MeterInterface = ListAggregatedMeter(names=METER_NAMES, listAggregatedMeter=list(Meters.values()))
+    METER_CONFIG = {'traloss': AverageValueMeter(), 'val_acc': AverageValueMeter()}
+    meterInterface = MeterInterface(METER_CONFIG)
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
                  save_dir: str = 'runs/test', checkpoint_path: str = None, device='cpu') -> None:
@@ -37,7 +34,6 @@ class IICTrainer(_Trainer):
             for k, v in self.Meters.items():
                 v.add(eval(k))
             print(self.MeterInterface.summary())
-
 
     def _train_loop(self, train_loader: DataLoader, epoch: int, mode: ModelMode = ModelMode.TRAIN, *args, **kwargs):
         self.model.set_mode(mode)
@@ -59,7 +55,7 @@ class IICTrainer(_Trainer):
             loss.backward()
             self.model.optimizer.step()
             tralossMeter.add(-loss.item())
-            report_dict = flatten_dict({'MI':tralossMeter.summary()},sep=' ')
+            report_dict = flatten_dict({'MI': tralossMeter.summary()}, sep=' ')
             train_loader.set_postfix(report_dict)
         return tralossMeter.detailed_summary()
 

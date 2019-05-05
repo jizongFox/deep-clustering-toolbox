@@ -1,4 +1,5 @@
 import functools
+from abc import abstractmethod
 from typing import *
 
 import pandas as pd
@@ -19,18 +20,23 @@ class Metric(object):
     From: https://github.com/pytorch/tnt/blob/master/torchnet/meter/meter.py
     """
 
+    @abstractmethod
     def reset(self):
         raise NotImplementedError
 
-    def add(self, **kwargs):
+    @abstractmethod
+    def add(self, *args, **kwargs):
         raise NotImplementedError
 
+    @abstractmethod
     def value(self, **kwargs):
         raise NotImplementedError
 
+    @abstractmethod
     def summary(self) -> dict:
         raise NotImplementedError
 
+    @abstractmethod
     def detailed_summary(self) -> dict:
         raise NotImplementedError
 
@@ -76,36 +82,48 @@ class AggragatedMeter(object):
 
 
 @export
-class ListAggregatedMeter(object):
+class MeterInterface(object):
     """
     A listed of Aggregated Meters with names, that severs to be a interface for project.
     """
 
-    def __init__(self,
-                 listAggregatedMeter: List[AggragatedMeter],
-                 names: Iterable[str] = None
-                 ) -> None:
+    def __init__(self, meter_config: Dict[str, Metric]) -> None:
+        """
+        :param meter_config: a dict of individual meter configurations
+        """
         super().__init__()
-        self.ListAggragatedMeter: List[AggragatedMeter] = listAggregatedMeter
-        self.names = names
-        assert self.ListAggragatedMeter.__len__() == self.names.__len__()
-        assert isinstance(self.ListAggragatedMeter, list), type(self.ListAggragatedMeter)
+        # check:
+        for k, v in meter_config.items():
+            assert isinstance(k, str), k
+            assert isinstance(v, Metric), v # can also check the subclasses.
+        self.ind_meter_dict = edict(meter_config) if not isinstance(meter_config, edict) else meter_config
+        for _, v in self.ind_meter_dict.items():
+            v.reset()
+        self.aggregated_meter_dict: Dict[str, AggragatedMeter] = edict({k: AggragatedMeter() for k in
+                                                                        self.ind_meter_dict.keys()})
 
-    def __getitem__(self, index: int):
-        return self.ListAggragatedMeter[index]
+    def __getitem__(self, meter_name) -> Metric:
+        return self.ind_meter_dict[meter_name]
 
     def summary(self) -> pd.DataFrame:
-        '''
+        """
         summary on the list of sub summarys, merging them together.
         :return:
-        '''
-
-        list_of_summary = [change_dataframe_name(self.ListAggragatedMeter[i].summary(), n) \
-                           for i, n in enumerate(self.names)]
-
+        """
+        list_of_summary = [change_dataframe_name(v.summary(), k) for k, v in self.aggregated_meter_dict.items()]
+        # merge the list
         summary = functools.reduce(lambda x, y: pd.merge(x, y, left_index=True, right_index=True), list_of_summary)
-
         return pd.DataFrame(summary)
+
+    def step(self) -> None:
+        """
+        This is to put individual Meter summary to Aggregated Meter dict
+        And reset the individual Meters
+        :return: None
+        """
+        for k in self.ind_meter_dict.keys():
+            self.aggregated_meter_dict[k].add(self.ind_meter_dict[k].summary())
+            self.ind_meter_dict[k].reset()
 
     @property
     def state_dict(self) -> dict:
@@ -113,7 +131,7 @@ class ListAggregatedMeter(object):
         to export dict
         :return: state dict
         """
-        return {n: l.record for n, l in zip(self.names, self.ListAggragatedMeter)}
+        return {k: v.record for k, v in self.aggregated_meter_dict.items()}
 
     def load_state_dict(self, checkpoint):
         """
@@ -122,8 +140,8 @@ class ListAggregatedMeter(object):
         :return:None
         """
         assert isinstance(checkpoint, dict)
-        for n, l in zip(self.names, self.ListAggragatedMeter):
-            l.record = checkpoint[n]
+        for k, v in self.aggregated_meter_dict.items():
+            v.record = checkpoint[k]
         print(self.summary())
 
     @classmethod

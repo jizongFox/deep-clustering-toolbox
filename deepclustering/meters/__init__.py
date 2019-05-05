@@ -1,5 +1,5 @@
 from .averagemeter import AverageValueMeter
-from .dicemeter import *
+from .dicemeter import BatchDiceMeter, SliceDiceMeter
 from .iou import IoU
 from .kappa import KappaMetrics, Kappa2Annotator
-from .metric import AggragatedMeter, ListAggregatedMeter
+from .metric import AggragatedMeter, MeterInterface

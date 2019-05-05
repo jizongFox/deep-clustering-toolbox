@@ -1,6 +1,5 @@
 .idea/
 /.pytest_cache/
-/deepclustering.egg-info/
 **/__pycache__/
 /.mypy_cache/
 **/*.pth
@@ -10,3 +9,4 @@
 /.coverage
 /.data/
 *.egg-info
+**/zzz*.py
