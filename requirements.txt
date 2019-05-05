@@ -1,0 +1,15 @@
+torchvision==0.2.2.post3
+scikit_image==0.15.0
+pandas==0.24.2
+numpy==1.16.3
+setuptools==41.0.1
+easydict==1.9
+typing_inspect==0.4.0
+matplotlib==2.2.4
+typing==3.6.4
+pathlib2==2.3.3
+behave==1.2.6
+tqdm==4.31.1
+Pillow==6.0.0
+skimage==0.0
+scikit_learn==0.20.3

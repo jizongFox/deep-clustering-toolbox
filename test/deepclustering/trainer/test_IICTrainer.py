@@ -13,7 +13,7 @@ class TestIICTrainer(TestCase):
         self.optim_dict = {'name': 'Adam', 'lr': 0.005}
         self.scheduler_dict = {'name': 'MultiStepLR', 'milestones': [10, 20, 30, 40, 50, 60, 70, 80, 90], 'gamma': 0.7}
         self.trainer_dict = {'max_epoch': 3, 'device': 'cuda'}
-        self.dataloader_dict = {'batch_size': 64, 'shuffle': True, "num_workers": 8}
+        self.dataloader_dict = {'batch_size': 256, 'shuffle': True, "num_workers": 16}
         self.train_dataloader = Cifar10ClusteringDataloaders(**self.dataloader_dict).creat_CombineDataLoader(
             default_cifar10_img_transform['tf1'],
             default_cifar10_img_transform['tf2'])
@@ -32,5 +32,5 @@ class TestIICTrainer(TestCase):
         with torch.no_grad():
             self.IICtrainer._eval_loop(self.val_dataloader, 0)
 
-    def test_starttraining(self):
+    def test_start_training(self):
         self.IICtrainer.start_training()

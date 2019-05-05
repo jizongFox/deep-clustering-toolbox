@@ -9,17 +9,17 @@ __all__ = ["ClusterNet5g", "ClusterNet5g_Param"]
 
 
 class ClusterNet5gTrunk(ResNetTrunk):
-    r'''
+    r"""
     ResNet based Trunk model
-    '''
+    """
 
     def __init__(self, input_size: int, num_channel: int = 3, batchnorm_track: bool = True):
-        '''
+        """
         ResNet Trunk Initialization
         :param input_size: the input image size
         :param num_channel: image channel, 3 for RGB while 1 for grey image
         :param batchnorm_track: if track the batchnorm state
-        '''
+        """
         super(ClusterNet5gTrunk, self).__init__()
 
         self.batchnorm_track = batchnorm_track
@@ -69,11 +69,11 @@ class ClusterNet5gTrunk(ResNetTrunk):
 
 class ClusterNet5gHead(nn.Module):
     def __init__(self, output_k: int, num_sub_heads: int, batchnorm_track: bool = True) -> None:
-        r'''
+        r"""
         :param output_k: number of clustering
         :param num_sub_heads: number of sub heads to form an ensemble-like prediction
         :param batchnorm_track: track the batchnorm
-        '''
+        """
         super(ClusterNet5gHead, self).__init__()
         self.batchnorm_track = batchnorm_track
         self.num_sub_heads = num_sub_heads
@@ -82,11 +82,11 @@ class ClusterNet5gHead(nn.Module):
             nn.Softmax(dim=1)) for _ in range(self.num_sub_heads)])
 
     def forward(self, x, kmeans_use_features=False):
-        r'''
+        r"""
         :param x: feature from trunk
         :param kmeans_use_features: whether use kmeans_use_features
         :return: predictions with sub_heads
-        '''
+        """
         results = []
         for i in range(self.num_sub_heads):
             if kmeans_use_features:
@@ -98,9 +98,9 @@ class ClusterNet5gHead(nn.Module):
 
 @export
 class ClusterNet5g(ResNet):
-    r'''
+    r"""
         Clustering model based on ResNet with ResNetTrunk and ResNetHead
-    '''
+    """
 
     def __init__(self, input_size: int, num_channel: int = 3, output_k: int = 10, num_sub_heads: int = 5,
                  batchnorm_track: bool = True):

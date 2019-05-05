@@ -27,24 +27,23 @@ class IICTrainer(_Trainer):
     def start_training(self):
 
         for epoch in range(self.max_epoch):
-            traloss = self._train_loop(self.train_loader, epoch)
+            self._train_loop(self.train_loader, epoch)
             with torch.no_grad():
-                val_acc = self._eval_loop(self.val_loader, epoch)
+                self._eval_loop(self.val_loader, epoch)
+            self.meterInterface.step()
 
-            for k, v in self.Meters.items():
-                v.add(eval(k))
-            print(self.MeterInterface.summary())
+            print(self.meterInterface.summary())
 
     def _train_loop(self, train_loader: DataLoader, epoch: int, mode: ModelMode = ModelMode.TRAIN, *args, **kwargs):
         self.model.set_mode(mode)
-        tralossMeter = AverageValueMeter()
+        assert self.model.training
         train_loader = tqdm_(train_loader)
         for batch, image_labels in enumerate(train_loader):
             images, _ = list(zip(*image_labels))
             tf1_images = torch.cat([images[0] for _ in range(images.__len__() - 1)], dim=0).to(self.device)
             tf2_images = torch.cat(images[1:], dim=0).to(self.device)
             assert tf1_images.shape == tf2_images.shape
-            self.model.optimizer.zero_grad()
+            self.model.zero_grad()
             tf1_pred_simplex = self.model(tf1_images)
             tf2_pred_simplex = self.model(tf2_images)
             assert tf1_pred_simplex.__len__() == tf2_pred_simplex.__len__()
@@ -53,15 +52,15 @@ class IICTrainer(_Trainer):
                 iicloss.append(IIDLoss()(tf1_pred_simplex[n_subhead], tf2_pred_simplex[n_subhead])[0])
             loss: torch.Tensor = sum(iicloss) / len(iicloss)  # type: ignore
             loss.backward()
-            self.model.optimizer.step()
-            tralossMeter.add(-loss.item())
-            report_dict = flatten_dict({'MI': tralossMeter.summary()}, sep=' ')
+            self.model.step()
+            self.meterInterface.traloss.add(-loss.item())
+            report_dict = flatten_dict({'MI': self.meterInterface.traloss.summary()}, sep=' ')
             train_loader.set_postfix(report_dict)
-        return tralossMeter.detailed_summary()
+
 
     def _eval_loop(self, val_loader: DataLoader, epoch: int, mode: ModelMode = ModelMode.EVAL, *args, **kwargs):
         self.model.set_mode(mode)
-        valaccMeter = AverageValueMeter()
+        assert not self.model.training
         val_loader_ = tqdm_(val_loader)
         preds = torch.zeros(self.model.arch_dict['num_sub_heads'], val_loader.dataset.__len__(),
                             dtype=torch.long, device=self.device)
@@ -80,9 +79,7 @@ class IICTrainer(_Trainer):
             reorder_pred, remap = _hungarian_match(flat_preds=preds[subhead], flat_targets=target, preds_k=10,
                                                    targets_k=10)
             acc = _acc(reorder_pred, target)
-            valaccMeter.add(acc)
-
-        return valaccMeter.detailed_summary()
+            self.meterInterface.val_acc.add(acc)
 
     @property
     def state_dict(self):

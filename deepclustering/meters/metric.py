@@ -95,10 +95,13 @@ class MeterInterface(object):
         # check:
         for k, v in meter_config.items():
             assert isinstance(k, str), k
-            assert isinstance(v, Metric), v # can also check the subclasses.
+            assert isinstance(v, Metric), v  # can also check the subclasses.
         self.ind_meter_dict = edict(meter_config) if not isinstance(meter_config, edict) else meter_config
         for _, v in self.ind_meter_dict.items():
             v.reset()
+        for k, v in self.ind_meter_dict.items():
+            setattr(self, k, v)
+
         self.aggregated_meter_dict: Dict[str, AggragatedMeter] = edict({k: AggragatedMeter() for k in
                                                                         self.ind_meter_dict.keys()})
 

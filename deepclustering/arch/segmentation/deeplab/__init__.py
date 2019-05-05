@@ -1,6 +1,6 @@
-'''
+"""
 This folder is modified based on the deep lab repo of: https://github.com/kazuto1011/deeplab-pytorch
-'''
+"""
 
 
 from .resnet import *

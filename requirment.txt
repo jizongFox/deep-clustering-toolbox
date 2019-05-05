@@ -1,3 +1,0 @@
-typing_inspect
-pytest
-pytest-cov

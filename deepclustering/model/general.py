@@ -48,6 +48,12 @@ class Model(ABC):
     def training(self):
         return self.torchnet.training
 
+    def zero_grad(self)->None:
+        self.optimizer.zero_grad()
+
+    def step(self):
+        self.optimizer.step()
+
     def update(self, img: Tensor, gt: Tensor, criterion: NLLLoss,
                mode=ModelMode.TRAIN) -> List[Tensor]:
         # todo improve the code
