@@ -6,6 +6,8 @@ from deepclustering.loss import loss
 from deepclustering.loss.IID_losses import IIDLoss
 from deepclustering.utils import simplex
 
+device = 'cuda' if torch.cuda.is_available() else "cpu"
+
 
 class Test_CrossEntropyLoss2D(unittest.TestCase):
     def setUp(self):
@@ -25,9 +27,9 @@ class Test_CrossEntropyLoss2D(unittest.TestCase):
             if isinstance(arg, torch.Tensor):
                 arg = arg.to('cpu')
 
-        self.weight = self.weight.to('cuda')
-        self.predict = self.predict.cuda()
-        self.label = self.label.cuda()
+        self.weight = self.weight.to(device)
+        self.predict = self.predict.to(device)
+        self.label = self.label.to(device)
         self.test_weight()
 
 

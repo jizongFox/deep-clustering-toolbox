@@ -5,6 +5,8 @@ from deepclustering.dataset import Cifar10ClusteringDataloaders, default_cifar10
 from deepclustering.model import Model
 from deepclustering.trainer.IIC_trainer import IICTrainer
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 
 class TestIICTrainer(TestCase):
     def setUp(self) -> None:
@@ -12,7 +14,7 @@ class TestIICTrainer(TestCase):
                           'num_sub_heads': 2}
         self.optim_dict = {'name': 'Adam', 'lr': 0.005}
         self.scheduler_dict = {'name': 'MultiStepLR', 'milestones': [10, 20, 30, 40, 50, 60, 70, 80, 90], 'gamma': 0.7}
-        self.trainer_dict = {'max_epoch': 3, 'device': 'cuda'}
+        self.trainer_dict = {'max_epoch': 0, 'device': device}
         self.dataloader_dict = {'batch_size': 256, 'shuffle': True, "num_workers": 16}
         self.train_dataloader = Cifar10ClusteringDataloaders(**self.dataloader_dict).creat_CombineDataLoader(
             default_cifar10_img_transform['tf1'],
@@ -26,11 +28,17 @@ class TestIICTrainer(TestCase):
                                      val_loader=self.val_dataloader, **self.trainer_dict)
 
     def test__train_loop(self):
+        if device == 'cpu':
+            return
         self.IICtrainer._train_loop(self.train_dataloader, 0)
 
     def test__eval_loop(self):
+        if device == 'cpu':
+            return
         with torch.no_grad():
             self.IICtrainer._eval_loop(self.val_dataloader, 0)
 
     def test_start_training(self):
+        if device == 'cpu':
+            return
         self.IICtrainer.start_training()

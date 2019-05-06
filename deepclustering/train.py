@@ -4,6 +4,8 @@ from typing import Dict, Any
 from deepclustering.dataset import Cifar10ClusteringDataloaders, default_cifar10_img_transform
 from deepclustering.model import Model
 from deepclustering.utils import yaml_parser, yaml_load, dict_merge
+from deepclustering.trainer import IIC_trainer
+from functools import partial
 
 
 class Trainer_Initialization(object):
@@ -33,6 +35,9 @@ class Trainer_Initialization(object):
             default_cifar10_img_transform['tf3']
         )
         return train_loader, val_loader
+
+    def return_trainer(self):
+        return partial(IIC_trainer, **self.merged_config['Trainer'])
 
     @staticmethod
     def _check_integrality(merged_dict=Dict[str, Any]):
