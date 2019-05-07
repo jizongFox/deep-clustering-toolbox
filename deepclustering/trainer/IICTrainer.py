@@ -10,7 +10,7 @@ from .. import ModelMode
 from ..loss.IID_losses import IIDLoss
 from ..meters import MeterInterface, AverageValueMeter
 from ..utils import tqdm_, flatten_dict
-from ..utils.classification.assignment_mapping import hungarian_match, acc
+from ..utils.classification.assignment_mapping import hungarian_match, flat_acc
 
 plt.ion()
 
@@ -29,9 +29,9 @@ class IICTrainer(_Trainer):
             self._train_loop(self.train_loader, epoch)
             with torch.no_grad():
                 self._eval_loop(self.val_loader, epoch)
-            self.meterInterface.step()
+            self.METERINTERFACE.step()
 
-            print(self.meterInterface.summary())
+            print(self.METERINTERFACE.summary())
 
     def _train_loop(self, train_loader: DataLoader, epoch: int, mode: ModelMode = ModelMode.TRAIN, *args, **kwargs):
         self.model.set_mode(mode)
@@ -52,8 +52,8 @@ class IICTrainer(_Trainer):
             loss: torch.Tensor = sum(iicloss) / len(iicloss)  # type: ignore
             loss.backward()
             self.model.step()
-            self.meterInterface.traloss.add(-loss.item())
-            report_dict = flatten_dict({'MI': self.meterInterface.traloss.summary()}, sep=' ')
+            self.METERINTERFACE.traloss.add(-loss.item())
+            report_dict = flatten_dict({'MI': self.METERINTERFACE.traloss.summary()}, sep=' ')
             train_loader.set_postfix(report_dict)
 
     def _eval_loop(self, val_loader: DataLoader, epoch: int, mode: ModelMode = ModelMode.EVAL, *args, **kwargs):
@@ -76,8 +76,8 @@ class IICTrainer(_Trainer):
         for subhead in range(preds.__len__()):
             reorder_pred, remap = hungarian_match(flat_preds=preds[subhead], flat_targets=target, preds_k=10,
                                                   targets_k=10)
-            acc = acc(reorder_pred, target)
-            self.meterInterface.val_acc.add(acc)
+            acc = flat_acc(reorder_pred, target)
+            self.METERINTERFACE.val_acc.add(acc)
 
     @property
     def state_dict(self):

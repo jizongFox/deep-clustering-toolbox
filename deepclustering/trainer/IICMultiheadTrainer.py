@@ -159,8 +159,8 @@ class IICMultiHeadTrainer(_Trainer):
 
         # record best acc
         self.METERINTERFACE.val_best_acc.add(max(subhead_accs))
-        report_dict = {'best_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
-                       'train_head_B': self.METERINTERFACE.val_best_acc.summary()['mean']}
+        report_dict = {'average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
+                       'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']}
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Validating epoch: {epoch} : {report_dict_str}")
 
