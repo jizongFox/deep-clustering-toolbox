@@ -1,6 +1,5 @@
-from deepclustering.train import Trainer_Initialization
+from script.train import Trainer_Initialization
 from deepclustering.model import Model
-from deepclustering.trainer import IIC_trainer
 from torch.utils.data import DataLoader
 from typing import Tuple
 

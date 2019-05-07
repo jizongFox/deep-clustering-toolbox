@@ -85,7 +85,7 @@ class ClusterNet5gTwoHead(ResNet):
         elif head == "B":
             x = self.head_B(x, kmeans_use_features=kmeans_use_features)
         else:
-            assert (False)
+            assert False
         return x
 
 

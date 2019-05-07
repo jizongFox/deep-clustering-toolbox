@@ -3,7 +3,6 @@ from typing import *
 import matplotlib.pyplot as plt
 import torch
 from deepclustering.model import Model
-from easydict import EasyDict as edict
 from torch.utils.data import DataLoader
 
 from .trainer import _Trainer
@@ -11,14 +10,14 @@ from .. import ModelMode
 from ..loss.IID_losses import IIDLoss
 from ..meters import MeterInterface, AverageValueMeter
 from ..utils import tqdm_, flatten_dict
-from ..utils.classification.assignment_mapping import _hungarian_match, _acc
+from ..utils.classification.assignment_mapping import hungarian_match, acc
 
 plt.ion()
 
 
 class IICTrainer(_Trainer):
     METER_CONFIG = {'traloss': AverageValueMeter(), 'val_acc': AverageValueMeter()}
-    meterInterface = MeterInterface(METER_CONFIG)
+    METERINTERFACE = MeterInterface(METER_CONFIG)
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
                  save_dir: str = 'runs/test', checkpoint_path: str = None, device='cpu') -> None:
@@ -57,7 +56,6 @@ class IICTrainer(_Trainer):
             report_dict = flatten_dict({'MI': self.meterInterface.traloss.summary()}, sep=' ')
             train_loader.set_postfix(report_dict)
 
-
     def _eval_loop(self, val_loader: DataLoader, epoch: int, mode: ModelMode = ModelMode.EVAL, *args, **kwargs):
         self.model.set_mode(mode)
         assert not self.model.training
@@ -76,9 +74,9 @@ class IICTrainer(_Trainer):
             target[bslicer] = gt
             slice_done += gt.shape[0]
         for subhead in range(preds.__len__()):
-            reorder_pred, remap = _hungarian_match(flat_preds=preds[subhead], flat_targets=target, preds_k=10,
-                                                   targets_k=10)
-            acc = _acc(reorder_pred, target)
+            reorder_pred, remap = hungarian_match(flat_preds=preds[subhead], flat_targets=target, preds_k=10,
+                                                  targets_k=10)
+            acc = acc(reorder_pred, target)
             self.meterInterface.val_acc.add(acc)
 
     @property

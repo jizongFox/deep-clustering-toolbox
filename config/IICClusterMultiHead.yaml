@@ -1,9 +1,11 @@
 Arch:
-  name: clusternet5g
+  name: ClusterNet5gTwoHead
   input_size: 32
   num_channel: 1
-  output_k: 10
-  num_sub_heads: 5
+  output_k_A: 70
+  output_k_B: 10
+  num_sub_heads: 3
+  semisup: False
 
 Optim:
   name: Adam
@@ -14,18 +16,19 @@ Scheduler:
   milestones: [10,20,30,40,50,60,70,80,90]
   gamma: 0.7
 
-DataSet:
-  num_dataset: 3
-
 
 DataLoader:
-  batch_size: 100
+  batch_size: 200
   shuffle: true
-  num_workers: 4
-
+  num_workers: 16
 
 Trainer:
   max_epoch: 100
-  save_dir: runs/test
+  save_dir: runs/multihead_cifar
   device: cuda
+  head_control_params:
+    B: 1
+    A: 1
+
+
 

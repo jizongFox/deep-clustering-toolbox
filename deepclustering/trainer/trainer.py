@@ -12,6 +12,8 @@ class _Trainer(ABC):
     Abstract class for a general trainer, which has _train_loop, _eval_loop,load_state, state_dict, and save_checkpoint
     functions. All other trainers are the subclasses of this class.
     """
+    METER_CONFIG = None
+    METERINTERFACE = None
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
                  save_dir: str = './runs/test', checkpoint_path: str = None, device='cpu') -> None:
@@ -37,7 +39,7 @@ class _Trainer(ABC):
             self.save_checkpoint()
 
     def to(self, *args, **kwargs):
-        raise NotImplementedError
+        self.model.to(device=self.device)
 
     @abstractmethod
     def _train_loop(self, *args, **kwargs):

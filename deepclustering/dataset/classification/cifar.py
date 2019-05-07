@@ -132,7 +132,7 @@ class CIFAR10(data.Dataset):
         return img, target
 
     def __len__(self):
-        return len(self.data)
+        return int(len(self.data))
 
     def _check_integrity(self):
         root = self.root
@@ -147,7 +147,7 @@ class CIFAR10(data.Dataset):
         import tarfile
 
         if self._check_integrity():
-            print('Files already downloaded and verified')
+            # print('Files already downloaded and verified')
             return
 
         download_url(self.url, self.root, self.filename, self.tgz_md5)

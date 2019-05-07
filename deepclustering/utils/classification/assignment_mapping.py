@@ -5,13 +5,13 @@ import torch
 from sklearn.utils.linear_assignment_ import linear_assignment
 
 
-def _acc(flat_preds, flat_targets):
+def flat_acc(flat_preds, flat_targets):
     assert flat_preds.shape == flat_targets.shape
     mean = (flat_preds == flat_targets).sum().float() / flat_preds.numel()
     return mean.item()
 
 
-def _hungarian_match(flat_preds, flat_targets, preds_k, targets_k) -> Tuple[torch.Tensor, Dict[int, int]]:
+def hungarian_match(flat_preds, flat_targets, preds_k, targets_k) -> Tuple[torch.Tensor, Dict[int, int]]:
     assert (isinstance(flat_preds, torch.Tensor) and
             isinstance(flat_targets, torch.Tensor) and
             flat_preds.is_cuda and flat_targets.is_cuda)
