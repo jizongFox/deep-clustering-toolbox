@@ -5,7 +5,7 @@ import torch
 from deepclustering.model import Model
 from torch.utils.data import DataLoader
 
-from .trainer import _Trainer
+from .Trainer import _Trainer
 from .. import ModelMode
 from ..loss.IID_losses import IIDLoss
 from ..meters import MeterInterface, AverageValueMeter

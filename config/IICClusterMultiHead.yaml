@@ -1,7 +1,7 @@
 Arch:
   name: ClusterNet5gTwoHead
   input_size: 32
-  num_channel: 1
+  num_channel: 2
   output_k_A: 70
   output_k_B: 10
   num_sub_heads: 3
@@ -13,17 +13,50 @@ Optim:
 
 Scheduler:
   name: MultiStepLR
-  milestones: [10,20,30,40,50,60,70,80,90]
-  gamma: 0.7
+  milestones: [100, 200, 300, 400, 500, 600, 700, 800, 900]
+  gamma: 0.75
+
+#Transform:
+#  tf1:
+#    randomcrop:
+#      size: [20, 20]
+#    resize:
+#      size: [32, 32]
+#    img2tensor:
+#      include_rgb: false
+#      include_grey: true
+#  tf2:
+#    randomcrop:
+#      size: [20, 20]
+#    resize:
+#      size: [32, 32]
+#    RandomHorizontalFlip:
+#      p: 0.5
+#    ColorJitter:
+#      brightness: [0.6, 1.4]
+#      contrast: [0.6, 1.4]
+#      saturation: [0.6, 1.4]
+#      hue: [-0.125, 0.125]
+#    img2tensor:
+#      include_rgb: false
+#      include_grey: true
+#  tf3:
+#    centercrop:
+#      size: [20, 20]
+#    resize:
+#      size: [32, 32]
+#    img2tensor:
+#      include_rgb: false
+#      include_grey: true
 
 
 DataLoader:
-  batch_size: 200
+  batch_size: 20
   shuffle: true
   num_workers: 16
 
 Trainer:
-  max_epoch: 100
+  max_epoch: 1000
   save_dir: runs/multihead_cifar
   device: cuda
   head_control_params:

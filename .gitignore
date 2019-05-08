@@ -10,3 +10,5 @@
 /.data/
 *.egg-info
 **/zzz*.py
+/deepclustering/runs/
+/runs/

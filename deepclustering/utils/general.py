@@ -212,3 +212,22 @@ def extract_from_big_dict(big_dict, keys) -> dict:
     """
     #   TODO a bug has been found
     return {key: big_dict.get(key) for key in keys if big_dict.get(key, 'not_found') != 'not_found'}
+
+
+# meta function for interface
+def _register(name: str, callable: Callable, alias=None, CALLABLE_DICT: dict = {}) -> None:
+    """ Private method to register the architecture to the ARCH_CALLABLES
+        :param name: A str
+        :param callable: The callable that return the nn.Module
+        :param alias: None, or a list of string, or str
+    """
+    if name in CALLABLE_DICT:
+        raise ValueError('{} already exists!'.format(name.lower()))
+    CALLABLE_DICT[name.lower()] = callable
+    if alias:
+        if isinstance(alias, str):
+            alias = [alias]
+        for other_arch in alias:
+            if other_arch.lower() in CALLABLE_DICT:
+                raise ValueError('alias {} for {} already exists!'.format(other_arch.lower(), name.lower()))
+            CALLABLE_DICT[other_arch.lower()] = callable

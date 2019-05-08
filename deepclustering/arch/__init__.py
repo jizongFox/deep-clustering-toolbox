@@ -2,7 +2,7 @@ from functools import partial
 from typing import *
 
 from torch import nn
-
+from ..utils.general import _register
 from .classification import *
 from .segmentation import *
 
@@ -13,26 +13,6 @@ Package
 # A Map from string to arch callables
 ARCH_CALLABLES: Dict[str, Callable] = {}
 ARCH_PARAM_DICT: Dict[str, Dict[str, Union[int, float, str]]] = {}
-
-
-# meta function
-def _register(name: str, callable: Callable, alias=None, CALLABLE_DICT: dict = {}) -> None:
-    """ Private method to register the architecture to the ARCH_CALLABLES
-        :param name: A str
-        :param callable: The callable that return the nn.Module
-        :param alias: None, or a list of string, or str
-    """
-    if name in CALLABLE_DICT:
-        raise ValueError('{} already exists!'.format(name.lower()))
-    CALLABLE_DICT[name.lower()] = callable
-    if alias:
-        if isinstance(alias, str):
-            alias = [alias]
-        for other_arch in alias:
-            if other_arch.lower() in CALLABLE_DICT:
-                raise ValueError('alias {} for {} already exists!'.format(other_arch.lower(), name.lower()))
-            CALLABLE_DICT[other_arch.lower()] = callable
-
 
 _register_arch = partial(_register, CALLABLE_DICT=ARCH_CALLABLES)
 _register_param = partial(_register_arch, CALLABLE_DICT=ARCH_PARAM_DICT)

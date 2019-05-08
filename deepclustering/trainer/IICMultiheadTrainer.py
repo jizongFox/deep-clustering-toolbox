@@ -6,8 +6,9 @@ from .. import ModelMode
 from ..meters import AverageValueMeter, MeterInterface
 from ..model import Model
 from ..utils import tqdm_, simplex, tqdm
-from .trainer import _Trainer
+from .Trainer import _Trainer
 from ..loss.IID_losses import IIDLoss
+from ..augment.augment import SobelProcess
 from ..utils.classification.assignment_mapping import flat_acc, hungarian_match
 import torch
 from collections import OrderedDict
@@ -32,18 +33,28 @@ class IICMultiHeadTrainer(_Trainer):
             save_dir: str = './runs/IICMultiHead',
             checkpoint_path: str = None,
             device='cpu',
-            head_control_params: dict = {'A': 1, 'B': 2}
+            head_control_params: dict = {},
+            use_sobel: bool = True,
+            config: dict = None
     ) -> None:
-        super().__init__(model, None, val_loader, max_epoch, save_dir, checkpoint_path, device)
+        super().__init__(model, None, val_loader, max_epoch, save_dir, checkpoint_path, device, config)  # type: ignore
         self.train_loader_A = train_loader_A
         self.train_loader_B = train_loader_B
         assert self.train_loader is None
         self.head_control_params: OrderedDict = OrderedDict(head_control_params)
         self.criterion = IIDLoss()
         self.criterion.to(self.device)
+        self.use_sobel = use_sobel
+        if self.use_sobel:
+            self.sobel = SobelProcess(include_origin=False)
+            self.sobel.to(self.device)
 
     def start_training(self):
-        for epoch in range(self.max_epoch):
+        """
+        main function to call for training
+        :return:
+        """
+        for epoch in range(self._start_epoch, self.max_epoch):
             self._train_loop(
                 train_loader_A=self.train_loader_A,
                 train_loader_B=self.train_loader_B,
@@ -51,10 +62,14 @@ class IICMultiHeadTrainer(_Trainer):
                 head_control_param=self.head_control_params
             )
             with torch.no_grad():
-                self._eval_loop(self.val_loader, epoch)
+                current_score = self._eval_loop(self.val_loader, epoch)
             self.METERINTERFACE.step()
-
-            print(self.METERINTERFACE.summary())
+            self.model.schedulerStep()
+            # save meters and checkpoints
+            for k, v in self.METERINTERFACE.aggregated_meter_dict.items():
+                v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
+            self.METERINTERFACE.summary().to_csv(self.save_dir / f'wholeMeter.csv')
+            self.save_checkpoint(self.state_dict, epoch, current_score)
 
     def _train_loop(
             self,
@@ -97,6 +112,9 @@ class IICMultiHeadTrainer(_Trainer):
                     images, _ = list(zip(*image_labels))
                     tf1_images = torch.cat([images[0] for _ in range(images.__len__() - 1)], dim=0).to(self.device)
                     tf2_images = torch.cat(images[1:], dim=0).to(self.device)
+                    if self.use_sobel:
+                        tf1_images = self.sobel(tf1_images)
+                        tf2_images = self.sobel(tf2_images)
                     assert tf1_images.shape == tf2_images.shape
                     self.model.zero_grad()
                     tf1_pred_simplex = self.model.torchnet(tf1_images, head=head_name)
@@ -117,7 +135,8 @@ class IICMultiHeadTrainer(_Trainer):
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Training epoch: {epoch} : {report_dict_str}")
 
-    def _eval_loop(self, val_loader: DataLoader, epoch: int, mode: ModelMode = ModelMode.EVAL, *args, **kwargs):
+    def _eval_loop(self, val_loader: DataLoader, epoch: int, mode: ModelMode = ModelMode.EVAL, *args,
+                   **kwargs) -> float:
         self.model.set_mode(mode)
         assert not self.model.training, f"Model should be in eval model in _eval_loop, given {self.model.training}."
         val_loader_: tqdm = tqdm_(val_loader)
@@ -128,13 +147,14 @@ class IICMultiHeadTrainer(_Trainer):
         target = torch.zeros(val_loader.dataset.__len__(),
                              dtype=torch.long,
                              device=self.device)
-
         slice_done = 0
         subhead_accs = []
         val_loader_.set_description(f'Validating epoch: {epoch}')
         for batch, image_labels in enumerate(val_loader_):
             images, gt = list(zip(*image_labels))
             images, gt = images[0].to(self.device), gt[0].to(self.device)
+            if self.use_sobel:
+                images = self.sobel(images)
             _pred = self.model.torchnet(images, head='B')
             assert _pred.__len__() == self.model.arch_dict['num_sub_heads']
             assert simplex(_pred[0]), f"pred should be normalized, given {_pred[0]}."
@@ -149,8 +169,8 @@ class IICMultiHeadTrainer(_Trainer):
             reorder_pred, remap = hungarian_match(
                 flat_preds=preds[subhead],
                 flat_targets=target,
-                preds_k=10,
-                targets_k=10
+                preds_k=self.model.arch_dict['output_k_B'],
+                targets_k=self.model.arch_dict['output_k_B']
             )
             _acc = flat_acc(reorder_pred, target)
             subhead_accs.append(_acc)
@@ -163,7 +183,28 @@ class IICMultiHeadTrainer(_Trainer):
                        'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']}
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Validating epoch: {epoch} : {report_dict_str}")
+        return self.METERINTERFACE.val_best_acc.summary()['mean']
 
     @property
     def state_dict(self):
-        return None
+        state_dictionary = {}
+        state_dictionary['model_state_dict'] = self.model.state_dict
+        state_dictionary['meter_state_dict'] = self.METERINTERFACE.state_dict
+        return state_dictionary
+
+    def save_checkpoint(self, state_dict, current_epoch, best_score):
+        save_best: bool = True if best_score > self.best_score else False
+        if save_best:
+            self.best_score = best_score
+        state_dict['epoch'] = current_epoch
+        state_dict['best_score'] = self.best_score
+
+        torch.save(state_dict, str(self.save_dir / 'last.pth'))
+        if save_best:
+            torch.save(state_dict, str(self.save_dir / 'best.pth'))
+
+    def load_checkpoint(self, state_dict):
+        self.model.load_state_dict(state_dict['model_state_dict'])
+        self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
+        self.best_score = state_dict['best_score']
+        self._start_epoch = state_dict['epoch'] + 1

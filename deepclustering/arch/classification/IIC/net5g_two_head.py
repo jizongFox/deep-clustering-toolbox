@@ -48,7 +48,8 @@ class ClusterNet5gTwoHead(ResNet):
                  output_k_B: int = 10,
                  semisup: bool = False,
                  num_sub_heads: int = 5,
-                 batchnorm_track: bool = True):
+                 batchnorm_track: bool = True,
+                 verbose=False):
         r"""
         :param input_size: image size of the raw image, only support 96, 64, 32
         :param num_channel: image channel
@@ -66,7 +67,9 @@ class ClusterNet5gTwoHead(ResNet):
                                        batchnorm_track=self.batchnorm_track)
         self.head_A = ClusterNet5gTwoHeadHead(output_k=output_k_A, num_sub_heads=num_sub_heads, semisup=semisup,
                                               batchnorm_track=self.batchnorm_track)
-        print("semisup: %s" % semisup)
+        self.verbose=verbose
+        if self.verbose:
+            print("semisup: %s" % semisup)
         self.head_B = ClusterNet5gTwoHeadHead(output_k=output_k_B, num_sub_heads=num_sub_heads, semisup=semisup,
                                               batchnorm_track=self.batchnorm_track)
         self._initialize_weights()

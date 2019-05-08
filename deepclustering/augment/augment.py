@@ -298,6 +298,12 @@ class SobelProcess(object):
             return sobel_imgs
         return torch.cat((img, sobel_imgs), dim=1)
 
+    def to(self, device):
+        self.conv1.to(device)
+        self.conv2.to(device)
+        self.cconv1.to(device)
+        self.cconv2.to(device)
+
 
 class RandomTransforms(object):
     """Base class for a list of transformations with randomness
