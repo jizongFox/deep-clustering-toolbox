@@ -4,7 +4,7 @@ Arch:
   num_channel: 2
   output_k_A: 70
   output_k_B: 10
-  num_sub_heads: 3
+  num_sub_heads: 5
   semisup: False
 
 Optim:
@@ -15,6 +15,20 @@ Scheduler:
   name: MultiStepLR
   milestones: [100, 200, 300, 400, 500, 600, 700, 800, 900]
   gamma: 0.75
+
+DataLoader:
+  batch_size: 200
+  shuffle: true
+  num_workers: 16
+
+Trainer:
+  max_epoch: 1000
+  save_dir: runs/multihead_cifar
+  device: cuda
+  head_control_params:
+    B: 1
+    A: 1
+
 
 #Transform:
 #  tf1:
@@ -48,20 +62,4 @@ Scheduler:
 #    img2tensor:
 #      include_rgb: false
 #      include_grey: true
-
-
-DataLoader:
-  batch_size: 20
-  shuffle: true
-  num_workers: 16
-
-Trainer:
-  max_epoch: 1000
-  save_dir: runs/multihead_cifar
-  device: cuda
-  head_control_params:
-    B: 1
-    A: 1
-
-
 

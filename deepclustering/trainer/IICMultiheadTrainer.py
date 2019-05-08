@@ -1,17 +1,20 @@
 """
 This is the trainer for IIC multiple-header Clustering
 """
+from collections import OrderedDict
+
+import torch
 from torch.utils.data import DataLoader
+
+from .Trainer import _Trainer
 from .. import ModelMode
+from ..augment.augment import SobelProcess
+from ..loss.IID_losses import IIDLoss
 from ..meters import AverageValueMeter, MeterInterface
 from ..model import Model
 from ..utils import tqdm_, simplex, tqdm
-from .Trainer import _Trainer
-from ..loss.IID_losses import IIDLoss
-from ..augment.augment import SobelProcess
 from ..utils.classification.assignment_mapping import flat_acc, hungarian_match
-import torch
-from collections import OrderedDict
+from ..writer.SummaryWriter import SummaryWriter, DrawCSV
 
 
 class IICMultiHeadTrainer(_Trainer):
@@ -48,6 +51,14 @@ class IICMultiHeadTrainer(_Trainer):
         if self.use_sobel:
             self.sobel = SobelProcess(include_origin=False)
             self.sobel.to(self.device)
+        self.writer = SummaryWriter(str(self.save_dir))
+        self.drawer = DrawCSV(
+            columns_to_draw=[
+                'train_head_A_mean',
+                'train_head_B_mean',
+                'val_average_acc_mean',
+                'val_best_acc_mean'
+            ], save_dir=str(self.save_dir), save_name='plot.png')
 
     def start_training(self):
         """
@@ -69,6 +80,8 @@ class IICMultiHeadTrainer(_Trainer):
             for k, v in self.METERINTERFACE.aggregated_meter_dict.items():
                 v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
             self.METERINTERFACE.summary().to_csv(self.save_dir / f'wholeMeter.csv')
+            self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict())
+            self.drawer.draw(self.METERINTERFACE.summary(), together=False)
             self.save_checkpoint(self.state_dict, epoch, current_score)
 
     def _train_loop(
