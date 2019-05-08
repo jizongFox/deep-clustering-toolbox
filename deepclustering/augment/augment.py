@@ -367,3 +367,13 @@ class RandomChoice(RandomTransforms):
     def __call__(self, img):
         t = random.choice(self.transforms)
         return t(img)
+
+
+class ToLabel():
+    def __init__(self) -> None:
+        super().__init__()
+
+    def __call__(self, img):
+        np_img = np.array(img)[None, ...].astype(np.float32)
+        t_img = torch.from_numpy(np_img)
+        return t_img.long()
