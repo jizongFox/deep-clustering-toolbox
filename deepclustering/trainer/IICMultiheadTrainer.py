@@ -80,7 +80,7 @@ class IICMultiHeadTrainer(_Trainer):
             for k, v in self.METERINTERFACE.aggregated_meter_dict.items():
                 v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
             self.METERINTERFACE.summary().to_csv(self.save_dir / f'wholeMeter.csv')
-            self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict())
+            self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict(), global_step=epoch)
             self.drawer.draw(self.METERINTERFACE.summary(), together=False)
             self.save_checkpoint(self.state_dict, epoch, current_score)
 

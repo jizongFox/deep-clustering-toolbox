@@ -26,8 +26,9 @@ Trainer:
   save_dir: runs/multihead_cifar
   device: cuda
   head_control_params:
-    B: 1
     A: 1
+    B: 2
+
 
 
 #Transform:
