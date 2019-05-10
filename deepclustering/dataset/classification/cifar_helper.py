@@ -25,7 +25,7 @@ class Cifar10ClusteringDataloaders(object):
     """
 
     def __init__(self, batch_size: int = 1, shuffle: bool = False,
-                 num_workers: int = 1) -> None:
+                 num_workers: int = 1, pin_memory: bool = False) -> None:
         """
         :param batch_size: batch_size = 1
         :param shuffle: shuffle the dataset, default = False
@@ -35,6 +35,7 @@ class Cifar10ClusteringDataloaders(object):
         self.shuffle = shuffle
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.pin_memory = pin_memory
 
     @staticmethod
     def _creat_concatDataset(image_transform: Callable, target_transform: Callable, dataset_dict: dict = {}):
@@ -65,7 +66,8 @@ class Cifar10ClusteringDataloaders(object):
         """
         concatSet = self._creat_concatDataset(image_transform, target_transform, dataset_dict)
         concatLoader = DataLoader(concatSet, batch_size=self.batch_size, shuffle=self.shuffle,
-                                  num_workers=self.num_workers, drop_last=True, **dataloader_dict)
+                                  num_workers=self.num_workers, drop_last=True, pin_memory=self.pin_memory,
+                                  **dataloader_dict)
         return concatLoader
 
     def _creat_combineDataset(self, image_transforms: Tuple[Callable, ...], target_transform: Callable = None,
@@ -84,7 +86,8 @@ class Cifar10ClusteringDataloaders(object):
                                 dataset_dict: Dict[str, Any] = {}, dataloader_dict: Dict[str, Any] = {}) -> DataLoader:
         combineSet = self._creat_combineDataset(image_transforms, target_transform, dataset_dict)
         combineLoader = DataLoader(combineSet, batch_size=self.batch_size, shuffle=self.shuffle,
-                                   num_workers=self.num_workers, drop_last=True, **dataloader_dict)
+                                   num_workers=self.num_workers, drop_last=True, pin_memory=self.pin_memory,
+                                   **dataloader_dict)
         return combineLoader
 
 
