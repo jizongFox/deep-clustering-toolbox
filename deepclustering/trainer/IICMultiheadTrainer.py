@@ -1,6 +1,7 @@
 """
 This is the trainer for IIC multiple-header Clustering
 """
+import time
 from collections import OrderedDict
 
 import torch
@@ -121,8 +122,10 @@ class IICMultiHeadTrainer(_Trainer):
                 train_loader_: tqdm = tqdm_(train_loader)  # reinitilize the train_loader
                 train_loader_.set_description(
                     f'Training epoch: {epoch} head:{head_name}, head_epoch:{head_epoch + 1}/{head_iterations}')
+                # time_before = time.time()
                 for batch, image_labels in enumerate(train_loader_):
                     images, _ = list(zip(*image_labels))
+                    # print(f"used time for dataloading:{time.time() - time_before}")
                     tf1_images = torch.cat([images[0] for _ in range(images.__len__() - 1)], dim=0).to(self.device)
                     tf2_images = torch.cat(images[1:], dim=0).to(self.device)
                     if self.use_sobel:
@@ -137,12 +140,13 @@ class IICMultiHeadTrainer(_Trainer):
                     for subhead in range(tf1_pred_simplex.__len__()):
                         _loss, _loss_no_lambda = self.criterion(tf1_pred_simplex[subhead], tf2_pred_simplex[subhead])
                         batch_loss.append(_loss)
-                    batch_loss = sum(batch_loss) / len(batch_loss)
+                    batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)
                     self.METERINTERFACE[f'train_head_{head_name}'].add(-batch_loss.item())
                     self.model.zero_grad()
                     batch_loss.backward()
                     self.model.step()
                     train_loader_.set_postfix(self.METERINTERFACE[f'train_head_{head_name}'].summary())
+                    # time_before = time.time()
         report_dict = {'train_head_A': self.METERINTERFACE['train_head_A'].summary()['mean'],
                        'train_head_B': self.METERINTERFACE['train_head_B'].summary()['mean']}
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
