@@ -109,7 +109,7 @@ class IICMultiHeadTrainer(_Trainer):
         for k, v in head_control_param.items():
             assert k in ('A', 'B'), f"`head_control_param` key must be in `A` or `B`," \
                 f" given{set(head_control_param.keys())}"
-            assert isinstance(v, int) and v > 0, f"Iteration for {k} must be > 0."
+            assert isinstance(v, int) and v >= 0, f"Iteration for {k} must be >= 0."
         self.model.set_mode(mode)
         assert self.model.training, f"Model should be in train() model, given {self.model.training}."
         assert len(train_loader_B) == len(train_loader_A), f"The length of the train_loaders should be the same,\"" \
