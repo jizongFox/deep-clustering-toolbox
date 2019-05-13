@@ -20,7 +20,6 @@ wrapper(){
     ./tmp.sh
 
 }
-
 cd ..
 time=1
 # as in the paper

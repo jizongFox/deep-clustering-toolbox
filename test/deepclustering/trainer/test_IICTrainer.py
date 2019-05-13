@@ -15,7 +15,7 @@ class TestIICTrainer(TestCase):
         self.optim_dict = {'name': 'Adam', 'lr': 0.005}
         self.scheduler_dict = {'name': 'MultiStepLR', 'milestones': [10, 20, 30, 40, 50, 60, 70, 80, 90], 'gamma': 0.7}
         self.trainer_dict = {'max_epoch': 0, 'device': device}
-        self.dataloader_dict = {'batch_size': 256, 'shuffle': True, "num_workers": 16}
+        self.dataloader_dict = {'batch_size': 2, 'shuffle': True, "num_workers": 16}
         self.train_dataloader = Cifar10ClusteringDataloaders(**self.dataloader_dict).creat_CombineDataLoader(
             default_cifar10_img_transform['tf1'],
             default_cifar10_img_transform['tf2'])
