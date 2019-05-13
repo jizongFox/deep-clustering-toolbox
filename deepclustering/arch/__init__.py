@@ -20,17 +20,18 @@ _register_param = partial(_register_arch, CALLABLE_DICT=ARCH_PARAM_DICT)
 # Adding architecture (new architecture goes here...)
 _register_arch('clusternet5g', ClusterNet5g)
 _register_arch('clusternet5gtwohead', ClusterNet5gTwoHead)
+_register_arch('culsternet5gmultihead', ClusterNet5gMultiHead)
 _register_arch('clusternet6c', ClusterNet6c)
 _register_arch('clusternet6cTwoHead', ClusterNet6cTwoHead)
 # Adding default keys here to enable automatic testing
 _register_param('clusternet5g', ClusterNet5g_Param)
 _register_param('clusternet5gtwohead', ClusterNet5gTwoHead_Param)
+_register_param('culsternet5gmultihead', ClusterNet5gMultiHead_Param)
 _register_param('clusternet6c', ClusterNet6c_Param)
 _register_param('clusternet6cTwoHead', ClusterNet6cTwoHead_Param)
 """
 Public interface
 """
-
 
 def weights_init(m):
     if type(m) == nn.Conv2d or type(m) == nn.ConvTranspose2d:
