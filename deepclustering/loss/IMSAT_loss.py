@@ -18,7 +18,7 @@ class MultualInformaton_IMSAT(nn.Module):
      MI(X,Y) = H(Y) - H(Y|X) = entropy(average(p_y)) - average(entropy(p_y))
     """
 
-    def __init__(self, mu=1.0, eps=1e-10):
+    def __init__(self, mu=4.0, eps=1e-8):
         """
         :param mu: balance term between entropy(average(p_y)) and average(entropy(p_y))
         :param eps: small value for calculation stability
@@ -33,7 +33,7 @@ class MultualInformaton_IMSAT(nn.Module):
         probs: Tensor = F.softmax(pred_logit, 1)
         p_average: Tensor = torch.mean(probs, dim=0).unsqueeze(0)
         assert probs.shape.__len__() == p_average.shape.__len__()
-        return Entropy(self.eps)(p_average) - self.mu * Entropy(self.eps)(probs).mean()
+        return self.mu * Entropy(self.eps)(p_average) - Entropy(self.eps)(probs).mean()
 
 
 class Perturbation_Loss(nn.Module):

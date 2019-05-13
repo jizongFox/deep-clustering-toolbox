@@ -12,3 +12,5 @@
 **/zzz*.py
 /deepclustering/runs/
 /runs/
+script/runs/
+

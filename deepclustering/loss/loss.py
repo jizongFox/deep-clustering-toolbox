@@ -2,7 +2,6 @@ import warnings
 from functools import reduce
 from typing import List
 
-import pysnooper
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -109,7 +108,7 @@ class KL_div(nn.Module):
     q is the target and p is the distribution to get approached.
     '''
 
-    def __init__(self, reduce=True, eps=1e-10):
+    def __init__(self, reduce=True, eps=1e-8):
         super().__init__()
         self.eps = eps
         self.reduce = reduce
@@ -120,7 +119,7 @@ class KL_div(nn.Module):
         assert simplex(p)
         assert simplex(q)
         b, *_ = p.shape
-        kl = (- p * torch.log(q / p + self.eps)).sum(1)
+        kl = (- p * torch.log((q + self.eps) / (p + self.eps))).sum(1)
         if self.reduce:
             return kl.mean()
         return kl

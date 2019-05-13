@@ -52,6 +52,7 @@ class IMSATTrainer(_Trainer):
             assert not simplex(tf1_pred_logit) and tf1_pred_logit.shape == tf2_pred_logit.shape
             sat_loss = self.SAT_criterion(tf1_pred_logit, tf2_pred_logit)
             ml_loss = self.MI_criterion(tf1_pred_logit)
+            # sat_loss = torch.Tensor([0]).cuda()
             batch_loss: torch.Tensor = sat_loss - 0.1 * ml_loss
             self.METERINTERFACE['train_sat_loss'].add(sat_loss.item())
             self.METERINTERFACE['train_mi_loss'].add(ml_loss.item())
