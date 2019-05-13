@@ -1,6 +1,3 @@
-"""
-This is a wrapper script to help to return the cifar dataloader.
-"""
 from itertools import repeat
 from typing import *
 
@@ -9,7 +6,7 @@ from pathlib2 import Path
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from .cifar import CIFAR10
+from .mnist import MNIST
 from .. import dataset  # type: ignore
 from ...augment import augment
 
@@ -17,9 +14,7 @@ DATA_ROOT = str(Path(__file__).parents[3] / '.data')
 Path(DATA_ROOT).mkdir(exist_ok=True)
 
 
-# todo try to extend the class to support semi supervised cases ....
-
-class Cifar10ClusteringDataloaders(object):
+class MNISTClusteringDataloaders(object):
     """
     dataset interface for unsupervised learning with combined train and test sets.
     return fixible dataloader with different transform functions, can be extended by creating subclasses for semi-supervised...
@@ -48,14 +43,15 @@ class Cifar10ClusteringDataloaders(object):
         :param dataset_dict:
         :return:
         """
-        trainset = CIFAR10(root=DATA_ROOT, train=True, transform=image_transform, target_transform=target_transform,
-                           download=True, **dataset_dict)
-        valset = CIFAR10(root=DATA_ROOT, train=False, transform=image_transform, target_transform=target_transform,
+        trainset = MNIST(root=DATA_ROOT, train=True, transform=image_transform, target_transform=target_transform,
                          download=True, **dataset_dict)
+        valset = MNIST(root=DATA_ROOT, train=False, transform=image_transform, target_transform=target_transform,
+                       download=True, **dataset_dict)
 
         concatSet = trainset + valset
         return concatSet
 
+    '''
     def creat_ConcatDataLoader(self, image_transform: Callable = None, target_transform: Callable = None,
                                dataset_dict: Dict[str, Any] = {}, dataloader_dict: Dict[str, Any] = {}) -> DataLoader:
         r"""
@@ -70,6 +66,7 @@ class Cifar10ClusteringDataloaders(object):
                                   num_workers=self.num_workers, drop_last=True, pin_memory=self.pin_memory,
                                   **dataloader_dict)
         return concatLoader
+    '''
 
     def _creat_combineDataset(self, image_transforms: Tuple[Callable, ...], target_transform: Callable = None,
                               dataset_dict: Dict[str, Any] = {}):
@@ -92,36 +89,16 @@ class Cifar10ClusteringDataloaders(object):
         return combineLoader
 
 
-## taken from IIC paper:
-r"""
-tf1=Compose(
-        RandomCrop(size=(20, 20), padding=None)
-        Resize(size=(32, 32), interpolation=PIL.Image.BILINEAR)
-        <function custom_greyscale_to_tensor.<locals>._inner at 0x7f2d1d099d90>
-    )
-tf2=Compose(
-        RandomCrop(size=(20, 20), padding=None)
-        Resize(size=(32, 32), interpolation=PIL.Image.BILINEAR)
-        RandomHorizontalFlip(p=0.5)
-        ColorJitter(brightness=[0.6, 1.4], contrast=[0.6, 1.4], saturation=[0.6, 1.4], hue=[-0.125, 0.125])
-        <function custom_greyscale_to_tensor.<locals>._inner at 0x7f2c8cc57f28>
-    )
-tf3=Compose(
-        CenterCrop(size=(20, 20))
-        Resize(size=(32, 32), interpolation=PIL.Image.BILINEAR)
-        <function custom_greyscale_to_tensor.<locals>._inner at 0x7f2c8cc57ea0>
-    )
-"""
-# parameters for the Cifar10ClusteringDataloaders. Used for clustering
-default_cifar10_img_transform = {
+## default transform
+default_mnist_img_transform = {
     "tf1": transforms.Compose([
-        augment.RandomCrop(size=(20, 20)),
+        augment.RandomCrop(size=(26, 26), padding=2),
         augment.Resize(size=(32, 32), interpolation=PIL.Image.BILINEAR),
         augment.Img2Tensor(include_rgb=False, include_grey=True)
     ]),
     "tf2":
         transforms.Compose([
-            augment.RandomCrop(size=(20, 20)),
+            augment.RandomCrop(size=(26, 26),padding=2),
             augment.Resize(size=(32, 32), interpolation=PIL.Image.BILINEAR),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ColorJitter(brightness=[0.6, 1.4], contrast=[0.6, 1.4], saturation=[0.6, 1.4],
@@ -129,11 +106,8 @@ default_cifar10_img_transform = {
             augment.Img2Tensor(include_rgb=False, include_grey=True)
         ]),
     "tf3": transforms.Compose([
-        augment.CenterCrop(size=(20, 20)),
+        augment.CenterCrop(size=(26, 26)),
         augment.Resize(size=(32, 32), interpolation=PIL.Image.BILINEAR),
         augment.Img2Tensor(include_rgb=False, include_grey=True)
     ])
 }
-
-# todo: generate a custom function to generate the transform from yaml file.
-# todo: add semi supervised interface

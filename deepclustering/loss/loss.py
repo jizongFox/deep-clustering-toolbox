@@ -10,6 +10,9 @@ from ..utils.general import simplex
 
 
 class CrossEntropyLoss2d(nn.Module):
+    """
+    specific CE 2D interface
+    """
 
     def __init__(self, weight=None, reduce=True, size_average=True, ignore_index=255):
         super(CrossEntropyLoss2d, self).__init__()
@@ -59,6 +62,10 @@ class MSE_2D(nn.Module):
 
 
 class Entropy(nn.Module):
+    """
+    General Entropy interface
+    """
+
     def __init__(self):
         super().__init__()
         r'''
@@ -114,9 +121,12 @@ class KL_div(nn.Module):
         if self.reduce:
             return kl.mean()
         return kl
-    
+
 
 class KL_Divergence_2D(nn.Module):
+    """
+    Specific KL 2D interface
+    """
 
     def __init__(self, reduce=False, eps=1e-10):
         super().__init__()
@@ -151,13 +161,13 @@ class KL_Divergence_2D_Logit(nn.Module):
         self.eps = eps
 
     def forward(self, p_logit: torch.Tensor, y_logit: torch.Tensor):
-        '''
-        :param p_probs:
-        :param y_prob: the Y_logit is like that for crossentropy
-        :return: 2D map?
-        '''
-        # assert simplex(p_prob, 1)
-        # assert simplex(y_prob, 1)
+        """
+        :param p_logit:
+        :param y_logit:
+        :return:
+        """
+        assert not simplex(p_logit, 1)
+        assert not simplex(y_logit, 1)
 
         logp = F.log_softmax(p_logit, 1)
         logy = F.log_softmax(y_logit, 1)
@@ -172,6 +182,10 @@ class KL_Divergence_2D_Logit(nn.Module):
 
 
 class JSD(nn.Module):
+    """
+    general JS divergence interface
+    """
+
     def __init__(self):
         super().__init__()
         self.entropy = Entropy()
@@ -190,6 +204,10 @@ class JSD(nn.Module):
 
 
 class JSD_2D(nn.Module):
+    """
+    Specific JS divergence interface
+    """
+
     def __init__(self):
         super().__init__()
         # self.C = num_probabilities
