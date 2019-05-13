@@ -2,15 +2,16 @@
 This file contains the network for IMSAT paper: https://arxiv.org/pdf/1702.08720.pdf.
 The code is taken from https://github.com/MOhammedJAbi/Imsat/blob/master/Imsat.py
 """
+import math
+
 import torch
 from torch import nn
 from torch.nn import functional as F
-import math
 
 
-class Net(nn.Module):
+class IMSATNet(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super(IMSATNet, self).__init__()
         self.fc1 = nn.Linear(28 * 28, 1200)
         torch.nn.init.normal_(self.fc1.weight, std=0.1 * math.sqrt(2 / (28 * 28)))
         self.fc1.bias.data.fill_(0)
@@ -32,6 +33,8 @@ class Net(nn.Module):
         :param update_batch_stats:
         :return:
         """
+        if x.shape.__len__()==4:
+            x = x.view(x.size(0),-1)
         if not update_batch_stats:
             x = self.fc1(x)
             x = self.bn1_F(x) * self.bn1.weight + self.bn1.bias
@@ -50,3 +53,6 @@ class Net(nn.Module):
             x = F.relu(x)
             x = self.fc3(x)
             return x
+
+
+IMSATNet_Param = {}

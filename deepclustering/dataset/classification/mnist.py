@@ -1,5 +1,5 @@
 from __future__ import print_function
-
+import numpy as np
 import codecs
 import gzip
 import os
@@ -102,7 +102,7 @@ class MNIST(data.Dataset):
         return img, target
 
     def __len__(self):
-        return len(self.data)
+        return int(len(self.data))
 
     @property
     def raw_folder(self):

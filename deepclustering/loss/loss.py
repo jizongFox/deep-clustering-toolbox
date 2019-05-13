@@ -2,6 +2,7 @@ import warnings
 from functools import reduce
 from typing import List
 
+import pysnooper
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -66,17 +67,18 @@ class Entropy(nn.Module):
     General Entropy interface
     """
 
-    def __init__(self):
+    def __init__(self, eps=1e-16):
         super().__init__()
         r'''
         the definition of Entropy is - \sum p(xi) log (p(xi))
         '''
+        self.eps = eps
 
     def forward(self, input: torch.Tensor):
         assert input.shape.__len__() >= 2
         b, _, *s = input.shape
         assert simplex(input)
-        e = input * (input + 1e-16).log()
+        e = input * (input + self.eps).log()
         e = -1.0 * e.sum(1)
         assert e.shape == torch.Size([b, *s])
         return e
@@ -112,7 +114,8 @@ class KL_div(nn.Module):
         self.eps = eps
         self.reduce = reduce
 
-    def forward(self, p, q, reduce=False):
+    # @pysnooper.snoop()
+    def forward(self, p, q):
         assert p.shape == q.shape
         assert simplex(p)
         assert simplex(q)

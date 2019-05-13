@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
+
 import torch
+import yaml
 from pathlib2 import Path
 from torch.utils.data import DataLoader
-import yaml
+
 from ..model import Model
 
 

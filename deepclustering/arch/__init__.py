@@ -1,10 +1,9 @@
 from functools import partial
 from typing import *
 
-from torch import nn
-from ..utils.general import _register
 from .classification import *
 from .segmentation import *
+from ..utils.general import _register
 
 __all__ = ['weights_init', 'get_arch', 'ARCH_CALLABLES']
 """
@@ -23,15 +22,18 @@ _register_arch('clusternet5gtwohead', ClusterNet5gTwoHead)
 _register_arch('clusternet5gmultihead', ClusterNet5gMultiHead)
 _register_arch('clusternet6c', ClusterNet6c)
 _register_arch('clusternet6cTwoHead', ClusterNet6cTwoHead)
+_register_arch('clusternetimsat', IMSATNet)
 # Adding default keys here to enable automatic testing
 _register_param('clusternet5g', ClusterNet5g_Param)
 _register_param('clusternet5gtwohead', ClusterNet5gTwoHead_Param)
 _register_param('clusternet5gmultihead', ClusterNet5gMultiHead_Param)
 _register_param('clusternet6c', ClusterNet6c_Param)
 _register_param('clusternet6cTwoHead', ClusterNet6cTwoHead_Param)
+_register_param('clusternetimsat', IMSATNet_Param)
 """
 Public interface
 """
+
 
 def weights_init(m):
     if type(m) == nn.Conv2d or type(m) == nn.ConvTranspose2d:

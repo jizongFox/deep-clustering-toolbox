@@ -1,10 +1,11 @@
 from unittest import TestCase
 
 import torch
+from pathlib2 import Path
+
 from deepclustering.arch import ARCH_PARAM_DICT
 from deepclustering.model import Model
 from deepclustering.utils import simplex
-from pathlib2 import Path
 
 
 class TestModel(TestCase):

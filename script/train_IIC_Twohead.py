@@ -1,9 +1,10 @@
-from deepclustering.model import Model
+from pprint import pprint
+from typing import Dict, Any
+
 from deepclustering.dataset.classification import Cifar10ClusteringDataloaders, default_cifar10_img_transform
+from deepclustering.model import Model
 from deepclustering.trainer.IICMultiheadTrainer import IICMultiHeadTrainer
 from deepclustering.utils import yaml_parser, yaml_load, dict_merge
-from typing import Dict, Any
-from pprint import pprint
 
 DEFAULT_CONFIG = '../config/IICClusterMultiHead.yaml'
 
