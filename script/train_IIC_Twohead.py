@@ -5,7 +5,7 @@ from deepclustering.utils import yaml_parser, yaml_load, dict_merge
 from typing import Dict, Any
 from pprint import pprint
 
-DEFAULT_CONFIG = './config/IICClusterMultiHead.yaml'
+DEFAULT_CONFIG = '../config/IICClusterMultiHead.yaml'
 
 parsed_args: Dict[str, Any] = yaml_parser(verbose=True)
 default_config = yaml_load(parsed_args.get('Config', DEFAULT_CONFIG), verbose=False)
