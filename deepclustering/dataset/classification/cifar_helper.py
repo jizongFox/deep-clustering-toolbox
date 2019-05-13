@@ -21,6 +21,7 @@ Path(DATA_ROOT).mkdir(exist_ok=True)
 
 class Cifar10ClusteringDataloaders(object):
     """
+    dataset interface for unsupervised learning with combined train and test sets.
     return fixible dataloader with different transform functions, can be extended by creating subclasses for semi-supervised...
     """
 
@@ -111,7 +112,7 @@ tf3=Compose(
         <function custom_greyscale_to_tensor.<locals>._inner at 0x7f2c8cc57ea0>
     )
 """
-
+# parameters for the Cifar10ClusteringDataloaders. Used for clustering
 default_cifar10_img_transform = {
     "tf1": transforms.Compose([
         augment.RandomCrop(size=(20, 20)),
@@ -135,3 +136,4 @@ default_cifar10_img_transform = {
 }
 
 # todo: generate a custom function to generate the transform from yaml file.
+# todo: add semi supervised interface
