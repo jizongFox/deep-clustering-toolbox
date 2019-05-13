@@ -6,7 +6,8 @@ from deepclustering import ModelMode
 from deepclustering.arch import get_arch
 from torch import Tensor
 from torch import nn
-from torch import optim
+# from torch import optim
+from .. import optim
 from torch.nn import NLLLoss
 from torch.nn import functional as F
 from torch.optim import lr_scheduler
