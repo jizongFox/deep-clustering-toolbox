@@ -55,5 +55,5 @@ class Perturbation_Loss(nn.Module):
         assert not simplex(pre_logit_t, 1)
         pred: Tensor = F.softmax(pred_logit, 1)
         pred_t: Tensor = F.softmax(pre_logit_t, 1)
-        loss: Tensor = self.distance_func(pred_t, pred.detach())
+        loss: Tensor = self.distance_func(pred_t, pred)
         return loss

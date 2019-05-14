@@ -1,9 +1,11 @@
+from typing import Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-from typing import List, Tuple
-from ..loss import Entropy_2D
+
+from ..utils.decorator import _disable_tracking_bn_stats
 
 
 class FSGMGenerator(object):
@@ -63,25 +65,23 @@ class VATGenerator(object):
         self.eps = eplision
         self.ip = ip
         self.net = net
-        self.entropy = Entropy_2D()  # type: Tensor # shape:
 
     @staticmethod
-    def _l2_normalize(d) -> Tensor:
-        # d = d.cpu().numpy()
-        # d /= (np.sqrt(np.sum(d ** 2, axis=(1, 2, 3))).reshape((-1, 1, 1, 1)) + 1e-16)
-        # return torch.from_numpy(d)
+    def _l2_normalize(d: Tensor) -> Tensor:
         d_reshaped = d.view(d.shape[0], -1, *(1 for _ in range(d.dim() - 2)))
-        d /= torch.norm(d_reshaped, dim=1, keepdim=True) + 1e-16
+        d /= torch.norm(d_reshaped, dim=1, keepdim=True)
         assert torch.allclose(d.view(d.shape[0], -1).norm(dim=1), torch.ones(d.shape[0]).to(d.device), rtol=1e-3)
         return d
 
     @staticmethod
-    def kl_div_with_logit(q_logit, p_logit):
+    def kl_div_with_logit(q_logit: Tensor, p_logit: Tensor):
         '''
         :param q_logit:it is like the y in the ce loss
         :param p_logit: it is the logit to be proched to q_logit
         :return:
         '''
+        assert not q_logit.requires_grad, f"q_logit should be no differentiable, like y."
+        assert p_logit.requires_grad
         q = F.softmax(q_logit, dim=1)
         logq = F.log_softmax(q_logit, dim=1)
         logp = F.log_softmax(p_logit, dim=1)
@@ -96,24 +96,60 @@ class VATGenerator(object):
         # prepare random unit tensor
         d = torch.Tensor(img.size()).normal_()  # 所有元素的std =1, average = 0
         d = self._l2_normalize(d).to(img.device)
-        assert torch.allclose(d.view(d.shape[0], -1).norm(dim=1),
-                              torch.ones(d.shape[0]).to(img.device)), 'The L2 normalization fails'
         self.net.zero_grad()
-        for _ in range(self.ip):
-            d = self.xi * self._l2_normalize(d).to(img.device)
-            d.requires_grad = True
-            y_hat = self.net(img + d)
+        with _disable_tracking_bn_stats(self.net):
+            for _ in range(self.ip):
+                d = self.xi * self._l2_normalize(d)
+                d.requires_grad = True
+                y_hat = self.net(img + d)
 
-            delta_kl = self.kl_div_with_logit(pred.detach(), y_hat, self.axises)  # B/H/W
-            delta_kl.mean().backward()
+                delta_kl = self.kl_div_with_logit(pred.detach(), y_hat)  # B/H/W
+                delta_kl.mean().backward()
 
-            d = d.grad.data.clone().cpu()
-            self.net.zero_grad()
-        ##
-        d = self._l2_normalize(d).to(img.device)
-        r_adv = self.eps * d
-        # compute lds
-        img_adv = img + r_adv.detach()
-        img_adv = torch.clamp(img_adv, 0, 1)
+                d = d.grad.data.clone()
+                self.net.zero_grad()
+            ##
+            d = self._l2_normalize(d)
+            r_adv = 0.25 * self.eps.view(-1, 1) * d
+            # compute lds
+            img_adv = img + r_adv.detach()
+            # img_adv = torch.clamp(img_adv, 0, 1)
 
         return img_adv.detach(), r_adv.detach()
+
+
+def vat(network, x, eps_list, xi=10, Ip=1):
+    # compute the regularized penality [eq. (4) & eq. (6), 1]
+
+    with torch.no_grad():
+        y = network(x)
+        d = torch.randn((x.size()[0], x.size()[1]))
+    d = F.normalize(d, p=2, dim=1)
+    for ip in range(Ip):
+        d_var = d
+
+        d_var = d_var.to(x.device)
+        d_var.requires_grad_(True)
+        y_p = network(x + xi * d_var, update_batch_stats=False)
+        kl_loss = distance(y, y_p)
+        kl_loss.backward()
+        d = d_var.grad
+        d = F.normalize(d, p=2, dim=1)
+    d_var = d
+
+    d_var = d_var.to(x.device)
+    eps = 0.25 * eps_list
+    eps = eps.view(-1, 1)
+    # y_2 = network(x + eps * d_var)
+    # return distance(y, y_2)
+    return (x + eps * d_var).detach(), (eps * d_var).detach()
+
+
+def distance(y0, y1):
+    # compute KL divergence between the outputs of the newtrok
+    return kl(F.softmax(y0, dim=1), F.softmax(y1, dim=1))
+
+
+def kl(p, q):
+    # compute KL divergence between p and q
+    return torch.sum(p * torch.log((p + 1e-8) / (q + 1e-8))) / float(len(p))

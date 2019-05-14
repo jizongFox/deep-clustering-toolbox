@@ -1,10 +1,9 @@
-import warnings
-from functools import reduce
-from typing import List
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import warnings
+from functools import reduce
+from typing import List
 
 from ..utils.general import simplex
 
@@ -104,8 +103,8 @@ class KL_div(nn.Module):
     r'''
     KL(p,q)= -\sum p(x) * log(q(x)/p(x))
     where p, q are distributions
-    q is usually the fixed one like one hot coding
-    q is the target and p is the distribution to get approached.
+    p is usually the fixed one like one hot coding
+    p is the target and q is the distribution to get approached.
     '''
 
     def __init__(self, reduce=True, eps=1e-8):
@@ -114,12 +113,14 @@ class KL_div(nn.Module):
         self.reduce = reduce
 
     # @pysnooper.snoop()
-    def forward(self, p, q):
-        assert p.shape == q.shape
-        assert simplex(p)
-        assert simplex(q)
-        b, *_ = p.shape
-        kl = (- p * torch.log((q + self.eps) / (p + self.eps))).sum(1)
+    def forward(self, prob: torch.Tensor, target: torch.Tensor):
+        assert not target.requires_grad
+        assert prob.requires_grad
+        assert prob.shape == target.shape
+        assert simplex(prob)
+        assert simplex(target)
+        b, *_ = target.shape
+        kl = (- target * torch.log((prob + self.eps) / (target + self.eps))).sum(1)
         if self.reduce:
             return kl.mean()
         return kl
@@ -141,6 +142,8 @@ class KL_Divergence_2D(nn.Module):
         :param y_prob: the Y_logit is like that for crossentropy
         :return: 2D map?
         '''
+        assert not y_prob.requires_grad
+        assert p_prob.requires_grad
         assert simplex(p_prob, 1)
         assert simplex(y_prob, 1)
 
@@ -168,6 +171,8 @@ class KL_Divergence_2D_Logit(nn.Module):
         :param y_logit:
         :return:
         """
+        assert not y_logit.requires_grad
+        assert p_logit.requires_grad
         assert not simplex(p_logit, 1)
         assert not simplex(y_logit, 1)
 

@@ -1,14 +1,20 @@
+import matplotlib
+import numpy as np
 import torch
+from deepclustering.model import Model
+from pathlib2 import Path
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from deepclustering.model import Model
+matplotlib.use('tkagg')
+
 from .Trainer import _Trainer
 from .. import ModelMode
 from ..loss.IMSAT_loss import Perturbation_Loss, MultualInformaton_IMSAT
 from ..meters import AverageValueMeter, MeterInterface
 from ..utils import tqdm_, simplex
+from ..utils.VAT import VATLoss
 from ..utils.classification.assignment_mapping import hungarian_match, flat_acc
 from ..writer import SummaryWriter, DrawCSV
 
@@ -34,6 +40,8 @@ class IMSATTrainer(_Trainer):
         self.writer = SummaryWriter(str(self.save_dir))
         self.drawer = DrawCSV(columns_to_draw=['train_sat_loss_mean', 'train_mi_loss_mean', 'val_acc_mean'],
                               save_dir=str(self.save_dir), save_name='plot.png')
+        nearest_dict = np.loadtxt(Path(__file__).parents[1] / 'dataset/classification/10th_neighbor.txt')
+        self.nearest_dict = torch.from_numpy(nearest_dict).float().to(self.device)
 
     def _train_loop(self, train_loader, epoch, mode: ModelMode = ModelMode.TRAIN, **kwargs):
         self.model.set_mode(mode)
@@ -41,20 +49,33 @@ class IMSATTrainer(_Trainer):
         train_loader_: tqdm = tqdm_(train_loader)  # reinitilize the train_loader
         train_loader_.set_description(f'Training epoch: {epoch}')
         for batch, image_labels in enumerate(train_loader_):
-            images, _ = list(zip(*image_labels))
+            images, _, (index, *_) = list(zip(*image_labels))
             # print(f"used time for dataloading:{time.time() - time_before}")
             tf1_images = torch.cat([images[0] for _ in range(images.__len__() - 1)], dim=0).to(self.device)
-            tf2_images = torch.cat(images[1:], dim=0).to(self.device)
+            tf2_images = torch.cat(images[1:], dim=0).to(self.device).to(self.device)
+            index = torch.cat([index for _ in range(images.__len__() - 1)], dim=0)
+
+            tf1_images = tf1_images.view(tf1_images.shape[0], -1)
+            tf2_images = tf2_images.view(tf2_images.shape[0], -1)
+
             assert tf1_images.shape == tf2_images.shape
-            self.model.zero_grad()
-            tf1_pred_logit = self.model.torchnet(tf1_images.view(tf1_images.size(0), -1))
-            tf2_pred_logit = self.model.torchnet(tf2_images.view(tf2_images.size(0), -1))
+            tf1_pred_logit = self.model.torchnet(tf1_images)
+            tf2_pred_logit = self.model.torchnet(tf2_images)
             assert not simplex(tf1_pred_logit) and tf1_pred_logit.shape == tf2_pred_logit.shape
-            sat_loss = self.SAT_criterion(tf1_pred_logit, tf2_pred_logit)
+            VAT_generator = VATLoss(eps=self.nearest_dict[index])
+            vat_loss, adv_tf1_images, _ = VAT_generator(
+                self.model.torchnet,
+                tf1_images
+            )
+
+            sat_loss = self.SAT_criterion(tf1_pred_logit.detach(), tf2_pred_logit)
+
             ml_loss = self.MI_criterion(tf1_pred_logit)
             # sat_loss = torch.Tensor([0]).cuda()
-            batch_loss: torch.Tensor = sat_loss - 0.1 * ml_loss
-            self.METERINTERFACE['train_sat_loss'].add(sat_loss.item())
+            batch_loss: torch.Tensor = vat_loss + sat_loss - 0.1 * ml_loss
+            # batch_loss: torch.Tensor = - 0.1 * ml_loss
+
+            self.METERINTERFACE['train_sat_loss'].add(vat_loss.item())
             self.METERINTERFACE['train_mi_loss'].add(ml_loss.item())
             self.model.zero_grad()
             batch_loss.backward()
@@ -77,7 +98,7 @@ class IMSATTrainer(_Trainer):
         subhead_accs = []
         val_loader_.set_description(f'Validating epoch: {epoch}')
         for batch, image_labels in enumerate(val_loader_):
-            images, gt = list(zip(*image_labels))
+            images, gt, _ = list(zip(*image_labels))
             images, gt = images[0].to(self.device), gt[0].to(self.device)
             _pred = F.softmax(self.model.torchnet(images.view(images.size(0), -1)), 1)
             assert simplex(_pred)
@@ -86,6 +107,7 @@ class IMSATTrainer(_Trainer):
             target[bSlicer] = gt
             slice_done += gt.shape[0]
         assert slice_done == val_loader.dataset.__len__(), 'Slice not completed.'
+
         reorder_pred, remap = hungarian_match(
             flat_preds=preds,
             flat_targets=target,
@@ -144,3 +166,26 @@ class IMSATTrainer(_Trainer):
         self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
         self.best_score = state_dict['best_score']
         self._start_epoch = state_dict['epoch'] + 1
+
+#
+# def compute_accuracy(y_pred, y_t):
+#     # compute the accuracy using Hungarian algorithm
+#     from munkres import Munkres
+#     y_pred = y_pred.squeeze().cpu().numpy().copy()
+#     y_t = y_t.squeeze().cpu().numpy().copy()
+#
+#     tot_cl = 10
+#     m = Munkres()
+#     mat = np.zeros((tot_cl, tot_cl))
+#     for i in range(tot_cl):
+#         for j in range(tot_cl):
+#             mat[i][j] = np.sum(np.logical_and(y_pred == i, y_t == j))
+#     indexes = m.compute(-mat)
+#
+#     corresp = []
+#     for i in range(tot_cl):
+#         corresp.append(indexes[i][1])
+#
+#     pred_corresp = [corresp[int(predicted)] for predicted in y_pred]
+#     acc = np.sum(pred_corresp == y_t) / float(len(y_t))
+#     return acc

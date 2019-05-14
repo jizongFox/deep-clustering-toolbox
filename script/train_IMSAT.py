@@ -1,10 +1,15 @@
+import warnings
 from pprint import pprint
 from typing import Dict, Any
 
 from deepclustering.dataset.classification import MNISTClusteringDataloaders, default_mnist_img_transform
 from deepclustering.model import Model
 from deepclustering.trainer.IMSATTrainer import IMSATTrainer
-from deepclustering.utils import yaml_parser, yaml_load, dict_merge
+from deepclustering.utils import yaml_parser, yaml_load, dict_merge, fix_all_seed
+
+warnings.filterwarnings('ignore')
+
+fix_all_seed(2)
 
 DEFAULT_CONFIG = '../config/IMSAT.yaml'
 
@@ -24,9 +29,9 @@ model = Model(
 train_loader_A = MNISTClusteringDataloaders(**merged_config['DataLoader']).creat_CombineDataLoader(
     default_mnist_img_transform['tf1'],
     default_mnist_img_transform['tf2'],
-    default_mnist_img_transform['tf2'],
-    default_mnist_img_transform['tf2'],
-    default_mnist_img_transform['tf2'],
+    # default_mnist_img_transform['tf2'],
+    # default_mnist_img_transform['tf2'],
+    # default_mnist_img_transform['tf2'],
 )
 
 val_loader = MNISTClusteringDataloaders(**merged_config['DataLoader']).creat_CombineDataLoader(

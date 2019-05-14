@@ -94,7 +94,8 @@ default_mnist_img_transform = {
     "tf1": transforms.Compose([
         augment.RandomCrop(size=(26, 26), padding=2),
         augment.Resize(size=(28, 28), interpolation=PIL.Image.BILINEAR),
-        augment.Img2Tensor(include_rgb=False, include_grey=True)
+        augment.Img2Tensor(include_rgb=False, include_grey=True),
+        transforms.Normalize((0.5,), (0.5,))
     ]),
     "tf2":
         transforms.Compose([
@@ -103,11 +104,13 @@ default_mnist_img_transform = {
             # transforms.RandomHorizontalFlip(p=0.5),
             transforms.ColorJitter(brightness=[0.6, 1.4], contrast=[0.6, 1.4], saturation=[0.6, 1.4],
                                    hue=[-0.125, 0.125]),
-            augment.Img2Tensor(include_rgb=False, include_grey=True)
+            augment.Img2Tensor(include_rgb=False, include_grey=True),
+            transforms.Normalize((0.5,), (0.5,))
         ]),
     "tf3": transforms.Compose([
         augment.CenterCrop(size=(26, 26)),
         augment.Resize(size=(28, 28), interpolation=PIL.Image.BILINEAR),
-        augment.Img2Tensor(include_rgb=False, include_grey=True)
+        augment.Img2Tensor(include_rgb=False, include_grey=True),
+        transforms.Normalize((0.5,), (0.5,))
     ])
 }

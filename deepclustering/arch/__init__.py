@@ -52,8 +52,8 @@ def get_arch(arch: str, kwargs) -> nn.Module:
         pass
     assert arch_callable, "Architecture {} is not found!".format(arch)
     net = arch_callable(**kwargs)
-    try:
-        net.apply(weights_init)
-    except AttributeError as e:
-        print(f'Using pretrained models with the error:{e}')
+    # try:
+    #     net.apply(weights_init)
+    # except AttributeError as e:
+    #     print(f'Using pretrained models with the error:{e}')
     return net

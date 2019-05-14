@@ -2,8 +2,21 @@ import inspect
 import sys
 
 from typing_inspect import is_union_type
-
+import contextlib
 from .general import one_hot
+
+@contextlib.contextmanager
+def _disable_tracking_bn_stats(model):
+    def switch_attr(m):
+        if hasattr(m, 'track_running_stats'):
+            m.track_running_stats ^= True
+
+    # let the track_running_stats to be inverse
+    model.apply(switch_attr)
+    yield
+    # let the track_running_stats to be inverse
+    model.apply(switch_attr)
+
 
 
 def export(fn):

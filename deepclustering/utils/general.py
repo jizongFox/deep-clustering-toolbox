@@ -3,7 +3,8 @@ import warnings
 from copy import deepcopy as dcopy
 from functools import partial
 from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Union, Any
-
+import os
+import random
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -14,6 +15,18 @@ from tqdm import tqdm
 A = TypeVar("A")
 B = TypeVar("B")
 T = TypeVar("T", Tensor, np.ndarray)
+
+# reproducibility
+
+def fix_all_seed(seed):
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
 
 # tqdm
 
