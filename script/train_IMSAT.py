@@ -29,9 +29,9 @@ model = Model(
 train_loader_A = MNISTClusteringDataloaders(**merged_config['DataLoader']).creat_CombineDataLoader(
     default_mnist_img_transform['tf1'],
     default_mnist_img_transform['tf2'],
-    # default_mnist_img_transform['tf2'],
-    # default_mnist_img_transform['tf2'],
-    # default_mnist_img_transform['tf2'],
+    default_mnist_img_transform['tf2'],
+    default_mnist_img_transform['tf2'],
+    default_mnist_img_transform['tf2'],
 )
 
 val_loader = MNISTClusteringDataloaders(**merged_config['DataLoader']).creat_CombineDataLoader(

@@ -143,49 +143,5 @@ class IMSATTrainer(_Trainer):
             self.drawer.draw(self.METERINTERFACE.summary(), together=False)
             self.save_checkpoint(self.state_dict, epoch, current_score)
 
-    @property
-    def state_dict(self):
-        state_dictionary = {}
-        state_dictionary['model_state_dict'] = self.model.state_dict
-        state_dictionary['meter_state_dict'] = self.METERINTERFACE.state_dict
-        return state_dictionary
 
-    def save_checkpoint(self, state_dict, current_epoch, best_score):
-        save_best: bool = True if best_score > self.best_score else False
-        if save_best:
-            self.best_score = best_score
-        state_dict['epoch'] = current_epoch
-        state_dict['best_score'] = self.best_score
 
-        torch.save(state_dict, str(self.save_dir / 'last.pth'))
-        if save_best:
-            torch.save(state_dict, str(self.save_dir / 'best.pth'))
-
-    def load_checkpoint(self, state_dict):
-        self.model.load_state_dict(state_dict['model_state_dict'])
-        self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
-        self.best_score = state_dict['best_score']
-        self._start_epoch = state_dict['epoch'] + 1
-
-#
-# def compute_accuracy(y_pred, y_t):
-#     # compute the accuracy using Hungarian algorithm
-#     from munkres import Munkres
-#     y_pred = y_pred.squeeze().cpu().numpy().copy()
-#     y_t = y_t.squeeze().cpu().numpy().copy()
-#
-#     tot_cl = 10
-#     m = Munkres()
-#     mat = np.zeros((tot_cl, tot_cl))
-#     for i in range(tot_cl):
-#         for j in range(tot_cl):
-#             mat[i][j] = np.sum(np.logical_and(y_pred == i, y_t == j))
-#     indexes = m.compute(-mat)
-#
-#     corresp = []
-#     for i in range(tot_cl):
-#         corresp.append(indexes[i][1])
-#
-#     pred_corresp = [corresp[int(predicted)] for predicted in y_pred]
-#     acc = np.sum(pred_corresp == y_t) / float(len(y_t))
-#     return acc
