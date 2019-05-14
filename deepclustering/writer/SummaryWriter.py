@@ -41,5 +41,5 @@ class DrawCSV(object):
                 _ax.legend()
                 _ax.grid()
                 _ax.set_title(f"{k} with max:{dataframe[k].max():.3f}, min:{dataframe[k].min():.3f}")
-            plt.savefig(str(self.save_dir) + f'/{k}_{self.save_name}')
+            plt.savefig(str(self.save_dir) + f'/{self.save_name}')
         plt.close('all')

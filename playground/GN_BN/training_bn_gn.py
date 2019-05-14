@@ -1,8 +1,11 @@
 """
 This is to investigate the GN and BN
 """
+from typing import List
+
 import torch
 from resnet import resnet18
+from analyse_model import analyze_alpha
 from torch import nn
 # dataset
 from torch.utils.data import DataLoader
@@ -17,7 +20,6 @@ from deepclustering.meters import AverageValueMeter, MeterInterface
 from deepclustering.model import Model
 from deepclustering.trainer.Trainer import _Trainer
 from deepclustering.utils import yaml_load, tqdm_
-from deepclustering.writer import DrawCSV
 
 for k, v in default_cifar10_img_transform.items():
     v.transforms[-1].include_rgb = True
@@ -25,13 +27,15 @@ for k, v in default_cifar10_img_transform.items():
 
 dataloader_dict = {'batch_size': 100, 'shuffle': True, 'num_workers': 4, 'pin_memory': True}
 train_set_list = [CIFAR10(root=DATA_PATH, train=True, download=True,
-                          transform=default_cifar10_img_transform[t]) for t in ('tf1', 'tf2', 'tf2', 'tf2')]
+                          transform=default_cifar10_img_transform[t]) for t in ('tf1', 'tf2', 'tf2', 'tf2', 'tf2')]
 train_loader = DataLoader(CombineDataset(*train_set_list), **dataloader_dict)
-val_loader = DataLoader(CombineDataset(*[CIFAR10(root=DATA_PATH,
-                                                 train=False,
-                                                 transform=default_cifar10_img_transform['tf3'],
-                                                 download=True)]),
-                        **dataloader_dict)
+val_loader = DataLoader \
+        (
+        CombineDataset(*[CIFAR10(root=DATA_PATH,
+                                 train=False,
+                                 transform=default_cifar10_img_transform['tf3'],
+                                 download=True)]),
+        **dataloader_dict)
 
 # network
 default_config = yaml_load('resnet.yaml', verbose=False)
@@ -45,25 +49,25 @@ model.scheduler = scheduler
 
 
 class class_Trainer(_Trainer):
-    METER_CONFIG = {
-        'train_loss': AverageValueMeter(),
-        'train_acc': AverageValueMeter(),
-        'val_acc': AverageValueMeter(),
-        'val_loss': AverageValueMeter()
-    }
-    METERINTERFACE = MeterInterface(METER_CONFIG)
 
-    def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
+    def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 1000,
                  save_dir: str = RUNS_PATH + "/gn_bn", checkpoint_path: str = None, device='cpu',
                  config: dict = None) -> None:
         super().__init__(model, train_loader, val_loader, max_epoch, save_dir, checkpoint_path, device, config)
         self.criterion = nn.CrossEntropyLoss()
-        self.drawer = DrawCSV(columns_to_draw=[
-            'train_loss_mean',
-            'train_acc_mean',
-            'val_acc_mean',
-            'val_loss_mean'
-        ], save_dir=self.save_dir)
+
+    def __init_meters__(self) -> List[str]:
+        METER_CONFIG = {
+            'train_loss': AverageValueMeter(),
+            'train_acc': AverageValueMeter(),
+            'val_acc': AverageValueMeter(),
+            'val_loss': AverageValueMeter()
+        }
+        self.METERINTERFACE = MeterInterface(METER_CONFIG)
+        return ['train_loss_mean',
+                'val_loss_mean',
+                'train_acc_mean',
+                'val_acc_mean']
 
     def _train_loop(self, train_loader, epoch, mode=ModelMode.TRAIN, **kwargs):
         self.model.set_mode(mode)
@@ -92,7 +96,6 @@ class class_Trainer(_Trainer):
                            'train_acc': self.METERINTERFACE['train_acc'].summary()['mean']}
             train_loader_.set_postfix(report_dict)
 
-            # print(self.model.torchnet.bn1.alpha)
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Training epoch: {epoch} : {report_dict_str}")
 
@@ -118,12 +121,33 @@ class class_Trainer(_Trainer):
         print(f"Validating epoch: {epoch} : {report_dict_str}")
         return self.METERINTERFACE['val_acc'].summary()['mean']
 
+    def start_training(self):
+        for epoch in range(self._start_epoch, self.max_epoch):
+            self._train_loop(
+                train_loader=self.train_loader,
+                epoch=epoch,
+            )
+            with torch.no_grad():
+                current_score = self._eval_loop(self.val_loader, epoch)
+            self.METERINTERFACE.step()
+            self.model.schedulerStep()
+            # save meters and checkpoints
+            for k, v in self.METERINTERFACE.aggregated_meter_dict.items():
+                v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
+            self.METERINTERFACE.summary().to_csv(self.save_dir / f'wholeMeter.csv')
+            self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict(), global_step=epoch)
+            self.drawer.draw(self.METERINTERFACE.summary(), together=False)
+            self.save_checkpoint(self.state_dict, epoch, current_score)
+            if epoch % 10 == 0:
+                analyze_alpha(checkpoint_path=self.save_dir / 'last.pth', epoch=epoch,
+                              save_dir=self.save_dir / 'alphas')
+
 
 trainer = class_Trainer(
     model=model,
     train_loader=train_loader,
     val_loader=val_loader,
-    save_dir=f"{RUNS_PATH}/bn_gn",
+    save_dir=f"{RUNS_PATH}/bn_gn_test",
     device='cuda'
 )
 trainer.start_training()
