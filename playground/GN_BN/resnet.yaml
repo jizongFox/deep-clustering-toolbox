@@ -1,0 +1,11 @@
+Arch:
+  name: clusternetimsat
+
+Optim:
+  name: Adam
+  lr: 0.002
+
+Scheduler:
+  name: MultiStepLR
+  milestones: [100, 200, 300, 400, 500, 600, 700, 800, 900]
+  gamma: 0.75

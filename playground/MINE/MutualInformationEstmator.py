@@ -1,13 +1,13 @@
 """
 This function is to calculate the MI.
 """
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from torch import nn
-from torch.nn import functional as F
-import numpy as np
-from tqdm import tqdm
 from torch import optim
-import matplotlib.pyplot as plt
+from torch.nn import functional as F
+from tqdm import tqdm
 
 
 def ma(a, window_size=100):
@@ -92,21 +92,21 @@ if __name__ == '__main__':
     # prepare data
     x = np.random.multivariate_normal(mean=[0, 0],
                                       cov=[[1, 0], [0, 1]],
-                                      size=300)
+                                      size=3000)
     # the mutual information should be 0
     y = np.random.multivariate_normal(mean=[0, 0],
-                                      cov=[[1, 0.8], [0.8, 1]],
-                                      size=300)
+                                      cov=[[1, 0.9], [0.9, 1]],
+                                      size=3000)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     data = y
-    batch_size = 100
+    batch_size = 1000
     mine_net = Mine().cuda()
     mine_net_optim = optim.Adam(mine_net.parameters(), lr=1e-3)
 
     # data is x or y
     result = list()
     ma_et = 1.
-    iter_num = tqdm(range(10000))
+    iter_num = tqdm(range(50000))
     for i in iter_num:
         joint, margin = sample_batch(data, batch_size=batch_size), sample_batch(data, batch_size=batch_size,
                                                                                 sample_mode='marginal')
@@ -116,8 +116,6 @@ if __name__ == '__main__':
         (loss).backward()
         mine_net_optim.step()
         result.append(mi_lb.detach().cpu().numpy())
-        # if (i + 1) % (log_freq) == 0:
-        iter_num.set_postfix({"": result[-1]})
-
+        iter_num.set_postfix({"MI": result[-1]})
     plt.plot(range(len(ma(result))), ma(result))
     plt.show()

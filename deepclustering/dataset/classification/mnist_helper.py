@@ -83,8 +83,12 @@ class MNISTClusteringDataloaders(object):
     def creat_CombineDataLoader(self, *image_transforms: Callable, target_transform: Callable = None,
                                 dataset_dict: Dict[str, Any] = {}, dataloader_dict: Dict[str, Any] = {}) -> DataLoader:
         combineSet = self._creat_combineDataset(image_transforms, target_transform, dataset_dict)
-        combineLoader = DataLoader(combineSet, batch_size=self.batch_size, shuffle=self.shuffle,
-                                   num_workers=self.num_workers, drop_last=True, pin_memory=self.pin_memory,
+        combineLoader = DataLoader(combineSet,
+                                   batch_size=self.batch_size,
+                                   shuffle=self.shuffle,
+                                   num_workers=self.num_workers,
+                                   drop_last=True,
+                                   pin_memory=self.pin_memory,
                                    **dataloader_dict)
         return combineLoader
 

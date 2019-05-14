@@ -70,13 +70,37 @@ class _Trainer(ABC):
         """
         raise NotImplementedError
 
+    # @property
+    # @abstractmethod
+    # def state_dict(self):
+    #     raise NotImplementedError
+    #
+    # def save_checkpoint(self, *args, **kwargs):
+    #     raise NotImplementedError
+    #
+    # def load_checkpoint(self, *args, **kwargs):
+    #     raise NotImplementedError
+
     @property
-    @abstractmethod
     def state_dict(self):
-        raise NotImplementedError
+        state_dictionary = {}
+        state_dictionary['model_state_dict'] = self.model.state_dict
+        state_dictionary['meter_state_dict'] = self.METERINTERFACE.state_dict
+        return state_dictionary
 
-    def save_checkpoint(self, *args, **kwargs):
-        raise NotImplementedError
+    def save_checkpoint(self, state_dict, current_epoch, best_score):
+        save_best: bool = True if best_score > self.best_score else False
+        if save_best:
+            self.best_score = best_score
+        state_dict['epoch'] = current_epoch
+        state_dict['best_score'] = self.best_score
 
-    def load_checkpoint(self, *args, **kwargs):
-        raise NotImplementedError
+        torch.save(state_dict, str(self.save_dir / 'last.pth'))
+        if save_best:
+            torch.save(state_dict, str(self.save_dir / 'best.pth'))
+
+    def load_checkpoint(self, state_dict):
+        self.model.load_state_dict(state_dict['model_state_dict'])
+        self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
+        self.best_score = state_dict['best_score']
+        self._start_epoch = state_dict['epoch'] + 1

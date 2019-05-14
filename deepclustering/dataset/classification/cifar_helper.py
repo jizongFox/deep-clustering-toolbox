@@ -26,7 +26,7 @@ class Cifar10ClusteringDataloaders(object):
     """
 
     def __init__(self, batch_size: int = 1, shuffle: bool = False,
-                 num_workers: int = 1, pin_memory: bool = False) -> None:
+                 num_workers: int = 1, pin_memory: bool = True) -> None:
         """
         :param batch_size: batch_size = 1
         :param shuffle: shuffle the dataset, default = False

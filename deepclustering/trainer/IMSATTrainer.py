@@ -1,11 +1,12 @@
 import matplotlib
 import numpy as np
 import torch
-from deepclustering.model import Model
 from pathlib2 import Path
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+from deepclustering.model import Model
 
 matplotlib.use('tkagg')
 
@@ -166,26 +167,3 @@ class IMSATTrainer(_Trainer):
         self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
         self.best_score = state_dict['best_score']
         self._start_epoch = state_dict['epoch'] + 1
-
-#
-# def compute_accuracy(y_pred, y_t):
-#     # compute the accuracy using Hungarian algorithm
-#     from munkres import Munkres
-#     y_pred = y_pred.squeeze().cpu().numpy().copy()
-#     y_t = y_t.squeeze().cpu().numpy().copy()
-#
-#     tot_cl = 10
-#     m = Munkres()
-#     mat = np.zeros((tot_cl, tot_cl))
-#     for i in range(tot_cl):
-#         for j in range(tot_cl):
-#             mat[i][j] = np.sum(np.logical_and(y_pred == i, y_t == j))
-#     indexes = m.compute(-mat)
-#
-#     corresp = []
-#     for i in range(tot_cl):
-#         corresp.append(indexes[i][1])
-#
-#     pred_corresp = [corresp[int(predicted)] for predicted in y_pred]
-#     acc = np.sum(pred_corresp == y_t) / float(len(y_t))
-#     return acc
