@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
+from typing import List
 
 import torch
 import yaml
 from pathlib2 import Path
 from torch.utils.data import DataLoader
 
+from .. import ModelMode
 from ..meters import MeterInterface
 from ..model import Model
 from ..writer import SummaryWriter, DrawCSV
@@ -16,8 +18,6 @@ class _Trainer(ABC):
     Abstract class for a general trainer, which has _train_loop, _eval_loop,load_state, state_dict, and save_checkpoint
     functions. All other trainers are the subclasses of this class.
     """
-    METER_CONFIG = {}
-    METERINTERFACE = MeterInterface(METER_CONFIG)
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
                  save_dir: str = './runs/test', checkpoint_path: str = None, device='cpu', config: dict = None) -> None:
@@ -33,24 +33,28 @@ class _Trainer(ABC):
         self.best_score: float = -1
         self._start_epoch = 0  # whether 0 or loaded from the checkpoint.
         self.device = torch.device(device)
-        if checkpoint_path:
-            assert Path(checkpoint_path).exists() and Path(checkpoint_path).is_dir()
-            state_dict = torch.load(str(Path(checkpoint_path) / 'last.pth'), map_location=torch.device('cpu'))
-            self.load_checkpoint(state_dict)
+        # load checkpoint
 
         if config:
-            # save config file to save_dir
-            self.config = dcopy(config)
-            try:
-                self.config.pop('Config')
-            except KeyError:
-                pass
+            self.config = dcopy(config).pop('Config', None)
             with open(self.save_dir / 'config.yaml', 'w') as outfile:
                 yaml.dump(self.config, outfile, default_flow_style=False)
-        self.model.to(self.device)
+
         self.writer = SummaryWriter(str(self.save_dir))
         # todo: try to override the DrawCSV
-        self.drawer = DrawCSV(columns_to_draw=['', ''], save_dir=str(self.save_dir), save_name='plot.png')
+        columns_to_draw = self.__init_meters__()
+        self.drawer = DrawCSV(columns_to_draw=columns_to_draw, save_dir=str(self.save_dir), save_name='plot.png')
+        if checkpoint_path:
+            assert Path(checkpoint_path).exists() and Path(checkpoint_path).is_dir(), Path(checkpoint_path)
+            state_dict = torch.load(str(Path(checkpoint_path) / 'last.pth'), map_location=torch.device('cpu'))
+            self.load_checkpoint(state_dict)
+        self.model.to(self.device)
+
+    @abstractmethod
+    def __init_meters__(self) -> List[str]:
+        METER_CONFIG = {}
+        self.METERINTERFACE = MeterInterface(METER_CONFIG)
+        return ["draw_columns_list"]
 
     def start_training(self):
         for epoch in range(self._start_epoch, self.max_epoch):
@@ -74,11 +78,11 @@ class _Trainer(ABC):
         self.model.to(device=device)
 
     @abstractmethod
-    def _train_loop(self, train_loader, epoch, mode, **kwargs):
+    def _train_loop(self, train_loader, epoch, mode=ModelMode.TRAIN, **kwargs):
         raise NotImplementedError
 
     @abstractmethod
-    def _eval_loop(self, val_loader, epoch, mode, **kwargs) -> float:
+    def _eval_loop(self, val_loader, epoch, mode=ModelMode.EVAL, **kwargs) -> float:
         """
         return the
         :param args:

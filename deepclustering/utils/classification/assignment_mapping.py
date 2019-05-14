@@ -1,3 +1,4 @@
+import warnings
 from typing import Dict, Tuple
 
 import numpy as np
@@ -31,7 +32,9 @@ def hungarian_match(flat_preds, flat_targets, preds_k, targets_k) -> Tuple[torch
             num_correct[c1, c2] = votes
 
     # num_correct is small
-    match = linear_assignment(num_samples - num_correct)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        match = linear_assignment(num_samples - num_correct)
 
     # return as list of tuples, out_c to gt_c
     res = {}

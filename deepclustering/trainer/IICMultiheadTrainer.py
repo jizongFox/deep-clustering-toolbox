@@ -1,8 +1,8 @@
 """
 This is the trainer for IIC multiple-header Clustering
 """
-import time
 from collections import OrderedDict
+from typing import List
 
 import torch
 from torch.utils.data import DataLoader
@@ -15,17 +15,9 @@ from ..meters import AverageValueMeter, MeterInterface
 from ..model import Model
 from ..utils import tqdm_, simplex, tqdm
 from ..utils.classification.assignment_mapping import flat_acc, hungarian_match
-from ..writer.SummaryWriter import SummaryWriter, DrawCSV
 
 
 class IICMultiHeadTrainer(_Trainer):
-    METER_CONFIG = {
-        'train_head_A': AverageValueMeter(),
-        'train_head_B': AverageValueMeter(),
-        'val_average_acc': AverageValueMeter(),
-        'val_best_acc': AverageValueMeter()
-    }
-    METERINTERFACE = MeterInterface(METER_CONFIG)
 
     def __init__(
             self,
@@ -52,14 +44,19 @@ class IICMultiHeadTrainer(_Trainer):
         if self.use_sobel:
             self.sobel = SobelProcess(include_origin=False)
             self.sobel.to(self.device)
-        self.writer = SummaryWriter(str(self.save_dir))
-        self.drawer = DrawCSV(
-            columns_to_draw=[
-                'train_head_A_mean',
+
+    def __init_meters__(self) -> List[str]:
+        METER_CONFIG = {
+            'train_head_A': AverageValueMeter(),
+            'train_head_B': AverageValueMeter(),
+            'val_average_acc': AverageValueMeter(),
+            'val_best_acc': AverageValueMeter()
+        }
+        self.METERINTERFACE = MeterInterface(METER_CONFIG)
+        return ['train_head_A_mean',
                 'train_head_B_mean',
                 'val_average_acc_mean',
-                'val_best_acc_mean'
-            ], save_dir=str(self.save_dir), save_name='plot.png')
+                'val_best_acc_mean']
 
     def start_training(self):
         """
@@ -201,27 +198,3 @@ class IICMultiHeadTrainer(_Trainer):
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Validating epoch: {epoch} : {report_dict_str}")
         return self.METERINTERFACE.val_best_acc.summary()['mean']
-
-    @property
-    def state_dict(self):
-        state_dictionary = {}
-        state_dictionary['model_state_dict'] = self.model.state_dict
-        state_dictionary['meter_state_dict'] = self.METERINTERFACE.state_dict
-        return state_dictionary
-
-    def save_checkpoint(self, state_dict, current_epoch, best_score):
-        save_best: bool = True if best_score > self.best_score else False
-        if save_best:
-            self.best_score = best_score
-        state_dict['epoch'] = current_epoch
-        state_dict['best_score'] = self.best_score
-
-        torch.save(state_dict, str(self.save_dir / 'last.pth'))
-        if save_best:
-            torch.save(state_dict, str(self.save_dir / 'best.pth'))
-
-    def load_checkpoint(self, state_dict):
-        self.model.load_state_dict(state_dict['model_state_dict'])
-        self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
-        self.best_score = state_dict['best_score']
-        self._start_epoch = state_dict['epoch'] + 1
