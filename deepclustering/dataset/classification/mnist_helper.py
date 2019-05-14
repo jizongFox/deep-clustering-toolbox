@@ -96,7 +96,7 @@ class MNISTClusteringDataloaders(object):
 ## default transform
 default_mnist_img_transform = {
     "tf1": transforms.Compose([
-        augment.RandomCrop(size=(26, 26), padding=2),
+        augment.CenterCrop(size=(26, 26)),
         augment.Resize(size=(28, 28), interpolation=PIL.Image.BILINEAR),
         augment.Img2Tensor(include_rgb=False, include_grey=True),
         transforms.Normalize((0.5,), (0.5,))

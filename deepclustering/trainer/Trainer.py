@@ -6,7 +6,9 @@ import yaml
 from pathlib2 import Path
 from torch.utils.data import DataLoader
 
+from ..meters import MeterInterface
 from ..model import Model
+from ..writer import SummaryWriter, DrawCSV
 
 
 class _Trainer(ABC):
@@ -14,8 +16,8 @@ class _Trainer(ABC):
     Abstract class for a general trainer, which has _train_loop, _eval_loop,load_state, state_dict, and save_checkpoint
     functions. All other trainers are the subclasses of this class.
     """
-    METER_CONFIG = None
-    METERINTERFACE = None
+    METER_CONFIG = {}
+    METERINTERFACE = MeterInterface(METER_CONFIG)
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
                  save_dir: str = './runs/test', checkpoint_path: str = None, device='cpu', config: dict = None) -> None:
@@ -46,22 +48,37 @@ class _Trainer(ABC):
             with open(self.save_dir / 'config.yaml', 'w') as outfile:
                 yaml.dump(self.config, outfile, default_flow_style=False)
         self.model.to(self.device)
+        self.writer = SummaryWriter(str(self.save_dir))
+        # todo: try to override the DrawCSV
+        self.drawer = DrawCSV(columns_to_draw=['', ''], save_dir=str(self.save_dir), save_name='plot.png')
 
     def start_training(self):
-        for epoch in range(self._start_epoch + 1, self.max_epoch):
-            self._train_loop()
-            self._eval_loop()
-            self.save_checkpoint()
+        for epoch in range(self._start_epoch, self.max_epoch):
+            self._train_loop(
+                train_loader=self.train_loader,
+                epoch=epoch,
+            )
+            with torch.no_grad():
+                current_score = self._eval_loop(self.val_loader, epoch)
+            self.METERINTERFACE.step()
+            self.model.schedulerStep()
+            # save meters and checkpoints
+            for k, v in self.METERINTERFACE.aggregated_meter_dict.items():
+                v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
+            self.METERINTERFACE.summary().to_csv(self.save_dir / f'wholeMeter.csv')
+            self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict(), global_step=epoch)
+            self.drawer.draw(self.METERINTERFACE.summary(), together=False)
+            self.save_checkpoint(self.state_dict, epoch, current_score)
 
     def to(self, device):
         self.model.to(device=device)
 
     @abstractmethod
-    def _train_loop(self, *args, **kwargs):
+    def _train_loop(self, train_loader, epoch, mode, **kwargs):
         raise NotImplementedError
 
     @abstractmethod
-    def _eval_loop(self, *args, **kwargs) -> float:
+    def _eval_loop(self, val_loader, epoch, mode, **kwargs) -> float:
         """
         return the
         :param args:
@@ -69,17 +86,6 @@ class _Trainer(ABC):
         :return:
         """
         raise NotImplementedError
-
-    # @property
-    # @abstractmethod
-    # def state_dict(self):
-    #     raise NotImplementedError
-    #
-    # def save_checkpoint(self, *args, **kwargs):
-    #     raise NotImplementedError
-    #
-    # def load_checkpoint(self, *args, **kwargs):
-    #     raise NotImplementedError
 
     @property
     def state_dict(self):

@@ -9,10 +9,10 @@ class NormalizationLayer(nn.Module):
         super().__init__()
         self.alpha = nn.Parameter(data=torch.Tensor([0.0]))
         self.bn = nn.BatchNorm2d(num_features)
-        self.gn = nn.GroupNorm(num_features, num_channels=num_features // 2)
+        self.gn = nn.GroupNorm(num_groups=num_features//4, num_channels=num_features)
 
     def forward(self, input):
-        return F.sigmoid(self.alpha) * self.bn(input) + (1 - F.sigmoid(self.alpha)) * self.gn(input)
+        return torch.sigmoid(self.alpha) * self.bn(input) + (1 - torch.sigmoid(self.alpha)) * self.gn(input)
 
 
 def conv3x3(in_planes, out_planes, stride=1):

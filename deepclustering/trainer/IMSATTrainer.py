@@ -1,6 +1,7 @@
 import matplotlib
 import numpy as np
 import torch
+from deepclustering.model import Model
 from pathlib2 import Path
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
