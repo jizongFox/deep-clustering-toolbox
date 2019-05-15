@@ -16,7 +16,7 @@ DataLoader:
 
 Trainer:
   max_epoch: 1000
-  save_dir: runs/imsat
+  save_dir: imsat
   device: cuda
 
 

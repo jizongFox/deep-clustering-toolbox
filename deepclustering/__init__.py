@@ -3,7 +3,7 @@ from enum import Enum
 from pathlib2 import Path
 
 DATA_PATH = str(Path(__file__).parents[1] / '.data')
-RUNS_PATH = str(Path(__file__).parents[1] / 'runs')
+PROJECT_PATH = str(Path(__file__).parents[1])
 
 
 class ModelMode(Enum):

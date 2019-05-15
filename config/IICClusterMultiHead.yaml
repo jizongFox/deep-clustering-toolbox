@@ -23,7 +23,7 @@ DataLoader:
 
 Trainer:
   max_epoch: 1000
-  save_dir: runs/multihead_cifar
+  save_dir: multihead_cifar
   device: cuda
   head_control_params:
     A: 1

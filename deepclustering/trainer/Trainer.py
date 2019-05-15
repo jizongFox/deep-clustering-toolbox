@@ -7,7 +7,7 @@ import yaml
 from pathlib2 import Path
 from torch.utils.data import DataLoader
 
-from .. import ModelMode
+from .. import ModelMode, PROJECT_PATH
 from ..meters import MeterInterface
 from ..model import Model
 from ..writer import SummaryWriter, DrawCSV
@@ -18,6 +18,8 @@ class _Trainer(ABC):
     Abstract class for a general trainer, which has _train_loop, _eval_loop,load_state, state_dict, and save_checkpoint
     functions. All other trainers are the subclasses of this class.
     """
+    RUN_PATH = str(Path(PROJECT_PATH) / 'runs')
+    ARCHIVE_PATH = str(Path(PROJECT_PATH) / 'archives')
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
                  save_dir: str = './runs/test', checkpoint_path: str = None, device='cpu', config: dict = None) -> None:
@@ -25,7 +27,7 @@ class _Trainer(ABC):
         self.model = model
         self.train_loader = train_loader
         self.val_loader = val_loader
-        self.save_dir: Path = Path(save_dir)
+        self.save_dir: Path = Path(self.RUN_PATH) / save_dir
         self.save_dir.mkdir(exist_ok=True, parents=True)
         (self.save_dir / 'meters').mkdir(exist_ok=True, parents=True)
         self.checkpoint = checkpoint_path
@@ -114,3 +116,11 @@ class _Trainer(ABC):
         self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
         self.best_score = state_dict['best_score']
         self._start_epoch = state_dict['epoch'] + 1
+
+    def clean_up(self):
+        import shutil
+
+        Path(self.ARCHIVE_PATH).mkdir(exist_ok=True, parents=True)
+        sub_dir = self.save_dir.relative_to(Path(self.RUN_PATH))
+        save_dir = Path(self.ARCHIVE_PATH) / str(sub_dir)
+        shutil.move(str(self.save_dir), str(save_dir))

@@ -48,3 +48,4 @@ trainer = IICMultiHeadTrainer(
     **merged_config['Trainer']
 )
 trainer.start_training()
+trainer.clean_up()
