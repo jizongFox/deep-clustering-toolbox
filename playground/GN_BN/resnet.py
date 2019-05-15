@@ -9,10 +9,14 @@ class NormalizationLayer(nn.Module):
         super().__init__()
         self.alpha = nn.Parameter(data=torch.Tensor([0.0]))
         self.bn = nn.BatchNorm2d(num_features)
-        self.gn = nn.GroupNorm(num_groups=num_features//4, num_channels=num_features)
+        self.gn = nn.GroupNorm(num_groups=num_features // 2, num_channels=num_features)
 
     def forward(self, input):
-        return torch.sigmoid(self.alpha) * self.bn(input) + (1 - torch.sigmoid(self.alpha)) * self.gn(input)
+        try:
+            out = torch.sigmoid(self.alpha) * self.bn(input) + (1 - torch.sigmoid(self.alpha)) * self.gn(input)
+        except:
+            print()
+        return out
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -68,7 +72,7 @@ class Bottleneck(nn.Module):
         self.conv2 = conv3x3(planes, planes, stride)
         self.bn2 = NormLayer(planes)  # nn.BatchNorm2d(planes)
         self.conv3 = conv1x1(planes, planes * self.expansion)
-        self.bn3 = NormLayer(planes)  # nn.BatchNorm2d(planes * self.expansion)
+        self.bn3 = NormLayer(planes * self.expansion)  # nn.BatchNorm2d(planes * self.expansion)
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
@@ -125,7 +129,6 @@ class ResNet(nn.Module):
                 nn.init.constant_(m.gn.weight, 1)
                 nn.init.constant_(m.gn.bias, 0)
 
-
         # Zero-initialize the last BN in each residual branch,
         # so that the residual branch starts with zeros, and each residual block behaves like an identity.
         # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
@@ -178,4 +181,26 @@ def resnet18(num_classes, **kwargs):
     """
     model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
     model.fc = nn.Linear(in_features=512, out_features=num_classes, bias=True)
+    return model
+
+
+def resnet152(num_classes, **kwargs):
+    """Constructs a ResNet-152 model.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
+    model.fc = nn.Linear(in_features=2048, out_features=num_classes, bias=True)
+    return model
+
+
+def resnet50(num_classes):
+    model = ResNet(Bottleneck, [3, 4, 6, 3])
+    model.fc = nn.Linear(in_features=2048, out_features=num_classes, bias=True)
+    return model
+
+def resnet101(num_classes):
+    model = ResNet(Bottleneck, [3, 4, 23, 3],)
+    model.fc = nn.Linear(in_features=2048, out_features=num_classes, bias=True)
     return model

@@ -4,12 +4,12 @@ from resnet import resnet18, NormalizationLayer
 from torch import nn
 
 
-def analyze_alpha(checkpoint_path, epoch, save_dir):
+def analyze_alpha(model_cls, checkpoint_path, epoch, save_dir):
     assert isinstance(save_dir, Path)
     save_dir.mkdir(exist_ok=True, parents=True)
     state_dict = torch.load(str(checkpoint_path),
                             map_location=torch.device('cpu'))
-    resnet: nn.Module = resnet18(10)
+    resnet: nn.Module = model_cls(10)
     resnet.load_state_dict(state_dict['model_state_dict']['net_state_dict'])
     print(f'checkpoint loaded with acc: {state_dict["best_score"]:.4f} at {state_dict["epoch"]} epoch.')
 

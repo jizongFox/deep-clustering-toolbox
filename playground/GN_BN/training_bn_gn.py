@@ -4,7 +4,7 @@ This is to investigate the GN and BN
 from typing import List
 
 import torch
-from resnet import resnet18
+from resnet import resnet101
 from analyse_model import analyze_alpha
 from torch import nn
 # dataset
@@ -25,22 +25,22 @@ for k, v in default_cifar10_img_transform.items():
     v.transforms[-1].include_rgb = True
     v.transforms[-1].include_grey = False
 
-dataloader_dict = {'batch_size': 100, 'shuffle': True, 'num_workers': 4, 'pin_memory': True}
+default_config = yaml_load('resnet.yaml', verbose=False)
+
+dataloader_dict = default_config['DataLoader']
 train_set_list = [CIFAR10(root=DATA_PATH, train=True, download=True,
                           transform=default_cifar10_img_transform[t]) for t in ('tf1', 'tf2', 'tf2', 'tf2', 'tf2')]
 train_loader = DataLoader(CombineDataset(*train_set_list), **dataloader_dict)
-val_loader = DataLoader \
-        (
-        CombineDataset(*[CIFAR10(root=DATA_PATH,
-                                 train=False,
-                                 transform=default_cifar10_img_transform['tf3'],
-                                 download=True)]),
-        **dataloader_dict)
+val_loader = DataLoader(
+    CombineDataset(*[CIFAR10(root=DATA_PATH,
+                             train=False,
+                             transform=default_cifar10_img_transform['tf3'],
+                             download=True)]),
+    **dataloader_dict)
 
 # network
-default_config = yaml_load('resnet.yaml', verbose=False)
 model = Model(default_config['Arch'], default_config['Optim'], default_config['Scheduler'])
-net: nn.Module = resnet18(num_classes=10)
+net: nn.Module = resnet101(num_classes=10)
 optimizer = optim.Adam(net.parameters(), lr=1e-4)
 scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=default_config['Scheduler']['milestones'])
 model.torchnet = net
@@ -139,7 +139,7 @@ class class_Trainer(_Trainer):
             self.drawer.draw(self.METERINTERFACE.summary(), together=False)
             self.save_checkpoint(self.state_dict, epoch, current_score)
             if epoch % 10 == 0:
-                analyze_alpha(checkpoint_path=self.save_dir / 'last.pth', epoch=epoch,
+                analyze_alpha(model_cls=resnet101, checkpoint_path=self.save_dir / 'last.pth', epoch=epoch,
                               save_dir=self.save_dir / 'alphas')
 
 
@@ -147,7 +147,8 @@ trainer = class_Trainer(
     model=model,
     train_loader=train_loader,
     val_loader=val_loader,
-    save_dir=f"{RUNS_PATH}/bn_gn_test",
-    device='cuda'
+    **default_config['Trainer'],
+    config=default_config
+
 )
 trainer.start_training()
