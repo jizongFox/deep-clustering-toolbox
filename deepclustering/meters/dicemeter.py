@@ -116,4 +116,4 @@ class BatchDiceMeter(_DiceMeter):
     """
 
     def __init__(self, C=4, report_axises=None, ) -> None:
-        super().__init__(method='2d', report_axises=report_axises, C=C)
+        super().__init__(method='3d', report_axises=report_axises, C=C)

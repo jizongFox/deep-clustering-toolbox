@@ -10,7 +10,7 @@ from torch import nn
 # dataset
 from torch.utils.data import DataLoader
 
-from deepclustering import ModelMode, DATA_PATH, RUNS_PATH
+from deepclustering import ModelMode, DATA_PATH, PROJECT_PATH
 from deepclustering import optim
 from deepclustering.dataset.classification.cifar import CIFAR10
 from deepclustering.dataset.classification.cifar_helper import \
@@ -51,7 +51,7 @@ model.scheduler = scheduler
 class class_Trainer(_Trainer):
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 1000,
-                 save_dir: str = RUNS_PATH + "/gn_bn", checkpoint_path: str = None, device='cpu',
+                 save_dir: str = None, checkpoint_path: str = None, device='cpu',
                  config: dict = None) -> None:
         super().__init__(model, train_loader, val_loader, max_epoch, save_dir, checkpoint_path, device, config)
         self.criterion = nn.CrossEntropyLoss()
@@ -149,6 +149,6 @@ trainer = class_Trainer(
     val_loader=val_loader,
     **default_config['Trainer'],
     config=default_config
-
 )
 trainer.start_training()
+trainer.clean_up()

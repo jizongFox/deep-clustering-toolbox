@@ -17,5 +17,6 @@ DataLoader:
   'pin_memory': true
 
 Trainer:
-  save_dir: ../runs/bn_gn_test",
-  device: 'cuda'
+  save_dir: playground/bn_gn_test
+  device: cuda
+  max_epoch: 100
