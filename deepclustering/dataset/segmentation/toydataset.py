@@ -1,24 +1,40 @@
 import math
-import os
 import random
-import sys
 
 import cv2
 import numpy as np
-from torch.utils.data import Dataset
-
-ROOT_DIR = os.path.abspath("../")
-
 # Import Mask RCNN
-sys.path.append(ROOT_DIR)  # To find local version of the library
+# sys.path.append(ROOT_DIR)  # To find local version of the library
 # from . import utils
 from deepclustering.utils.segmentation import utils
+from torch.utils.data import Dataset
 from torchvision import transforms
 
 
+# ROOT_DIR = os.path.abspath("../")
+
+
 class ShapesDataset(Dataset):
-    def __init__(self, count, height, width) -> None:
+    def __init__(
+            self,
+            count: int = 1000,
+            max_object_per_img: int = 4,
+            max_object_scale: float = 0.25,
+            height: int = 256,
+            width: int = 256
+    ) -> None:
+        """
+        Interface for ShapesDataset
+        :param count: how many samples to generate
+        :param max_object_per_img: how many objects to show in an image
+        :param height: image height
+        :param width: image height
+        """
         super().__init__()
+        assert max_object_per_img >= 1, f"max_object_per_img should be larger than 1, given {max_object_per_img}."
+        self.max_object_per_img = max_object_per_img
+        assert 0 < max_object_scale <= 0.5
+        self.max_object_scale = max_object_scale
         self._image_ids = []
         self.image_info = []
         # Background is always the first class
@@ -82,7 +98,7 @@ class ShapesDataset(Dataset):
         y = random.randint(buffer, height - buffer - 1)
         x = random.randint(buffer, width - buffer - 1)
         # Size
-        s = random.randint(buffer, height // 4)
+        s = random.randint(buffer, random.randint(buffer, max(int(height ** self.max_object_scale), buffer + 1)))
         return shape, color, (x, y, s)
 
     def random_image(self, height, width):
@@ -96,7 +112,7 @@ class ShapesDataset(Dataset):
         # bounding boxes
         shapes = []
         boxes = []
-        N = random.randint(1, 4)
+        N = random.randint(1, self.max_object_per_img)
         for _ in range(N):
             shape, color, dims = self.random_shape(height, width)
             shapes.append((shape, color, dims))
@@ -219,11 +235,33 @@ class ShapesDataset(Dataset):
         return self._image_ids
 
 
-if __name__ == '__main__':
-    dataset = ShapesDataset(20000, 256, 256)
-    from torch.utils.data import DataLoader
+class Cls_ShapesDataset(ShapesDataset):
+    def __init__(self, count: int = 1000, max_object_scale: float = 0.25,
+                 height: int = 256, width: int = 256) -> None:
+        super().__init__(count, 1, max_object_scale, height, width)
 
-    dataloader = DataLoader(dataset, batch_size=4)
-    img, gt, instance_gt = iter(dataloader).__next__()
+    def __getitem__(self, index):
+        img, global_mask, instance_mask = super().__getitem__(index)
+        assert len(global_mask.unique()) == 2, f'Only background and one type of foreground should be presented,\
+             given {len(global_mask.unique())} type.'
+        return img, sorted(global_mask.unique())[1].long()
 
-    print()
+
+class Seg_ShapesDataset(ShapesDataset):
+    def __init__(self, count: int = 1000, max_object_per_img=3, max_object_scale: float = 0.25,
+                 height: int = 256, width: int = 256) -> None:
+        super().__init__(count, max_object_per_img, max_object_scale, height, width)
+
+    def __getitem__(self, index):
+        img, global_mask, instance_mask = super().__getitem__(index)
+        return img, global_mask.long()
+
+
+class Ins_ShapesDataset(ShapesDataset):
+    def __init__(self, count: int = 1000, max_object_per_img=4, max_object_scale: float = 0.25,
+                 height: int = 256, width: int = 256) -> None:
+        super().__init__(count, max_object_per_img, max_object_scale, height, width)
+
+    def __getitem__(self, index):
+        img, global_mask, instance_mask = super().__getitem__(index)
+        return img, global_mask.long(), instance_mask.long()

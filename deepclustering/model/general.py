@@ -129,3 +129,5 @@ class Model(ABC):
         model.load_state_dict(state_dict=state_dict)
         model.to(torch.device('cpu'))
         return model
+
+
