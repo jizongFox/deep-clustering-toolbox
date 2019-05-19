@@ -22,7 +22,7 @@ class _Trainer(ABC):
     ARCHIVE_PATH = str(Path(PROJECT_PATH) / 'archives')
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
-                 save_dir: str = './runs/test', checkpoint_path: str = None, device='cpu', config: dict = None) -> None:
+                 save_dir: str = 'base', checkpoint_path: str = None, device='cpu', config: dict = None) -> None:
         super().__init__()
         self.model = model
         self.train_loader = train_loader

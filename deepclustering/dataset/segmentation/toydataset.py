@@ -3,12 +3,13 @@ import random
 
 import cv2
 import numpy as np
+from torch.utils.data import Dataset
+from torchvision import transforms
+
 # Import Mask RCNN
 # sys.path.append(ROOT_DIR)  # To find local version of the library
 # from . import utils
 from deepclustering.utils.segmentation import utils
-from torch.utils.data import Dataset
-from torchvision import transforms
 
 
 # ROOT_DIR = os.path.abspath("../")
@@ -35,6 +36,8 @@ class ShapesDataset(Dataset):
         self.max_object_per_img = max_object_per_img
         assert 0 < max_object_scale <= 0.5
         self.max_object_scale = max_object_scale
+        self.height = height
+        self.width = width
         self._image_ids = []
         self.image_info = []
         # Background is always the first class
@@ -94,7 +97,7 @@ class ShapesDataset(Dataset):
         # Color
         color = tuple([random.randint(0, 255) for _ in range(3)])
         # Center x, y
-        buffer = 20
+        buffer = min(int(self.height / 20) + 1, int(self.width / 20) + 1)
         y = random.randint(buffer, height - buffer - 1)
         x = random.randint(buffer, width - buffer - 1)
         # Size
@@ -265,3 +268,10 @@ class Ins_ShapesDataset(ShapesDataset):
     def __getitem__(self, index):
         img, global_mask, instance_mask = super().__getitem__(index)
         return img, global_mask.long(), instance_mask.long()
+
+
+dtransform = {
+    'tf1': '',
+    'tf2': '',
+    'tf3': '',
+}
