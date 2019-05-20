@@ -2,15 +2,16 @@ from abc import ABC
 from typing import *
 
 import torch
-from deepclustering import ModelMode
-from deepclustering.arch import get_arch
 from torch import Tensor
 from torch import nn
-# from torch import optim
-from .. import optim
 from torch.nn import NLLLoss
 from torch.nn import functional as F
 from torch.optim import lr_scheduler
+
+from deepclustering import ModelMode
+from deepclustering.arch import get_arch
+# from torch import optim
+from .. import optim
 
 
 class Model(ABC):
@@ -49,7 +50,7 @@ class Model(ABC):
     def training(self):
         return self.torchnet.training
 
-    def zero_grad(self)->None:
+    def zero_grad(self) -> None:
         self.optimizer.zero_grad()
 
     def step(self):
@@ -130,4 +131,5 @@ class Model(ABC):
         model.to(torch.device('cpu'))
         return model
 
-
+    def apply(self, *args, **kwargs):
+        self.torchnet.apply(*args, **kwargs)

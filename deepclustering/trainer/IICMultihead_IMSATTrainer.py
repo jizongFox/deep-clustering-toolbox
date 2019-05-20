@@ -5,6 +5,7 @@ from collections import OrderedDict
 from typing import List
 
 import torch
+from torch import nn
 from torch.utils.data import DataLoader
 
 from .Trainer import _Trainer
@@ -14,6 +15,7 @@ from ..loss.IID_losses import IIDLoss
 from ..meters import AverageValueMeter, MeterInterface
 from ..model import Model
 from ..utils import tqdm_, simplex, tqdm
+from ..utils.VAT import VATLoss, _l2_normalize, _kl_div, _disable_tracking_bn_stats
 from ..utils.classification.assignment_mapping import flat_acc, hungarian_match
 
 
@@ -26,6 +28,7 @@ class IICMultiHeadIMSATTrainer(_Trainer):
             train_loader_B: DataLoader,
             val_loader: DataLoader,
             max_epoch: int = 100,
+            adv_weight: float = 0.01,
             save_dir: str = 'IICMultiHead_IMSAT',
             checkpoint_path: str = None,
             device='cpu',
@@ -44,6 +47,7 @@ class IICMultiHeadIMSATTrainer(_Trainer):
         if self.use_sobel:
             self.sobel = SobelProcess(include_origin=False)
             self.sobel.to(self.device)
+        self.adv_weight = float(adv_weight)
 
     def __init_meters__(self) -> List[str]:
         METER_CONFIG = {
@@ -126,6 +130,7 @@ class IICMultiHeadIMSATTrainer(_Trainer):
                     tf1_images = torch.cat([images[0] for _ in range(images.__len__() - 1)], dim=0).to(self.device)
                     tf2_images = torch.cat(images[1:], dim=0).to(self.device)
                     # todo: try to integrate the Lipschitz continuity by using the VAT.
+
                     # todo, and cross entropy term such as IMSAT paper.
                     if self.use_sobel:
                         tf1_images = self.sobel(tf1_images)
@@ -141,6 +146,9 @@ class IICMultiHeadIMSATTrainer(_Trainer):
                         batch_loss.append(_loss)
                     batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)
                     self.METERINTERFACE[f'train_head_{head_name}'].add(-batch_loss.item())
+
+                    adv_loss, _, _ = VATLoss()(self.model.torchnet, tf1_images)
+                    batch_loss += self.adv_weight * adv_loss
                     self.model.zero_grad()
                     batch_loss.backward()
                     self.model.step()
@@ -207,3 +215,47 @@ class IICMultiHeadIMSATTrainer(_Trainer):
 # based on the VAT module, I need to define my own VAT module so that We can use the multihead, multisub-head network
 # architecture.
 # todo: create the VAT module
+class VATLoss(nn.Module):
+
+    def __init__(self, xi=10.0, eps=1.0, prop_eps=0.25, ip=1):
+        """VAT loss
+        :param xi: hyperparameter of VAT (default: 10.0)
+        :param eps: hyperparameter of VAT (default: 1.0)
+        :param ip: iteration times of computing adv noise (default: 1)
+        """
+        super(VATLoss, self).__init__()
+        self.xi = xi
+        self.eps = eps
+        self.ip = ip
+        self.prop_eps = prop_eps
+
+    def forward(self, model: Model, x: torch.Tensor):
+        with torch.no_grad():
+            pred = model(x)
+            assert simplex(pred[0]), f"pred should be simplex."
+
+        # prepare random unit tensor
+        d = torch.rand(x.shape).sub(0.5).to(x.device)
+        d = _l2_normalize(d)
+
+        with _disable_tracking_bn_stats(model):
+            # calc adversarial direction
+            for _ in range(self.ip):
+                d.requires_grad_()
+                pred_hat = model(x + self.xi * d)
+                # here the pred_hat is the list of simplex
+                adv_distance = list(map(lambda x, y: _kl_div(x, y), pred_hat, pred))
+                # adv_distance = _kl_div(F.softmax(pred_hat, dim=1), pred)
+                adv_distance = sum(adv_distance) / float(len(adv_distance))
+                adv_distance.backward()
+                d = _l2_normalize(d.grad.clone())
+                model.zero_grad()
+
+            # calc LDS
+            r_adv = d * self.eps.view(-1, 1) * self.prop_eps if isinstance(self.eps,
+                                                                           torch.Tensor) else d * self.eps * self.prop_eps
+            pred_hat = model(x + r_adv)
+            lds = list(map(lambda x, y: _kl_div(x, y), pred_hat, pred))
+            lds = sum(lds) / float(len(lds))
+
+        return lds, (x + r_adv).detach(), r_adv.detach()
