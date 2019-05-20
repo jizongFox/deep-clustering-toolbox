@@ -125,7 +125,7 @@ class IICMultiHeadIMSATTrainer(_Trainer):
                     # print(f"used time for dataloading:{time.time() - time_before}")
                     tf1_images = torch.cat([images[0] for _ in range(images.__len__() - 1)], dim=0).to(self.device)
                     tf2_images = torch.cat(images[1:], dim=0).to(self.device)
-
+                    # todo: try to integrate the Lipschitz continuity by using the VAT.
                     # todo, and cross entropy term such as IMSAT paper.
                     if self.use_sobel:
                         tf1_images = self.sobel(tf1_images)
@@ -202,3 +202,8 @@ class IICMultiHeadIMSATTrainer(_Trainer):
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Validating epoch: {epoch} : {report_dict_str}")
         return self.METERINTERFACE.val_best_acc.summary()['mean']
+
+
+# based on the VAT module, I need to define my own VAT module so that We can use the multihead, multisub-head network
+# architecture.
+# todo: create the VAT module
