@@ -159,6 +159,9 @@ class DataIter(object):
         self.iter_dataloader = iter(dataloader)
         self.cache = None
 
+    def __iter__(self):
+        return self
+
     def __next__(self):
         try:
             self.cache = self.iter_dataloader.__next__()
