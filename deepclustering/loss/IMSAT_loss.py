@@ -28,9 +28,13 @@ class MultualInformaton_IMSAT(nn.Module):
         self.mu = mu
         self.eps = eps
 
-    def forward(self, pred_logit: Tensor):
-        assert not simplex(pred_logit), f'pred_log should not be simplex.'
-        probs: Tensor = F.softmax(pred_logit, 1)
+    def forward(self, pred: Tensor):
+        """
+        it can handle both logit and simplex
+        :param pred:
+        :return:
+        """
+        probs: Tensor = F.softmax(pred, 1) if not simplex(pred) else pred
         p_average: Tensor = torch.mean(probs, dim=0).unsqueeze(0)
         assert probs.shape.__len__() == p_average.shape.__len__()
         return self.mu * Entropy(self.eps)(p_average) - Entropy(self.eps)(probs).mean()

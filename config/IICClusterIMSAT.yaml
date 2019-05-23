@@ -4,7 +4,7 @@ Arch:
   num_channel: 2
   output_k_A: 70
   output_k_B: 10
-  num_sub_heads: 5
+  num_sub_heads: 1
   semisup: False
 
 Optim:
@@ -25,9 +25,8 @@ Trainer:
   max_epoch: 1000
   save_dir: multihead_cifar_imsat_iic
   device: cuda
-  adv_weight: 0.005
   head_control_params:
-    A: 1
+    A: 0
     B: 2
 
 

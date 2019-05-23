@@ -12,6 +12,7 @@ from .Trainer import _Trainer
 from .. import ModelMode
 from ..augment.augment import SobelProcess
 from ..loss.IID_losses import IIDLoss
+from ..loss.IMSAT_loss import Perturbation_Loss, MultualInformaton_IMSAT
 from ..meters import AverageValueMeter, MeterInterface
 from ..model import Model
 from ..utils import tqdm_, simplex, tqdm
@@ -28,7 +29,8 @@ class IICMultiHeadIMSATTrainer(_Trainer):
             train_loader_B: DataLoader,
             val_loader: DataLoader,
             max_epoch: int = 100,
-            adv_weight: float = 0.01,
+            IIC_weight: float = 1,
+            IMSAT_weight: float = 0.001,
             save_dir: str = 'IICMultiHead_IMSAT',
             checkpoint_path: str = None,
             device='cpu',
@@ -37,6 +39,8 @@ class IICMultiHeadIMSATTrainer(_Trainer):
             config: dict = None
     ) -> None:
         super().__init__(model, None, val_loader, max_epoch, save_dir, checkpoint_path, device, config)  # type: ignore
+        self.IIC_weight = float(IIC_weight)
+        self.IMSAT_weight = float(IMSAT_weight)
         self.train_loader_A = train_loader_A
         self.train_loader_B = train_loader_B
         assert self.train_loader is None
@@ -47,18 +51,24 @@ class IICMultiHeadIMSATTrainer(_Trainer):
         if self.use_sobel:
             self.sobel = SobelProcess(include_origin=False)
             self.sobel.to(self.device)
-        self.adv_weight = float(adv_weight)
+        # IMSAT loss
+        self.p_criterion = Perturbation_Loss()
+        self.MI = MultualInformaton_IMSAT()
 
     def __init_meters__(self) -> List[str]:
         METER_CONFIG = {
             'train_head_A': AverageValueMeter(),
             'train_head_B': AverageValueMeter(),
+            'adv_loss': AverageValueMeter(),
+            'imsat_mi': AverageValueMeter(),
             'val_average_acc': AverageValueMeter(),
             'val_best_acc': AverageValueMeter()
         }
         self.METERINTERFACE = MeterInterface(METER_CONFIG)
         return ['train_head_A_mean',
                 'train_head_B_mean',
+                'adv_loss_mean',
+                'imsat_mi_mean',
                 'val_average_acc_mean',
                 'val_best_acc_mean']
 
@@ -127,8 +137,9 @@ class IICMultiHeadIMSATTrainer(_Trainer):
                 for batch, image_labels in enumerate(train_loader_):
                     images, _ = list(zip(*image_labels))
                     # print(f"used time for dataloading:{time.time() - time_before}")
-                    tf1_images = torch.cat([images[0] for _ in range(images.__len__() - 1)], dim=0).to(self.device)
-                    tf2_images = torch.cat(images[1:], dim=0).to(self.device)
+                    tf1_images = torch.cat(tuple([images[0] for _ in range(images.__len__() - 1)]), dim=0).to(
+                        self.device)
+                    tf2_images = torch.cat(tuple(images[1:]), dim=0).to(self.device)
                     # todo: try to integrate the Lipschitz continuity by using the VAT.
 
                     # todo, and cross entropy term such as IMSAT paper.
@@ -140,17 +151,27 @@ class IICMultiHeadIMSATTrainer(_Trainer):
                     tf1_pred_simplex = self.model.torchnet(tf1_images, head=head_name)
                     tf2_pred_simplex = self.model.torchnet(tf2_images, head=head_name)
                     assert simplex(tf1_pred_simplex[0]) and tf1_pred_simplex.__len__() == tf2_pred_simplex.__len__()
-                    batch_loss = []
+                    batch_loss = []  # type: ignore
                     for subhead in range(tf1_pred_simplex.__len__()):
                         _loss, _loss_no_lambda = self.criterion(tf1_pred_simplex[subhead], tf2_pred_simplex[subhead])
                         batch_loss.append(_loss)
                     batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)
                     self.METERINTERFACE[f'train_head_{head_name}'].add(-batch_loss.item())
 
+                    # IMSAT loss
                     adv_loss, _, _ = VATLoss()(self.model.torchnet, tf1_images)
-                    batch_loss += self.adv_weight * adv_loss
+                    self.METERINTERFACE['adv_loss'].add(adv_loss.item())
+                    mi_batch_loss = []  # type: ignore
+                    for subhead in range(tf1_pred_simplex.__len__()):
+                        _loss = self.MI(tf1_pred_simplex[subhead])
+                        mi_batch_loss.append(_loss)
+                    mi_batch_loss: torch.Tensor = sum(mi_batch_loss) / len(mi_batch_loss)
+                    self.METERINTERFACE['imsat_mi'].add(mi_batch_loss.item())
+                    imsat_loss = adv_loss + mi_batch_loss
+
+                    total_loss = self.IIC_weight * batch_loss + self.IMSAT_weight * imsat_loss
                     self.model.zero_grad()
-                    batch_loss.backward()
+                    total_loss.backward()
                     self.model.step()
                     train_loader_.set_postfix(self.METERINTERFACE[f'train_head_{head_name}'].summary())
                     # time_before = time.time()
@@ -246,8 +267,8 @@ class VATLoss(nn.Module):
                 # here the pred_hat is the list of simplex
                 adv_distance = list(map(lambda x, y: _kl_div(x, y), pred_hat, pred))
                 # adv_distance = _kl_div(F.softmax(pred_hat, dim=1), pred)
-                adv_distance = sum(adv_distance) / float(len(adv_distance))
-                adv_distance.backward()
+                adv_distance = sum(adv_distance) / float(len(adv_distance))  # type: ignore
+                adv_distance.backward()  # type: ignore
                 d = _l2_normalize(d.grad.clone())
                 model.zero_grad()
 

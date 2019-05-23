@@ -16,4 +16,5 @@ script/runs/
 
 /playground/runs/
 /archives/
+**/.mypy_cache/
 

@@ -80,7 +80,7 @@ class _Trainer(ABC):
         self.model.to(device=device)
 
     @abstractmethod
-    def _train_loop(self, train_loader, epoch, mode=ModelMode.TRAIN, **kwargs):
+    def _train_loop(self, train_loader=None, epoch=0, mode=ModelMode.TRAIN, **kwargs):
         raise NotImplementedError
 
     @abstractmethod

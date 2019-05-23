@@ -104,7 +104,7 @@ def class2one_hot(seg: Tensor, C: int) -> Tensor:
         seg = seg.unsqueeze(dim=0)
     assert sset(seg, list(range(C)))
 
-    b, w, h = seg.shape  # type: Tuple[int, int, int]
+    b, w, h = seg.shape  # type:  Tuple[int, int, int]
 
     res: Tensor = torch.stack([seg == c for c in range(C)], dim=1).type(torch.int32)
     assert res.shape == (b, C, w, h)

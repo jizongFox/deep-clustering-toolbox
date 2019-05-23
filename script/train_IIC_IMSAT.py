@@ -6,7 +6,7 @@ from deepclustering.model import Model
 from deepclustering.trainer.IICMultihead_IMSATTrainer import IICMultiHeadIMSATTrainer
 from deepclustering.utils import yaml_parser, yaml_load, dict_merge
 
-DEFAULT_CONFIG = '../config/IICClusterMultiHead2.yaml'
+DEFAULT_CONFIG = '../config/IICClusterIMSAT.yaml'
 
 parsed_args: Dict[str, Any] = yaml_parser(verbose=True)
 default_config = yaml_load(parsed_args.get('Config', DEFAULT_CONFIG), verbose=False)
