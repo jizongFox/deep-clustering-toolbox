@@ -1,6 +1,6 @@
 import torch
 from pathlib2 import Path
-from resnet import resnet18, NormalizationLayer
+from resnet import NormalizationLayer
 from torch import nn
 
 

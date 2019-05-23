@@ -5,24 +5,20 @@
 # URL:      http://kazuto1011.github.io
 # Created:  2017-11-19
 
-from collections import OrderedDict
-
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.model_zoo as model_zoo
 
 
 class _ConvBatchNormReLU(nn.Sequential):
     def __init__(
-        self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        stride,
-        padding,
-        dilation,
-        relu=True,
+            self,
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride,
+            padding,
+            dilation,
+            relu=True,
     ):
         super(_ConvBatchNormReLU, self).__init__()
         self.add_module(
@@ -55,7 +51,7 @@ class _Bottleneck(nn.Module):
     """Bottleneck Unit"""
 
     def __init__(
-        self, in_channels, mid_channels, out_channels, stride, dilation, downsample
+            self, in_channels, mid_channels, out_channels, stride, dilation, downsample
     ):
         super(_Bottleneck, self).__init__()
         self.reduce = _ConvBatchNormReLU(in_channels, mid_channels, 1, stride, 0, 1)
@@ -86,14 +82,14 @@ class _ResBlock(nn.Sequential):
     """Residual Block"""
 
     def __init__(
-        self,
-        n_layers,
-        in_channels,
-        mid_channels,
-        out_channels,
-        stride,
-        dilation,
-        mg=None,
+            self,
+            n_layers,
+            in_channels,
+            mid_channels,
+            out_channels,
+            stride,
+            dilation,
+            mg=None,
     ):
         super(_ResBlock, self).__init__()
 

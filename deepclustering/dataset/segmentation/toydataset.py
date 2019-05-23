@@ -3,13 +3,12 @@ import random
 
 import cv2
 import numpy as np
-from torch.utils.data import Dataset
-from torchvision import transforms
-
 # Import Mask RCNN
 # sys.path.append(ROOT_DIR)  # To find local version of the library
 # from . import utils
 from deepclustering.utils.segmentation import utils
+from torch.utils.data import Dataset
+from torchvision import transforms
 
 
 # ROOT_DIR = os.path.abspath("../")

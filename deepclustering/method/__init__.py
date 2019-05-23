@@ -58,4 +58,3 @@ class _Method(object):
             kwarg_str = ", ".join([f"{k}:{v}" for k, v in kwargs.items()])
             warnings.warn(f'Received unassigned kwargs: \n{kwarg_str}')
         # warning control ends
-

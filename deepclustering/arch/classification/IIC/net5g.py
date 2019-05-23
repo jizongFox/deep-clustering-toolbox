@@ -13,7 +13,7 @@ class ClusterNet5gTrunk(ResNetTrunk):
     ResNet based Trunk model
     """
 
-    def __init__(self, input_size: int, num_channel: int = 3, batchnorm_track: bool = True):
+    def __init__(self, num_channel: int = 3, batchnorm_track: bool = True):
         """
         ResNet Trunk Initialization
         :param input_size: the input image size
@@ -39,17 +39,17 @@ class ClusterNet5gTrunk(ResNetTrunk):
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
-        if input_size == 96:
-            avg_pool_sz = 7
-        elif input_size == 64:
-            avg_pool_sz = 5
-        elif input_size == 32:
-            avg_pool_sz = 3
-        else:
-            raise ValueError(f'the input size should be in (96, 64, 32), given {input_size}')
-        print("avg_pool_sz %d" % avg_pool_sz)
+        # if input_size == 96:
+        #     avg_pool_sz = 7
+        # elif input_size == 64:
+        #     avg_pool_sz = 5
+        # elif input_size == 32:
+        #     avg_pool_sz = 3
+        # else:
+        #     raise ValueError(f'the input size should be in (96, 64, 32), given {input_size}')
+        # print("avg_pool_sz %d" % avg_pool_sz)
 
-        self.avgpool = nn.AvgPool2d(avg_pool_sz, stride=1)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))  # dAvgPool2d(avg_pool_sz, stride=1)
 
     def forward(self, x, penultimate_features=False):
         x = self.conv1(x)
@@ -102,7 +102,7 @@ class ClusterNet5g(ResNet):
         Clustering model based on ResNet with ResNetTrunk and ResNetHead
     """
 
-    def __init__(self, input_size: int, num_channel: int = 3, output_k: int = 10, num_sub_heads: int = 5,
+    def __init__(self, num_channel: int = 3, output_k: int = 10, num_sub_heads: int = 5,
                  batchnorm_track: bool = True):
         r"""
         :param input_size: image size of the raw image, only support 96, 64, 32
@@ -115,7 +115,7 @@ class ClusterNet5g(ResNet):
 
         self.batchnorm_track = batchnorm_track
 
-        self.trunk = ClusterNet5gTrunk(input_size=input_size, num_channel=num_channel,
+        self.trunk = ClusterNet5gTrunk(num_channel=num_channel,
                                        batchnorm_track=self.batchnorm_track)
         self.head = ClusterNet5gHead(output_k=output_k, num_sub_heads=num_sub_heads,
                                      batchnorm_track=self.batchnorm_track)
@@ -133,4 +133,4 @@ class ClusterNet5g(ResNet):
         return x
 
 
-ClusterNet5g_Param = {'input_size': 64, 'num_channel': 3, 'output_k': 10, 'num_sub_heads': 5}
+ClusterNet5g_Param = {'num_channel': 3, 'output_k': 10, 'num_sub_heads': 5}

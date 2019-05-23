@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class NormalizationLayer(nn.Module):
@@ -200,7 +199,8 @@ def resnet50(num_classes):
     model.fc = nn.Linear(in_features=2048, out_features=num_classes, bias=True)
     return model
 
+
 def resnet101(num_classes):
-    model = ResNet(Bottleneck, [3, 4, 23, 3],)
+    model = ResNet(Bottleneck, [3, 4, 23, 3], )
     model.fc = nn.Linear(in_features=2048, out_features=num_classes, bias=True)
     return model

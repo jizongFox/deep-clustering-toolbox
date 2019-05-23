@@ -1,6 +1,7 @@
+from unittest import TestCase
+
 import torch
 import torch.nn as nn
-from unittest import TestCase
 from deepclustering.meters import MeterInterface, AverageValueMeter, SliceDiceMeter
 
 

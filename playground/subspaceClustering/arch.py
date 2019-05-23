@@ -1,5 +1,6 @@
-import torch.nn as nn
 import warnings
+
+import torch.nn as nn
 from deepclustering.arch.classification.IIC.residual import BasicBlock, ResNet, ResNetTrunk
 
 # resnet34 and full channels

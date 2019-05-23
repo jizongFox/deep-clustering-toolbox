@@ -2,12 +2,11 @@
 This folder is modified based on the deep lab repo of: https://github.com/kazuto1011/deeplab-pytorch
 """
 
-
-from .resnet import *
 from .deeplabv2 import *
 from .deeplabv3 import *
 from .deeplabv3plus import *
 from .msc import *
+from .resnet import *
 
 __all__ = ['DeepLabV3', 'DeepLabV3Plus', 'DeepLabV2', 'init_weights']
 

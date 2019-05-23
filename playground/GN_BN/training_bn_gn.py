@@ -4,13 +4,8 @@ This is to investigate the GN and BN
 from typing import List
 
 import torch
-from resnet import resnet101
 from analyse_model import analyze_alpha
-from torch import nn
-# dataset
-from torch.utils.data import DataLoader
-
-from deepclustering import ModelMode, DATA_PATH, PROJECT_PATH
+from deepclustering import ModelMode, DATA_PATH
 from deepclustering import optim
 from deepclustering.dataset.classification.cifar import CIFAR10
 from deepclustering.dataset.classification.cifar_helper import \
@@ -20,6 +15,10 @@ from deepclustering.meters import AverageValueMeter, MeterInterface
 from deepclustering.model import Model
 from deepclustering.trainer.Trainer import _Trainer
 from deepclustering.utils import yaml_load, tqdm_
+from resnet import resnet101
+from torch import nn
+# dataset
+from torch.utils.data import DataLoader
 
 for k, v in default_cifar10_img_transform.items():
     v.transforms[-1].include_rgb = True

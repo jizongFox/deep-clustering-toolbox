@@ -1,8 +1,8 @@
 import numpy as np
+import torch
 
 from .confusionmatrix import ConfusionMatrix
 from .metric import Metric
-import torch
 
 
 class IoU(Metric):

@@ -1,4 +1,5 @@
 import math
+
 import torch
 from torch.optim import Optimizer
 
@@ -116,6 +117,7 @@ class AdaBound(Optimizer):
                 p.data.add_(-step_size)
 
         return loss
+
 
 class AdaBoundW(Optimizer):
     """Implements AdaBound algorithm with Decoupled Weight Decay (arxiv.org/abs/1711.05101)

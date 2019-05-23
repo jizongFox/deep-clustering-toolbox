@@ -5,7 +5,6 @@ import warnings
 from unittest import TestCase
 
 import torch
-
 from deepclustering import DATA_PATH
 from deepclustering.augment.tensor_augment import Resize
 from deepclustering.dataset.classification.mnist import MNIST
@@ -26,7 +25,6 @@ class testSubspaceClusteringMethod(TestCase):
         # for the model initialization
         arch_param = {
             'name': 'clusternet5g',
-            'input_size': 32,
             'num_channel': 1,
             'batchnorm_track': True
         }
@@ -41,7 +39,7 @@ class testSubspaceClusteringMethod(TestCase):
             'gamma': 0.75
         }
         model = Model(arch_param, optim_dict, scheduler_dict)
-        self.subspaceMethod = SubSpaceClusteringMethod(model=model)
+        self.subspaceMethod = SubSpaceClusteringMethod(model=model, device=torch.device('cpu'))
 
     def test_MainInterface(self):
         index = torch.linspace(0, 20, 20).long()

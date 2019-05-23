@@ -33,8 +33,8 @@ class IMSATNet(nn.Module):
         :param update_batch_stats:
         :return:
         """
-        if x.shape.__len__()==4:
-            x = x.view(x.size(0),-1)
+        if x.shape.__len__() == 4:
+            x = x.view(x.size(0), -1)
         if not update_batch_stats:
             x = self.fc1(x)
             x = self.bn1_F(x) * self.bn1.weight + self.bn1.bias

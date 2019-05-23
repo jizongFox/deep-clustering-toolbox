@@ -1,11 +1,10 @@
 from unittest import TestCase
 
 import torch
-from pathlib2 import Path
-
 from deepclustering.arch import ARCH_PARAM_DICT
 from deepclustering.model import Model
 from deepclustering.utils import simplex
+from pathlib2 import Path
 
 
 class TestModel(TestCase):
@@ -43,6 +42,9 @@ class TestModel(TestCase):
             if arch_name == 'clusternetimsat':
                 with self.assertRaises(RuntimeError):
                     predicts = model.predict(self.image)
+            elif arch_name == 'vatnet':
+                predicts = model.predict(self.image)
+                assert not simplex(predicts[0])
             else:
                 predicts = model.predict(self.image)
                 self.assertEqual(simplex(predicts[0]), True)
@@ -51,6 +53,7 @@ class TestModel(TestCase):
         for arch_name, arch_dict in self.arch_dicts.items():
             model = self._init_onenet(arch_dict=arch_dict, optim_dict=self.optim_dict,
                                       scheduler_dict=self.scheduler_dict)
+            model.eval()
             if arch_name == 'clusternetimsat':
                 with self.assertRaises(RuntimeError):
                     torch.allclose(model.predict(self.image)[0], model(self.image)[0])
@@ -59,14 +62,16 @@ class TestModel(TestCase):
 
     def test_state_dict(self):
         for arch_name, arch_dict in self.arch_dicts.items():
-            # print(f'Building {arch_name} network with parameters:')
+            print(f'Building {arch_name} network with parameters:')
             # pprint(arch_dict)
             model1 = self._init_onenet(arch_dict=arch_dict, optim_dict=self.optim_dict,
                                        scheduler_dict=self.scheduler_dict)
+            model1.eval()
             input_img = self.image if arch_name != 'clusternetimsat' else torch.randn(10, 1, 28, 28)
             predicts = model1.predict(input_img)
             model2 = self._init_onenet(arch_dict=arch_dict, optim_dict=self.optim_dict,
                                        scheduler_dict=self.scheduler_dict)
+            model2.eval()
             with self.assertRaises(AssertionError):
                 assert torch.allclose(model2(input_img)[0], predicts[0])
 
@@ -77,9 +82,11 @@ class TestModel(TestCase):
         for arch_name, arch_dict in self.arch_dicts.items():
             model1 = self._init_onenet(arch_dict=arch_dict, optim_dict=self.optim_dict,
                                        scheduler_dict=self.scheduler_dict)
+            model1.eval()
             input_img = self.image if arch_name != 'clusternetimsat' else torch.randn(10, 1, 28, 28)
             predicts = model1.predict(input_img)
             model2 = Model.initialize_from_state_dict(model1.state_dict)
+            model2.eval()
             assert torch.allclose(model2(input_img)[0], predicts[0])
 
     def test_initialize_instance_from_cls_save(self):
@@ -88,6 +95,7 @@ class TestModel(TestCase):
             model1 = self._init_onenet(arch_dict=arch_dict, optim_dict=self.optim_dict,
                                        scheduler_dict=self.scheduler_dict)
             model1.to(device=device)
+            model1.eval()
             input_img = self.image if arch_name != 'clusternetimsat' else torch.randn(10, 1, 28, 28)
 
             predicts = model1.predict(input_img.to(device))
@@ -95,4 +103,5 @@ class TestModel(TestCase):
             state_dict = torch.load(f'{Path(__file__).parent / arch_name}.pth', map_location=torch.device('cpu'))
             model2 = Model.initialize_from_state_dict(state_dict)
             model2.to(device)
+            model2.eval()
             assert torch.allclose(model2(input_img.to(device))[0], predicts[0])

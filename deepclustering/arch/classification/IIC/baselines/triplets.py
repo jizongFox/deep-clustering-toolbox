@@ -1,5 +1,3 @@
-import sys
-
 import torch.nn as nn
 
 from ..net5g import ClusterNet5gTrunk

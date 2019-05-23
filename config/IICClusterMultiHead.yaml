@@ -1,6 +1,5 @@
 Arch:
   name: ClusterNet5gTwoHead
-  input_size: 32
   num_channel: 2
   output_k_A: 70
   output_k_B: 10

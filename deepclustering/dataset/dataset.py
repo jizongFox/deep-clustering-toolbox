@@ -93,6 +93,7 @@ class CombineDataset(Dataset):
     """
     Combine multiple dataset to return their values in the same time.
     """
+
     def __init__(self, *datasets):
         self.datasets = datasets
 
@@ -101,7 +102,6 @@ class CombineDataset(Dataset):
 
     def __len__(self):
         return min(len(d) for d in self.datasets)
-
 
 
 class Subset(Dataset):

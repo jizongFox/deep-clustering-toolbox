@@ -1,8 +1,9 @@
 from unittest import TestCase
-from deepclustering.dataset.segmentation.toydataset import ShapesDataset, Cls_ShapesDataset
-import matplotlib.pyplot as plt
-from torch.utils.data import DataLoader
+
 import torch
+from deepclustering.dataset.segmentation.toydataset import ShapesDataset, Cls_ShapesDataset
+from torch.utils.data import DataLoader
+
 
 class TestToyExample(TestCase):
     def setUp(self) -> None:
@@ -21,4 +22,3 @@ class TestToyExample(TestCase):
         for i, (img, gt) in enumerate(dataloader):
             assert img.shape == torch.Size([4, 3, 256, 256])
             assert gt.shape == torch.Size([4])
-

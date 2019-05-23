@@ -13,6 +13,7 @@ __all__ = ["yaml_parser", "yaml_load"]
 
 D = Dict[str, Any]
 
+
 # todo, add type check
 # argparser
 def yaml_load(yaml_path: Union[Path, str], verbose=False) -> dict:

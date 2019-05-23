@@ -44,7 +44,7 @@ class ClusterNet5gTwoHead(ResNet):
     other is for normal clustering
     """
 
-    def __init__(self, input_size: int, num_channel: int = 3, output_k_A: int = 10,
+    def __init__(self, num_channel: int = 3, output_k_A: int = 10,
                  output_k_B: int = 10,
                  semisup: bool = False,
                  num_sub_heads: int = 5,
@@ -63,11 +63,11 @@ class ClusterNet5gTwoHead(ResNet):
 
         self.batchnorm_track = batchnorm_track
         # resnet structure
-        self.trunk = ClusterNet5gTrunk(input_size=input_size, num_channel=num_channel,
+        self.trunk = ClusterNet5gTrunk(num_channel=num_channel,
                                        batchnorm_track=self.batchnorm_track)
         self.head_A = ClusterNet5gTwoHeadHead(output_k=output_k_A, num_sub_heads=num_sub_heads, semisup=semisup,
                                               batchnorm_track=self.batchnorm_track)
-        self.verbose=verbose
+        self.verbose = verbose
         if self.verbose:
             print("semisup: %s" % semisup)
         self.head_B = ClusterNet5gTwoHeadHead(output_k=output_k_B, num_sub_heads=num_sub_heads, semisup=semisup,
@@ -92,9 +92,9 @@ class ClusterNet5gTwoHead(ResNet):
         return x
 
 
-ClusterNet5gTwoHead_Param = {'input_size': 64,
-                             'num_channel': 3,
-                             'output_k_A': 70,
-                             'output_k_B': 10,
-                             'num_sub_heads': 5,
-                             'semisup': False}
+ClusterNet5gTwoHead_Param = {
+    'num_channel': 3,
+    'output_k_A': 70,
+    'output_k_B': 10,
+    'num_sub_heads': 5,
+    'semisup': False}

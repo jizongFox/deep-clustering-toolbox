@@ -1,11 +1,12 @@
 from __future__ import print_function
-import numpy as np
+
 import codecs
 import gzip
 import os
 import os.path
 import warnings
 
+import numpy as np
 import torch
 import torch.utils.data as data
 from PIL import Image

@@ -4,21 +4,18 @@ This is a wrapper script to help to return the cifar dataloader.
 from itertools import repeat
 from typing import *
 
-import PIL
 from pathlib2 import Path
 from torch.utils.data import DataLoader
-from torchvision import transforms
 
 from .cifar import CIFAR10
 from .. import dataset  # type: ignore
-from ...augment import augment
+from ...augment import TransformInterface
 
 DATA_ROOT = str(Path(__file__).parents[3] / '.data')
 Path(DATA_ROOT).mkdir(exist_ok=True)
 
 
 # todo try to extend the class to support semi supervised cases ....
-
 class Cifar10ClusteringDataloaders(object):
     """
     dataset interface for unsupervised learning with combined train and test sets.
@@ -92,7 +89,7 @@ class Cifar10ClusteringDataloaders(object):
         return combineLoader
 
 
-## taken from IIC paper:
+# taken from IIC paper:
 r"""
 tf1=Compose(
         RandomCrop(size=(20, 20), padding=None)
@@ -112,28 +109,55 @@ tf3=Compose(
         <function custom_greyscale_to_tensor.<locals>._inner at 0x7f2c8cc57ea0>
     )
 """
-# parameters for the Cifar10ClusteringDataloaders. Used for clustering
-default_cifar10_img_transform = {
-    "tf1": transforms.Compose([
-        augment.RandomCrop(size=(20, 20)),
-        augment.Resize(size=(32, 32), interpolation=PIL.Image.BILINEAR),
-        augment.Img2Tensor(include_rgb=False, include_grey=True)
-    ]),
-    "tf2":
-        transforms.Compose([
-            augment.RandomCrop(size=(20, 20)),
-            augment.Resize(size=(32, 32), interpolation=PIL.Image.BILINEAR),
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.ColorJitter(brightness=[0.6, 1.4], contrast=[0.6, 1.4], saturation=[0.6, 1.4],
-                                   hue=[-0.125, 0.125]),
-            augment.Img2Tensor(include_rgb=False, include_grey=True)
-        ]),
-    "tf3": transforms.Compose([
-        augment.CenterCrop(size=(20, 20)),
-        augment.Resize(size=(32, 32), interpolation=PIL.Image.BILINEAR),
-        augment.Img2Tensor(include_rgb=False, include_grey=True)
-    ])
+# convert to dictionary configuration:
+transform_dict = {
+    'tf1': {
+        'randomcrop': {'size': (20, 20)},
+        'Resize': {'size': (32, 32), 'interpolation': 0},
+        'Img2Tensor': {'include_rgb': False, 'include_grey': True}
+    },
+    'tf2': {
+        'randomcrop': {'size': (20, 20)},
+        'Resize': {'size': (32, 32), 'interpolation': 0},
+        'RandomHorizontalFlip': {'p': 0.5},
+        'ColorJitter': {'brightness': [0.6, 1.4],
+                        'contrast': [0.6, 1.4],
+                        'saturation': [0.6, 1.4],
+                        'hue': [-0.125, 0.125]},
+        'Img2Tensor': {'include_rgb': False, 'include_grey': True}
+    },
+    'tf3': {
+        'CenterCrop': {'size': (20, 20)},
+        'Resize': {'size': (32, 32), 'interpolation': 0},
+        'Img2Tensor': {'include_rgb': False, 'include_grey': True}
+    }
 }
+default_cifar10_img_transform = {}
+for k, v in transform_dict.items():
+    default_cifar10_img_transform[k] = TransformInterface(v)
+
+# parameters for the Cifar10ClusteringDataloaders. Used for clustering
+# default_cifar10_img_transform = {
+#     "tf1": transforms.Compose([
+#         augment.RandomCrop(size=(20, 20)),
+#         augment.Resize(size=(32, 32), interpolation=PIL.Image.BILINEAR),
+#         augment.Img2Tensor(include_rgb=False, include_grey=True)
+#     ]),
+#     "tf2":
+#         transforms.Compose([
+#             augment.RandomCrop(size=(20, 20)),
+#             augment.Resize(size=(32, 32), interpolation=PIL.Image.BILINEAR),
+#             transforms.RandomHorizontalFlip(p=0.5),
+#             transforms.ColorJitter(brightness=[0.6, 1.4], contrast=[0.6, 1.4], saturation=[0.6, 1.4],
+#                                    hue=[-0.125, 0.125]),
+#             augment.Img2Tensor(include_rgb=False, include_grey=True)
+#         ]),
+#     "tf3": transforms.Compose([
+#         augment.CenterCrop(size=(20, 20)),
+#         augment.Resize(size=(32, 32), interpolation=PIL.Image.BILINEAR),
+#         augment.Img2Tensor(include_rgb=False, include_grey=True)
+#     ])
+# }
 
 # todo: generate a custom function to generate the transform from yaml file.
 # todo: add semi supervised interface

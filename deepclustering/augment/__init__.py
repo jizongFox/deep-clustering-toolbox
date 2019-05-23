@@ -1,12 +1,15 @@
 """
 Interface to build the data transformation, taking a dict to return a corresponding cascaded transformation.
 """
+from functools import partial
 from typing import *
 
 from torchvision import transforms
-from ..utils.general import _register
-from functools import partial
+
 from . import augment
+from ..utils.general import _register
+
+__all__ = ['TRANSFORM_CALLABLE', 'TransformInterface']
 
 TRANSFORM_CALLABLE: Dict[str, Callable] = {}
 
@@ -25,12 +28,6 @@ config = {
     'Img2Tensor': {'include_rgb': False, 'include_grey': True}
 }
 
-def TransformInterface(config_dict):
-    transforms ={}
-    for k, v in config_dict.items():
-        transforms[k]=_TransformInterface(v)
-    return transforms
-
 
 def _TransformInterface(config_dict: Dict[str, Any]):
     transformList = []
@@ -42,3 +39,8 @@ def _TransformInterface(config_dict: Dict[str, Any]):
         transformList.append(t)
     transform = transforms.Compose(transformList)
     return transform
+
+
+def TransformInterface(config_dict: dict) -> Callable:
+    transforms: Callable = _TransformInterface(config_dict)
+    return transforms

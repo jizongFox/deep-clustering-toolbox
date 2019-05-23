@@ -1,18 +1,14 @@
 """
 """
-from copy import deepcopy as dcp
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from torch import optim
-from torch.utils.data import DataLoader, Subset
-from torchvision.transforms import ToTensor, Compose, Resize
-from deepclustering import DATA_PATH
-from deepclustering.dataset.classification.mnist import MNIST
 from deepclustering.model import Model
 from deepclustering.utils import DataIter
 from playground.subspaceClustering.arch import ClusterNet5g
+from torch import optim
+from torch.utils.data import DataLoader
 
 try:
     from .subclassClustering import SubSpaceClusteringMethod2, SubSpaceClusteringMethod

@@ -1,7 +1,6 @@
 from unittest import TestCase
 
 import torch
-
 from deepclustering.loss.IMSAT_loss import MultualInformaton_IMSAT
 
 

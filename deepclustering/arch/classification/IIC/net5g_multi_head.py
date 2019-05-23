@@ -1,10 +1,12 @@
+import warnings
+from typing import List
+
 import torch
 import torch.nn as nn
-from typing import List
+
 from .net5g import ClusterNet5gTrunk
 from .residual import BasicBlock, ResNet
 from ....utils.decorator import export
-import warnings
 
 # resnet34 and full channels
 
@@ -48,7 +50,6 @@ class ClusterNet5gMultiHead(ResNet):
     name_num_mapping = {v: k for k, v in num_name_mapping.items()}
 
     def __init__(self,
-                 input_size: int,
                  num_channel: int = 3,
                  output_k_list: List[int] = [70, 10],
                  semisup: bool = False,
@@ -72,7 +73,7 @@ class ClusterNet5gMultiHead(ResNet):
         self.output_k_list: List[int] = output_k_list
         self.batchnorm_track = batchnorm_track
         # resnet structure
-        self.trunk = ClusterNet5gTrunk(input_size=input_size, num_channel=num_channel,
+        self.trunk = ClusterNet5gTrunk(num_channel=num_channel,
                                        batchnorm_track=self.batchnorm_track)
         for head_i, cluster_num in enumerate(self.output_k_list):
             setattr(
@@ -98,7 +99,7 @@ class ClusterNet5gMultiHead(ResNet):
                 ):
         if head is None:
             warnings.warn(
-                'head is None, using the last head: head_%s.'%self.num_name_mapping[len(self.output_k_list)])
+                'head is None, using the last head: head_%s.' % self.num_name_mapping[len(self.output_k_list)])
             head = self.num_name_mapping[len(self.output_k_list)]
 
         assert isinstance(head, str) and head in list(self.name_num_mapping.keys()), f"head given {head} should be " \
@@ -113,8 +114,8 @@ class ClusterNet5gMultiHead(ResNet):
             return x
 
 
-ClusterNet5gMultiHead_Param = {'input_size': 64,
-                               'num_channel': 3,
-                               'output_k_list': [150, 70, 10],
-                               'num_sub_heads': 5,
-                               'semisup': False}
+ClusterNet5gMultiHead_Param = {
+    'num_channel': 3,
+    'output_k_list': [150, 70, 10],
+    'num_sub_heads': 5,
+    'semisup': False}

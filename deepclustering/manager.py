@@ -1,11 +1,11 @@
+from functools import partial
 from pprint import pprint
 from typing import Dict, Any
 
 from deepclustering.dataset import Cifar10ClusteringDataloaders, default_cifar10_img_transform
 from deepclustering.model import Model
-from deepclustering.utils import yaml_parser, yaml_load, dict_merge
 from deepclustering.trainer.IICTrainer import IICTrainer
-from functools import partial
+from deepclustering.utils import yaml_parser, yaml_load, dict_merge
 
 
 class _TrainerManger(object):

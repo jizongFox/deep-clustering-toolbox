@@ -1,7 +1,7 @@
-import numpy as np
 import matplotlib.pyplot as plt
-import scipy
-from tqdm import  tqdm
+import numpy as np
+from tqdm import tqdm
+
 
 def fix_seed(seed: int) -> None:
     assert isinstance(seed, int)

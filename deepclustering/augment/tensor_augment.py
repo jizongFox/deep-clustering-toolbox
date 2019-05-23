@@ -242,7 +242,7 @@ class CenterCrop(object):
         """
         assert isinstance(img, _Tensor)
         b, c, h, w = img.shape
-        assert h >= self.size[0] and w >= self.size[1],f"Image size {h} and {w}, given {self.size}."
+        assert h >= self.size[0] and w >= self.size[1], f"Image size {h} and {w}, given {self.size}."
         r_img = img.copy() if isinstance(img, np.ndarray) else img.clone()
         i, j, th, tw = self.get_parameter(r_img, self.size)
 

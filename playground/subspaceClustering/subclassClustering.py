@@ -1,10 +1,9 @@
 from typing import List
 
 import torch
-from torch import Tensor
-
 from deepclustering.method import _Method
 from deepclustering.model import Model
+from torch import Tensor
 
 
 class SubSpaceClusteringMethod(_Method):
@@ -70,6 +69,7 @@ class SubSpaceClusteringMethod(_Method):
         _reconstr_loss.backward()
         self.model.step()
         # print(_reconstr_loss)
+
     def _update_dictionary(self):
         assert self.check_diagnal_zero(self.current_adj_matrix)
         X2 = self._representation.mm(self._representation.t()).detach()
@@ -86,8 +86,9 @@ class SubSpaceClusteringMethod(_Method):
             self.current_adj_matrix = new_current_adj
         # update the whole matrix
         for i, c in enumerate(self.index):
-            self.adj_matrix[c, self.index] = new_current_adj[:,i]  # new_current_adj
+            self.adj_matrix[c, self.index] = new_current_adj[:, i]  # new_current_adj
         # self.adj_matrix.scatter((self.index, self.index), -1000)
+
 
 class SubSpaceClusteringMethod2(SubSpaceClusteringMethod):
 
@@ -95,19 +96,18 @@ class SubSpaceClusteringMethod2(SubSpaceClusteringMethod):
                  device: torch.device = torch.device('cuda'), *args, **kwargs):
         super().__init__(model, lamda, lr, num_samples, device, *args, **kwargs)
 
-
     def _update_dictionary(self):
         # reconstruction:
         current_adj_matrix = self.current_adj_matrix.clone()
         for _ in range(1000):
             self._diagnoal_remove(current_adj_matrix)
-            current_adj_matrix.requires_grad=True
+            current_adj_matrix.requires_grad = True
             _reconstr_loss = (
-                        self._representation -
-                        torch.mm(current_adj_matrix, self._representation)
-                ).norm(p=2, dim=1).mean()
-            _sparsity_loss = current_adj_matrix.norm(p=1,dim=0).mean()
-            _loss = _reconstr_loss +_sparsity_loss
+                    self._representation -
+                    torch.mm(current_adj_matrix, self._representation)
+            ).norm(p=2, dim=1).mean()
+            _sparsity_loss = current_adj_matrix.norm(p=1, dim=0).mean()
+            _loss = _reconstr_loss + _sparsity_loss
             _loss.backward()
             # print(f"sparsity:{_sparsity_loss}, reconstruction:{_reconstr_loss}")
             new_current_adj_matrix = current_adj_matrix - self.lamda * current_adj_matrix.grad
@@ -119,11 +119,8 @@ class SubSpaceClusteringMethod2(SubSpaceClusteringMethod):
             current_adj_matrix = new_current_adj_matrix
         for i, c in enumerate(self.index):
             self.adj_matrix[c, self.index] = new_current_adj_matrix[i]  # new_current_adj
-        print(f'reconstruction:{_reconstr_loss}, sparsity:{_sparsity_loss}, current_adj_max:{new_current_adj_matrix.diag().max()}, min:{new_current_adj_matrix.diag().min()}')
+        print(
+            f'reconstruction:{_reconstr_loss}, sparsity:{_sparsity_loss}, current_adj_max:{new_current_adj_matrix.diag().max()}, min:{new_current_adj_matrix.diag().min()}')
 
     def update(self):
         self._update_dictionary()
-
-
-
-

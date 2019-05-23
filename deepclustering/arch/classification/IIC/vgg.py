@@ -1,5 +1,6 @@
 import torch.nn as nn
 
+
 # vggTrunk
 class VGGTrunk(nn.Module):
     def __init__(self):

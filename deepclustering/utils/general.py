@@ -1,10 +1,11 @@
 import collections
+import os
+import random
 import warnings
 from copy import deepcopy as dcopy
 from functools import partial
 from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Union, Any
-import os
-import random
+
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -15,6 +16,7 @@ from tqdm import tqdm
 A = TypeVar("A")
 B = TypeVar("B")
 T = TypeVar("T", Tensor, np.ndarray)
+
 
 # reproducibility
 
