@@ -39,6 +39,7 @@ class IICMultiHeadIMSATTrainer(_Trainer):
             config: dict = None
     ) -> None:
         super().__init__(model, None, val_loader, max_epoch, save_dir, checkpoint_path, device, config)  # type: ignore
+        assert self.train_loader is None
         self.IIC_weight = float(IIC_weight)
         self.IMSAT_weight = float(IMSAT_weight)
         self.train_loader_A = train_loader_A
@@ -114,6 +115,7 @@ class IICMultiHeadIMSATTrainer(_Trainer):
         :param kwargs: to ignore
         :return:
         """
+        super()._train_loop(*args, **kwargs)
         assert head_control_param.__len__() > 0, f"`head_control_param` must be provided, given {head_control_param}."
         assert set(head_control_param.keys()) <= {'A', 'B'}, f"`head_control_param` key must be in `A` or `B`," \
             f" given{set(head_control_param.keys())}"
@@ -155,19 +157,21 @@ class IICMultiHeadIMSATTrainer(_Trainer):
                     for subhead in range(tf1_pred_simplex.__len__()):
                         _loss, _loss_no_lambda = self.criterion(tf1_pred_simplex[subhead], tf2_pred_simplex[subhead])
                         batch_loss.append(_loss)
-                    batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)
+                    batch_loss: torch.Tensor = sum(batch_loss) / len(
+                        batch_loss)  # here the batch_loss_loss shoud be negative
                     self.METERINTERFACE[f'train_head_{head_name}'].add(-batch_loss.item())
 
                     # IMSAT loss
-                    adv_loss, _, _ = VATLoss()(self.model.torchnet, tf1_images)
+                    adv_loss, adv_tf1_images, \
+                    adv_noise = VATLoss(xi=0.25, eps=1, prop_eps=0.1)(self.model.torchnet, tf1_images)
                     self.METERINTERFACE['adv_loss'].add(adv_loss.item())
                     mi_batch_loss = []  # type: ignore
                     for subhead in range(tf1_pred_simplex.__len__()):
-                        _loss = self.MI(tf1_pred_simplex[subhead])
+                        _loss = - self.MI(tf1_pred_simplex[subhead])
                         mi_batch_loss.append(_loss)
                     mi_batch_loss: torch.Tensor = sum(mi_batch_loss) / len(mi_batch_loss)
-                    self.METERINTERFACE['imsat_mi'].add(mi_batch_loss.item())
-                    imsat_loss = adv_loss + mi_batch_loss
+                    self.METERINTERFACE['imsat_mi'].add(- mi_batch_loss.item())
+                    imsat_loss = 0.01 * adv_loss + mi_batch_loss  # here the mi_batch_loss shoud be negative
 
                     total_loss = self.IIC_weight * batch_loss + self.IMSAT_weight * imsat_loss
                     self.model.zero_grad()
@@ -182,6 +186,7 @@ class IICMultiHeadIMSATTrainer(_Trainer):
 
     def _eval_loop(self, val_loader: DataLoader, epoch: int, mode: ModelMode = ModelMode.EVAL, *args,
                    **kwargs) -> float:
+        super()._eval_loop(*args, **kwargs)
         self.model.set_mode(mode)
         assert not self.model.training, f"Model should be in eval model in _eval_loop, given {self.model.training}."
         val_loader_: tqdm = tqdm_(val_loader)
@@ -238,7 +243,7 @@ class IICMultiHeadIMSATTrainer(_Trainer):
 # todo: create the VAT module
 class VATLoss(nn.Module):
 
-    def __init__(self, xi=10.0, eps=1.0, prop_eps=0.25, ip=1):
+    def __init__(self, xi=0.01, eps=1.0, prop_eps=0.25, ip=1):
         """VAT loss
         :param xi: hyperparameter of VAT (default: 10.0)
         :param eps: hyperparameter of VAT (default: 1.0)
@@ -253,7 +258,7 @@ class VATLoss(nn.Module):
     def forward(self, model: Model, x: torch.Tensor):
         with torch.no_grad():
             pred = model(x)
-            assert simplex(pred[0]), f"pred should be simplex."
+        assert simplex(pred[0]), f"pred should be simplex."
 
         # prepare random unit tensor
         d = torch.rand(x.shape).sub(0.5).to(x.device)
@@ -267,8 +272,8 @@ class VATLoss(nn.Module):
                 # here the pred_hat is the list of simplex
                 adv_distance = list(map(lambda x, y: _kl_div(x, y), pred_hat, pred))
                 # adv_distance = _kl_div(F.softmax(pred_hat, dim=1), pred)
-                adv_distance = sum(adv_distance) / float(len(adv_distance))  # type: ignore
-                adv_distance.backward()  # type: ignore
+                _adv_distance = sum(adv_distance) / float(len(adv_distance))  # type: ignore
+                _adv_distance.backward()  # type: ignore
                 d = _l2_normalize(d.grad.clone())
                 model.zero_grad()
 

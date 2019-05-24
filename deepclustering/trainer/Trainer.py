@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
 from typing import List
@@ -35,10 +36,10 @@ class _Trainer(ABC):
         self.best_score: float = -1
         self._start_epoch = 0  # whether 0 or loaded from the checkpoint.
         self.device = torch.device(device)
-        # load checkpoint
 
         if config:
-            self.config = dcopy(config).pop('Config', None)
+            self.config = dcopy(config)
+            self.config.pop('Config', None)  # delete the Config attribute
             with open(self.save_dir / 'config.yaml', 'w') as outfile:
                 yaml.dump(self.config, outfile, default_flow_style=False)
 
@@ -80,18 +81,30 @@ class _Trainer(ABC):
         self.model.to(device=device)
 
     @abstractmethod
-    def _train_loop(self, train_loader=None, epoch=0, mode=ModelMode.TRAIN, **kwargs):
-        raise NotImplementedError
+    def _train_loop(self, train_loader=None, epoch=0, mode=ModelMode.TRAIN, *args, **kwargs):
+        # warning control
+        if len(args) > 0:
+            warnings.warn(f'Received unassigned args with args: {args}.')
+        if len(kwargs) > 0:
+            kwarg_str = ", ".join([f"{k}:{v}" for k, v in kwargs.items()])
+            warnings.warn(f'Received unassigned kwargs: \n{kwarg_str}')
+        # warning control ends
 
     @abstractmethod
-    def _eval_loop(self, val_loader, epoch, mode=ModelMode.EVAL, **kwargs) -> float:
+    def _eval_loop(self, val_loader=None, epoch=None, mode=ModelMode.EVAL, *args, **kwargs) -> float:
         """
         return the
         :param args:
         :param kwargs:
         :return:
         """
-        raise NotImplementedError
+        # warning control
+        if len(args) > 0:
+            warnings.warn(f'Received unassigned args with args: {args}.')
+        if len(kwargs) > 0:
+            kwarg_str = ", ".join([f"{k}:{v}" for k, v in kwargs.items()])
+            warnings.warn(f'Received unassigned kwargs: \n{kwarg_str}')
+        # warning control ends
 
     @property
     def state_dict(self):
@@ -113,7 +126,10 @@ class _Trainer(ABC):
 
     def load_checkpoint(self, state_dict):
         self.model.load_state_dict(state_dict['model_state_dict'])
-        self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
+        try:
+            self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
+        except KeyError:
+            pass
         self.best_score = state_dict['best_score']
         self._start_epoch = state_dict['epoch'] + 1
 

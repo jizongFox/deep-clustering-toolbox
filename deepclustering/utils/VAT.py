@@ -27,7 +27,7 @@ def _l2_normalize(d):
     return d
 
 
-_kl_div = KL_div()
+_kl_div = KL_div(reduce=True)
 
 
 # def _kl_div(log_probs, probs):

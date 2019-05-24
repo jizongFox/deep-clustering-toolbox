@@ -119,15 +119,16 @@ class IICMultiHeadTrainer(_Trainer):
             train_loader = eval(f"train_loader_{head_name}")  # change the dataloader for different head
             for head_epoch in range(head_iterations):
                 # given one head, one iteration in this head, and one train_loader.
-                train_loader_: tqdm = tqdm_(train_loader)  # reinitilize the train_loader
+                train_loader_: tqdm = tqdm_(train_loader)  # reinitialize the train_loader
                 train_loader_.set_description(
                     f'Training epoch: {epoch} head:{head_name}, head_epoch:{head_epoch + 1}/{head_iterations}')
                 # time_before = time.time()
                 for batch, image_labels in enumerate(train_loader_):
                     images, _ = list(zip(*image_labels))
-                    # print(f"used time for dataloading:{time.time() - time_before}")
-                    tf1_images = torch.cat([images[0] for _ in range(images.__len__() - 1)], dim=0).to(self.device)
-                    tf2_images = torch.cat(images[1:], dim=0).to(self.device)
+                    # print(f"used time for data load:{time.time() - time_before}")
+                    tf1_images = torch.cat(tuple([images[0] for _ in range(images.__len__() - 1)]), dim=0).to(
+                        self.device)
+                    tf2_images = torch.cat(tuple(images[1:]), dim=0).to(self.device)
                     if self.use_sobel:
                         tf1_images = self.sobel(tf1_images)
                         tf2_images = self.sobel(tf2_images)
@@ -136,7 +137,7 @@ class IICMultiHeadTrainer(_Trainer):
                     tf1_pred_simplex = self.model.torchnet(tf1_images, head=head_name)
                     tf2_pred_simplex = self.model.torchnet(tf2_images, head=head_name)
                     assert simplex(tf1_pred_simplex[0]) and tf1_pred_simplex.__len__() == tf2_pred_simplex.__len__()
-                    batch_loss = []
+                    batch_loss: List[torch.Tensor] = [] # type: ignore
                     for subhead in range(tf1_pred_simplex.__len__()):
                         _loss, _loss_no_lambda = self.criterion(tf1_pred_simplex[subhead], tf2_pred_simplex[subhead])
                         batch_loss.append(_loss)
