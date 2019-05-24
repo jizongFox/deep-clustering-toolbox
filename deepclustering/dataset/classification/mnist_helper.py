@@ -1,99 +1,42 @@
-from itertools import repeat
+from functools import reduce
 from typing import *
 
 import PIL
-from pathlib2 import Path
-from torch.utils.data import DataLoader
 from torchvision import transforms
 
+from .clustering_helper import ClusterDatasetInterface
 from .mnist import MNIST
-from .. import dataset  # type: ignore
+from ... import DATA_PATH
 from ...augment import augment
 
-DATA_ROOT = str(Path(__file__).parents[3] / '.data')
-Path(DATA_ROOT).mkdir(exist_ok=True)
+__all__ = ['MNISTDatasetInterface', 'default_mnist_img_transform']
 
 
-class MNISTClusteringDataloaders(object):
+class MNISTDatasetInterface(ClusterDatasetInterface):
     """
     dataset interface for unsupervised learning with combined train and test sets.
-    return fixible dataloader with different transform functions, can be extended by creating subclasses for semi-supervised...
     """
+    ALLOWED_SPLIT = ['train', 'val']
 
-    def __init__(self, batch_size: int = 1, shuffle: bool = False,
-                 num_workers: int = 1, pin_memory: bool = False) -> None:
-        """
-        :param batch_size: batch_size = 1
-        :param shuffle: shuffle the dataset, default = False
-        :param num_workers: default 1
-        """
-        super().__init__()
-        self.shuffle = shuffle
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-        self.pin_memory = pin_memory
+    def __init__(self, split_partitions: List[str] = ['train', 'val'], batch_size: int = 1, shuffle: bool = False,
+                 num_workers: int = 1, pin_memory: bool = True) -> None:
+        super().__init__(MNIST, split_partitions, batch_size, shuffle, num_workers, pin_memory)
 
-    @staticmethod
-    def _creat_concatDataset(image_transform: Callable, target_transform: Callable, dataset_dict: dict = {}):
-        """
-        create concat dataset with only one type of transform.
-        :rtype: dataset
-        :param image_transform:
-        :param target_transform:
-        :param dataset_dict:
-        :return:
-        """
-        trainset = MNIST(root=DATA_ROOT, train=True, transform=image_transform, target_transform=target_transform,
-                         download=True, **dataset_dict)
-        valset = MNIST(root=DATA_ROOT, train=False, transform=image_transform, target_transform=target_transform,
-                       download=True, **dataset_dict)
+    def _creat_concatDataset(self, image_transform: Callable, target_transform: Callable, dataset_dict: dict = {}):
+        for split in self.split_partitions:
+            assert split in self.ALLOWED_SPLIT, f"Allowed split in MNIST-10:{self.ALLOWED_SPLIT}, given {split}."
 
-        concatSet = trainset + valset
-        return concatSet
-
-    '''
-    def creat_ConcatDataLoader(self, image_transform: Callable = None, target_transform: Callable = None,
-                               dataset_dict: Dict[str, Any] = {}, dataloader_dict: Dict[str, Any] = {}) -> DataLoader:
-        r"""
-        :param image_transform: Callable function for both tran and val
-        :param target_transform: Callable function for target such as remapping
-        :param dataset_dict: supplementary options for datasets
-        :param dataloader_dict: supplementary options for dataloader
-        :return: type: Dataloader
-        """
-        concatSet = self._creat_concatDataset(image_transform, target_transform, dataset_dict)
-        concatLoader = DataLoader(concatSet, batch_size=self.batch_size, shuffle=self.shuffle,
-                                  num_workers=self.num_workers, drop_last=True, pin_memory=self.pin_memory,
-                                  **dataloader_dict)
-        return concatLoader
-    '''
-
-    def _creat_combineDataset(self, image_transforms: Tuple[Callable, ...], target_transform: Callable = None,
-                              dataset_dict: Dict[str, Any] = {}):
-        assert len(image_transforms) >= 1, f"Given {image_transforms}"
-        assert not isinstance(target_transform,
-                              (list, tuple)), f"We consider the target_transform should be the same for all."
-        concatSets = []
-        for t_img, t_tar in zip(image_transforms, repeat(target_transform)):
-            concatSets.append(
-                self._creat_concatDataset(image_transform=t_img, target_transform=t_tar, dataset_dict=dataset_dict))
-        combineSet = dataset.CombineDataset(*concatSets)
-        return combineSet
-
-    def creat_CombineDataLoader(self, *image_transforms: Callable, target_transform: Callable = None,
-                                dataset_dict: Dict[str, Any] = {}, dataloader_dict: Dict[str, Any] = {}) -> DataLoader:
-        combineSet = self._creat_combineDataset(image_transforms, target_transform, dataset_dict)
-        combineLoader = DataLoader(combineSet,
-                                   batch_size=self.batch_size,
-                                   shuffle=self.shuffle,
-                                   num_workers=self.num_workers,
-                                   drop_last=True,
-                                   pin_memory=self.pin_memory,
-                                   **dataloader_dict)
-        return combineLoader
+        _datasets = []
+        for split in self.split_partitions:
+            dataset = self.DataClass(DATA_PATH, train=True if split == 'train' else False,
+                                     transform=image_transform, target_transform=target_transform,
+                                     download=True, **dataset_dict)
+            _datasets.append(dataset)
+        serial_dataset = reduce(lambda x, y: x + y, _datasets)
+        return serial_dataset
 
 
-## default transform
+# default transform
 default_mnist_img_transform = {
     "tf1": transforms.Compose([
         augment.CenterCrop(size=(26, 26)),

@@ -1,7 +1,7 @@
 from pprint import pprint
 from typing import Dict, Any
 
-from deepclustering.dataset.classification import Cifar10ClusteringDataloaders, default_cifar10_img_transform
+from deepclustering.dataset.classification import Cifar10DatasetInterface, default_cifar10_img_transform
 from deepclustering.model import Model
 from deepclustering.trainer.IICMultihead_IMSATTrainer import IICMultiHeadIMSATTrainer
 from deepclustering.utils import yaml_parser, yaml_load, dict_merge
@@ -21,21 +21,21 @@ model = Model(
     scheduler_dict=merged_config['Scheduler']
 )
 
-train_loader_A = Cifar10ClusteringDataloaders(**merged_config['DataLoader']).creat_CombineDataLoader(
+train_loader_A = Cifar10DatasetInterface(**merged_config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf1'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
 )
-train_loader_B = Cifar10ClusteringDataloaders(**merged_config['DataLoader']).creat_CombineDataLoader(
+train_loader_B = Cifar10DatasetInterface(**merged_config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf1'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
 )
-val_loader = Cifar10ClusteringDataloaders(**merged_config['DataLoader']).creat_CombineDataLoader(
+val_loader = Cifar10DatasetInterface(**merged_config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf3'],
 )
 

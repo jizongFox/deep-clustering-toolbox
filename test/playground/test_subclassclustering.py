@@ -5,6 +5,7 @@ import warnings
 from unittest import TestCase
 
 import torch
+
 from deepclustering import DATA_PATH
 from deepclustering.augment.tensor_augment import Resize
 from deepclustering.dataset.classification.mnist import MNIST

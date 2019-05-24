@@ -1,9 +1,10 @@
 from enum import Enum
 
-from pathlib2 import Path
+from pathlib import Path
 
 DATA_PATH = str(Path(__file__).parents[1] / '.data')
 PROJECT_PATH = str(Path(__file__).parents[1])
+Path(DATA_PATH).mkdir(parents=True, exist_ok=True)
 
 
 class ModelMode(Enum):
