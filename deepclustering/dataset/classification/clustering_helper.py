@@ -4,8 +4,10 @@ from typing import *
 
 from torch.utils.data import Dataset, DataLoader
 
+from .cifar import CIFAR10
+from .mnist import MNIST
+from .stl10 import STL10
 from .. import dataset
-from ..classification import MNIST, CIFAR10, STL10
 
 __doc__ = "This interface is to define clustering datasets with different transformations"
 

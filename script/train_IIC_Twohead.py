@@ -1,12 +1,12 @@
 from pprint import pprint
 from typing import Dict, Any
 
-from deepclustering.dataset.classification import Cifar10ClusteringDataloaders, default_cifar10_img_transform
+from deepclustering.dataset import default_cifar10_img_transform, STL10DatasetInterface
 from deepclustering.model import Model
 from deepclustering.trainer.IICMultiheadTrainer import IICMultiHeadTrainer
 from deepclustering.utils import yaml_parser, yaml_load, dict_merge
 
-DEFAULT_CONFIG = './config/IICClusterMultiHead.yaml'
+DEFAULT_CONFIG = '../config/IICClusterMultiHead.yaml'
 
 parsed_args: Dict[str, Any] = yaml_parser(verbose=True)
 default_config = yaml_load(parsed_args.get('Config', DEFAULT_CONFIG), verbose=False)
@@ -21,21 +21,22 @@ model = Model(
     scheduler_dict=merged_config['Scheduler']
 )
 
-train_loader_A = Cifar10ClusteringDataloaders(**merged_config['DataLoader']).creat_CombineDataLoader(
+train_loader_A = STL10DatasetInterface(**merged_config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf1'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
-    default_cifar10_img_transform['tf2'],
-    default_cifar10_img_transform['tf2'],
+    # default_cifar10_img_transform['tf2'],
+    # default_cifar10_img_transform['tf2'],
 )
-train_loader_B = Cifar10ClusteringDataloaders(**merged_config['DataLoader']).creat_CombineDataLoader(
+train_loader_B = STL10DatasetInterface(split_partitions=['train', 'test'],
+                                       **merged_config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf1'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
-    default_cifar10_img_transform['tf2'],
-    default_cifar10_img_transform['tf2'],
+    # default_cifar10_img_transform['tf2'],
+    # default_cifar10_img_transform['tf2'],
 )
-val_loader = Cifar10ClusteringDataloaders(**merged_config['DataLoader']).creat_CombineDataLoader(
+val_loader = STL10DatasetInterface(**merged_config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf3'],
 )
 

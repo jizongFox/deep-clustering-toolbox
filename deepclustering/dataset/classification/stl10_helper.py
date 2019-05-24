@@ -24,7 +24,7 @@ class STL10DatasetInterface(ClusterDatasetInterface):
 
         _datasets = []
         for split in self.split_partitions:
-            dataset = self.DataClass(DATA_PATH, train=True if split == 'train' else False,
+            dataset = self.DataClass(DATA_PATH, split=split,
                                      transform=image_transform, target_transform=target_transform,
                                      download=True, **dataset_dict)
             _datasets.append(dataset)
@@ -38,7 +38,7 @@ default_stl10_img_transform = {
                                augment.Img2Tensor(include_grey=True, include_rgb=False)]),
     'tf2': transforms.Compose([augment.RandomCrop(size=(64, 64), padding=None),
                                augment.Resize(size=(64, 64), interpolation=0),
-                               augment.RandomHorizontalFlip(p=0.5),
+                               transforms.RandomHorizontalFlip(p=0.5),
                                transforms.ColorJitter(
                                    brightness=[0.6, 1.4],
                                    contrast=[0.6, 1.4],
@@ -46,7 +46,7 @@ default_stl10_img_transform = {
                                    hue=[-0.125, 0.125]
                                ),
                                augment.Img2Tensor(include_grey=True, include_rgb=False)]),
-    'tf3': transforms.Compose([augment.CenterCrop(size=(64, 64), padding=None),
+    'tf3': transforms.Compose([augment.CenterCrop(size=(64, 64)),
                                augment.Resize(size=(64, 64), interpolation=0),
                                augment.Img2Tensor(include_grey=True, include_rgb=False)]),
 
