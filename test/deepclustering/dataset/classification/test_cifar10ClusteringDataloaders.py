@@ -2,17 +2,17 @@ import random
 from unittest import TestCase
 
 import torch
-from deepclustering.dataset import default_cifar10_img_transform, Cifar10ClusteringDataloaders
+from deepclustering.dataset import default_cifar10_img_transform, Cifar10DatasetInterface
 
 
 class TestCifar(TestCase):
     def setUp(self) -> None:
         self.transform_list = default_cifar10_img_transform
         cifar10_option = {"shuffle": True, "batch_size": 4, "num_workers": 1}
-        self.cifarGenerator = Cifar10ClusteringDataloaders(**cifar10_option)
+        self.cifarGenerator = Cifar10DatasetInterface(**cifar10_option)
 
     def _build_concat_dataloader(self, transform):
-        return self.cifarGenerator.creat_ConcatDataLoader(image_transform=transform)
+        return self.cifarGenerator.SerialDataLoader(image_transform=transform)
 
     def test_concatdataloader(self):
         for _ in range(5):
@@ -27,7 +27,7 @@ class TestCifar(TestCase):
                 assert batch[0].shape[1] == 1
 
     def test_combinedataloader(self):
-        combineLoader = self.cifarGenerator.creat_CombineDataLoader(
+        combineLoader = self.cifarGenerator.ParallelDataLoader(
             self.transform_list['tf1'],
             self.transform_list['tf2'],
             self.transform_list['tf3']

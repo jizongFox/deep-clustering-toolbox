@@ -14,7 +14,7 @@ __all__ = ['STL10DatasetInterface', 'default_stl10_img_transform']
 class STL10DatasetInterface(ClusterDatasetInterface):
     ALLOWED_SPLIT = ['train', 'test', 'train+unlabeled']
 
-    def __init__(self, split_partitions: List[str] = ['train', 'test'], batch_size: int = 1, shuffle: bool = False,
+    def __init__(self, split_partitions: List[str] = [], batch_size: int = 1, shuffle: bool = False,
                  num_workers: int = 1, pin_memory: bool = True) -> None:
         super().__init__(STL10, split_partitions, batch_size, shuffle, num_workers, pin_memory)
 

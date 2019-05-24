@@ -17,7 +17,7 @@ class testSubspaceClusteringMethod(TestCase):
     def setUp(self) -> None:
         super().setUp()
         # take a minibatch of mnist to set an example.
-        mnist_dataset = MNIST(root=DATA_PATH, train=False)
+        mnist_dataset = MNIST(root=DATA_PATH, train=False, download=True)
         self.imgs = mnist_dataset.data[:200].unsqueeze(1).float()
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')

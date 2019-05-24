@@ -21,22 +21,24 @@ model = Model(
     scheduler_dict=merged_config['Scheduler']
 )
 
-train_loader_A = STL10DatasetInterface(**merged_config['DataLoader']).ParallelDataLoader(
+train_loader_A = STL10DatasetInterface(split_partitions=['train+unlabeled', 'test'],
+                                       **merged_config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf1'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
-    # default_cifar10_img_transform['tf2'],
-    # default_cifar10_img_transform['tf2'],
+    default_cifar10_img_transform['tf2'],
+    default_cifar10_img_transform['tf2'],
 )
 train_loader_B = STL10DatasetInterface(split_partitions=['train', 'test'],
                                        **merged_config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf1'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
-    # default_cifar10_img_transform['tf2'],
-    # default_cifar10_img_transform['tf2'],
+    default_cifar10_img_transform['tf2'],
+    default_cifar10_img_transform['tf2'],
 )
-val_loader = STL10DatasetInterface(**merged_config['DataLoader']).ParallelDataLoader(
+val_loader = STL10DatasetInterface(split_partitions=['train', 'test'],
+                                   **merged_config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf3'],
 )
 

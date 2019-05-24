@@ -109,8 +109,11 @@ class IICMultiHeadTrainer(_Trainer):
             assert isinstance(v, int) and v >= 0, f"Iteration for {k} must be >= 0."
         self.model.set_mode(mode)
         assert self.model.training, f"Model should be in train() model, given {self.model.training}."
+        """
         assert len(train_loader_B) == len(train_loader_A), f"The length of the train_loaders should be the same,\"" \
             f"given `len(train_loader_A)`:{len(train_loader_A)} and `len(train_loader_B)`:{len(train_loader_B)}."
+        This assert is not always true for STL-10 dataset.
+        """
         for head_name, head_iterations in head_control_param.items():
             assert head_name in ('A', 'B'), head_name
             train_loader = eval(f"train_loader_{head_name}")  # change the dataloader for different head

@@ -16,7 +16,7 @@ Scheduler:
   gamma: 0.75
 
 DataLoader:
-  batch_size: 20
+  batch_size: 200
   shuffle: true
   num_workers: 16
 

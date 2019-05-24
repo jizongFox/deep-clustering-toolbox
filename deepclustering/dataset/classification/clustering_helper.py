@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from itertools import repeat
 from typing import *
-
+from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
 
 from .cifar import CIFAR10
