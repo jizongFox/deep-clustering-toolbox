@@ -113,7 +113,6 @@ class KL_div(nn.Module):
         self.eps = eps
         self.reduce = reduce
 
-    # @pysnooper.snoop()
     def forward(self, prob: torch.Tensor, target: torch.Tensor):
         assert not target.requires_grad
         assert prob.requires_grad
@@ -140,7 +139,7 @@ class KL_Divergence_2D(nn.Module):
     def forward(self, p_prob: torch.Tensor, y_prob: torch.Tensor):
         '''
         :param p_probs:
-        :param y_prob: the Y_logit is like that for crossentropy
+        :param y_prob: the Y_logit is like that for cross-entropy
         :return: 2D map?
         '''
         assert not y_prob.requires_grad

@@ -1,7 +1,7 @@
 from pprint import pprint
 from typing import Dict, Any
 
-from deepclustering.dataset import default_cifar10_img_transform, STL10DatasetInterface
+from deepclustering.dataset import default_stl10_img_transform, STL10DatasetInterface
 from deepclustering.model import Model
 from deepclustering.trainer.IICMultiheadTrainer import IICMultiHeadTrainer
 from deepclustering.utils import yaml_parser, yaml_load, dict_merge
@@ -23,23 +23,23 @@ model = Model(
 
 train_loader_A = STL10DatasetInterface(split_partitions=['train+unlabeled', 'test'],
                                        **merged_config['DataLoader']).ParallelDataLoader(
-    default_cifar10_img_transform['tf1'],
-    default_cifar10_img_transform['tf2'],
-    default_cifar10_img_transform['tf2'],
-    default_cifar10_img_transform['tf2'],
-    default_cifar10_img_transform['tf2'],
+    default_stl10_img_transform['tf1'],
+    default_stl10_img_transform['tf2'],
+    default_stl10_img_transform['tf2'],
+    default_stl10_img_transform['tf2'],
+    default_stl10_img_transform['tf2'],
 )
 train_loader_B = STL10DatasetInterface(split_partitions=['train', 'test'],
                                        **merged_config['DataLoader']).ParallelDataLoader(
-    default_cifar10_img_transform['tf1'],
-    default_cifar10_img_transform['tf2'],
-    default_cifar10_img_transform['tf2'],
-    default_cifar10_img_transform['tf2'],
-    default_cifar10_img_transform['tf2'],
+    default_stl10_img_transform['tf1'],
+    default_stl10_img_transform['tf2'],
+    default_stl10_img_transform['tf2'],
+    default_stl10_img_transform['tf2'],
+    default_stl10_img_transform['tf2'],
 )
 val_loader = STL10DatasetInterface(split_partitions=['train', 'test'],
                                    **merged_config['DataLoader']).ParallelDataLoader(
-    default_cifar10_img_transform['tf3'],
+    default_stl10_img_transform['tf3'],
 )
 
 trainer = IICMultiHeadTrainer(

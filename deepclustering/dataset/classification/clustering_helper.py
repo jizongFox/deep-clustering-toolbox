@@ -1,13 +1,14 @@
 from abc import abstractmethod
 from itertools import repeat
 from typing import *
-from tqdm import tqdm
+
 from torch.utils.data import Dataset, DataLoader
 
 from .cifar import CIFAR10
 from .mnist import MNIST
 from .stl10 import STL10
 from .. import dataset
+from ..segmentation.toydataset import Seg_ShapesDataset, Cls_ShapesDataset, ShapesDataset
 
 __doc__ = "This interface is to define clustering datasets with different transformations"
 
@@ -19,14 +20,14 @@ class ClusterDatasetInterface(object):
     ALLOWED_SPLIT = []
 
     def __init__(self, DataClass: Dataset, split_partitions: List[str], batch_size: int = 1, shuffle: bool = False,
-                 num_workers: int = 1, pin_memory: bool = True) -> None:
+                 num_workers: int = 1, pin_memory: bool = True, drop_last=False) -> None:
         """
         :param batch_size: batch_size = 1
         :param shuffle: shuffle the dataset, default = False
         :param num_workers: default 1
         """
         super().__init__()
-        assert DataClass in (MNIST, CIFAR10, STL10), f"" \
+        assert DataClass in (MNIST, CIFAR10, STL10, Seg_ShapesDataset, Cls_ShapesDataset, ShapesDataset), f"" \
             f"Dataset supported only by MNIST, CIFAR10 and STL-10, given{DataClass}."
         self.DataClass = DataClass
         if not isinstance(split_partitions, list):
@@ -38,6 +39,7 @@ class ClusterDatasetInterface(object):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.pin_memory = pin_memory
+        self.drop_last = drop_last
 
     @abstractmethod
     def _creat_concatDataset(self, image_transform: Callable, target_transform: Callable, dataset_dict: dict = {}):
@@ -51,6 +53,23 @@ class ClusterDatasetInterface(object):
         """
         raise NotImplementedError
 
+    def _creat_combineDataset(self, image_transforms: Tuple[Callable, ...],
+                              target_transform: Tuple[Callable, ...] = None,
+                              dataset_dict: Dict[str, Any] = {}):
+        if target_transform is None:
+            assert len(image_transforms) >= 1, f"Given {image_transforms}"
+            target_transform = repeat(target_transform)
+        elif len(target_transform) == 1 and not isinstance(target_transform, list):
+            target_transform = repeat(target_transform)
+        else:
+            assert len(image_transforms) == len(target_transform)
+        concatSets = []
+        for t_img, t_tar in zip(image_transforms, target_transform):
+            concatSets.append(
+                self._creat_concatDataset(image_transform=t_img, target_transform=t_tar, dataset_dict=dataset_dict))
+        combineSet = dataset.CombineDataset(*concatSets)
+        return combineSet
+
     def SerialDataLoader(self, image_transform: Callable = None, target_transform: Callable = None,
                          dataset_dict: Dict[str, Any] = {}, dataloader_dict: Dict[str, Any] = {}) -> DataLoader:
         r"""
@@ -63,26 +82,19 @@ class ClusterDatasetInterface(object):
         """
         concatSet = self._creat_concatDataset(image_transform, target_transform, dataset_dict)
         concatLoader = DataLoader(concatSet, batch_size=self.batch_size, shuffle=self.shuffle,
-                                  num_workers=self.num_workers, drop_last=True, pin_memory=self.pin_memory,
+                                  num_workers=self.num_workers, drop_last=self.drop_last, pin_memory=self.pin_memory,
                                   **dataloader_dict)
         return concatLoader
 
-    def _creat_combineDataset(self, image_transforms: Tuple[Callable, ...], target_transform: Callable = None,
-                              dataset_dict: Dict[str, Any] = {}):
-        assert len(image_transforms) >= 1, f"Given {image_transforms}"
-        assert not isinstance(target_transform,
-                              (list, tuple)), f"We consider the target_transform should be the same for all."
-        concatSets = []
-        for t_img, t_tar in zip(image_transforms, repeat(target_transform)):
-            concatSets.append(
-                self._creat_concatDataset(image_transform=t_img, target_transform=t_tar, dataset_dict=dataset_dict))
-        combineSet = dataset.CombineDataset(*concatSets)
-        return combineSet
-
-    def ParallelDataLoader(self, *image_transforms: Callable, target_transform: Callable = None,
-                           dataset_dict: Dict[str, Any] = {}, dataloader_dict: Dict[str, Any] = {}) -> DataLoader:
+    def ParallelDataLoader(
+            self,
+            *image_transforms: Callable,
+            target_transform: Union[Callable, Tuple[Callable, ...]] = None,
+            dataset_dict: Dict[str, Any] = {},
+            dataloader_dict: Dict[str, Any] = {}
+    ) -> DataLoader:
         parallel_set = self._creat_combineDataset(image_transforms, target_transform, dataset_dict)
         parallel_loader = DataLoader(parallel_set, batch_size=self.batch_size, shuffle=self.shuffle,
-                                     num_workers=self.num_workers, drop_last=True, pin_memory=self.pin_memory,
+                                     num_workers=self.num_workers, drop_last=self.drop_last, pin_memory=self.pin_memory,
                                      **dataloader_dict)
         return parallel_loader

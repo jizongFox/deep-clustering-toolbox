@@ -18,7 +18,7 @@ class MultualInformaton_IMSAT(nn.Module):
      MI(X,Y) = H(Y) - H(Y|X) = entropy(average(p_y)) - average(entropy(p_y))
     """
 
-    def __init__(self, mu=4.0, eps=1e-8, verbose=False):
+    def __init__(self, mu=4.0, eps=1e-8, separate_return: bool = False):
         """
         :param mu: balance term between entropy(average(p_y)) and average(entropy(p_y))
         :param eps: small value for calculation stability
@@ -27,7 +27,7 @@ class MultualInformaton_IMSAT(nn.Module):
         assert mu > 0, f'mu should be positive, given {mu}.'
         self.mu = mu
         self.eps = eps
-        self.verbose = verbose
+        self.separate_return = separate_return
 
     def forward(self, pred: Tensor):
         """
@@ -40,9 +40,9 @@ class MultualInformaton_IMSAT(nn.Module):
         assert probs.shape.__len__() == p_average.shape.__len__()
         marginal_entropy = Entropy(self.eps)(p_average)
         conditional_entropy = Entropy(self.eps)(probs).mean()
-        if self.verbose:
-            print(f"marginal entropy: {marginal_entropy.item():.3f}, conditional entropy: {conditional_entropy.item():.3f}")
-        return self.mu * marginal_entropy - conditional_entropy
+        if self.separate_return:
+            return self.mu * marginal_entropy - conditional_entropy, (marginal_entropy, conditional_entropy)
+        return self.mu * marginal_entropy - conditional_entropy, (0, 0)
 
 
 class Perturbation_Loss(nn.Module):

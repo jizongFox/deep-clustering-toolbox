@@ -19,7 +19,6 @@ wrapper(){
      --mail-type=ALL   \
     ./tmp.sh
     rm ./tmp.sh
-
 }
 cd ..
 time=1

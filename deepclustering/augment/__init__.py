@@ -21,6 +21,7 @@ _register_transform('randomcrop', augment.RandomCrop)
 _register_transform('resize', augment.Resize)
 _register_transform('centercrop', augment.CenterCrop)
 _register_transform('sobelprocess', augment.SobelProcess)
+_register_transform('tolabel', augment.ToLabel)
 
 config = {
     'randomcrop': {'size': (20, 20)},

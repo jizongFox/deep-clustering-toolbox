@@ -4,9 +4,10 @@ import numpy as np
 import requests
 import torch
 from PIL import Image
+
 from deepclustering.augment import TransformInterface
 
-__doc__ = """this file tests functions in augment model"""
+__doc__ = "this file tests functions in augment model"
 
 URL = 'https://cdn1.medicalnewstoday.com/content/images/articles/322/322868/golden-retriever-puppy.jpg'
 

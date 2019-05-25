@@ -18,6 +18,11 @@ B = TypeVar("B")
 T = TypeVar("T", Tensor, np.ndarray)
 
 
+# identical function
+def identical(x):
+    return x
+
+
 # reproducibility
 
 def fix_all_seed(seed):
@@ -31,7 +36,6 @@ def fix_all_seed(seed):
 
 
 # tqdm
-
 tqdm_ = partial(tqdm, ncols=15,
                 leave=False,
                 bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [' '{rate_fmt}{postfix}]')
@@ -58,7 +62,7 @@ def eq(a: Tensor, b) -> bool:
 
 def simplex(t: Tensor, axis=1) -> bool:
     '''
-    check if the matrix is the probability
+    check if the matrix is the probability distribution
     :param t:
     :param axis:
     :return:

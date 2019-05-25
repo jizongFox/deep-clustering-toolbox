@@ -1,6 +1,6 @@
 Arch:
   name: dummy
-  num_channel: 3
+  num_channel: 1
   output_k: 3
   num_sub_heads: 1
 
@@ -16,3 +16,10 @@ Scheduler:
 Trainer:
   save_dir: tmp
   device: cuda
+
+
+DataLoader:
+  batch_size: 3
+  shuffle: true
+  num_workers: 16
+  drop_last: False

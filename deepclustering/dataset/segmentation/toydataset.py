@@ -1,18 +1,21 @@
 import math
 import random
+import warnings
+from typing import *
 
 import cv2
 import numpy as np
+import torch
+from easydict import EasyDict as edict
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-# Import Mask RCNN
-# sys.path.append(ROOT_DIR)  # To find local version of the library
-# from . import utils
+from deepclustering.augment import TransformInterface
+from deepclustering.augment.sychronized_augment import SequentialWrapper
+from deepclustering.utils import fix_all_seed
 from deepclustering.utils.segmentation import utils
 
-
-# ROOT_DIR = os.path.abspath("../")
+__all__ = ['default_toy_img_transform', 'ShapesDataset', 'Cls_ShapesDataset', 'Seg_ShapesDataset']
 
 
 class ShapesDataset(Dataset):
@@ -22,7 +25,10 @@ class ShapesDataset(Dataset):
             max_object_per_img: int = 4,
             max_object_scale: float = 0.25,
             height: int = 256,
-            width: int = 256
+            width: int = 256,
+            transform: Callable = None,
+            target_transform: Callable = None,
+            seed: int = 0
     ) -> None:
         """
         Interface for ShapesDataset
@@ -32,6 +38,7 @@ class ShapesDataset(Dataset):
         :param width: image height
         """
         super().__init__()
+        fix_all_seed(seed)
         assert max_object_per_img >= 1, f"max_object_per_img should be larger than 1, given {max_object_per_img}."
         self.max_object_per_img = max_object_per_img
         assert 0 < max_object_scale <= 0.75
@@ -43,6 +50,12 @@ class ShapesDataset(Dataset):
         # Background is always the first class
         self.class_info = [{"source": "", "id": 0, "name": "BG"}]
         self.source_class_ids = {}
+        # self.transform: Callable = transform
+        # self.target_transform: Callable = target_transform
+        self.squential_transform = SequentialWrapper(
+            img_transform=transform,
+            target_transform=target_transform
+        )
 
         self.add_class("shapes", 1, "square")
         self.add_class("shapes", 2, "circle")
@@ -188,9 +201,13 @@ class ShapesDataset(Dataset):
         for i, c in enumerate(class_ids):
             instance_mask[:, :, i][instance_mask[:, :, i] == c] = i + 1
         instance_mask = instance_mask.sum(2)
-        img = transforms.ToTensor()(img)
-        global_mask = utils.ToLabel()(global_mask)
-        instance_mask = utils.ToLabel()(instance_mask)
+        img = transforms.ToTensor()(img).to(torch.float)
+        global_mask = utils.ToLabel()(global_mask).to(torch.uint8)
+        instance_mask = utils.ToLabel()(instance_mask).to(torch.uint8)
+
+        img, global_mask, instance_mask = self.squential_transform(
+            [img, global_mask, instance_mask], [False, True, True]
+        )
 
         return img.float(), global_mask.long(), instance_mask.long()
 
@@ -240,20 +257,25 @@ class ShapesDataset(Dataset):
 
 class Cls_ShapesDataset(ShapesDataset):
     def __init__(self, count: int = 1000, max_object_scale: float = 0.25,
-                 height: int = 256, width: int = 256) -> None:
-        super().__init__(count, 1, max_object_scale, height, width)
+                 height: int = 256, width: int = 256,
+                 transform=None,
+                 target_transform=None) -> None:
+        super().__init__(count, 1, max_object_scale, height, width, transform, target_transform)
 
     def __getitem__(self, index):
         img, global_mask, instance_mask = super().__getitem__(index)
-        assert len(global_mask.unique()) == 2, \
-            f'Only background and one type of foreground should be presented, given {len(global_mask.unique())} type.'
-        return img, sorted(global_mask.unique())[1].long()-1 # remove the background class
+        if len(global_mask.unique()) == 2:
+            warnings.warn(f'Only background and one type of foreground should be presented, \
+            given {len(global_mask.unique())} type.')
+        return img, sorted(global_mask.unique())[1].long() - 1  # remove the background class
 
 
 class Seg_ShapesDataset(ShapesDataset):
     def __init__(self, count: int = 1000, max_object_per_img=3, max_object_scale: float = 0.25,
-                 height: int = 256, width: int = 256) -> None:
-        super().__init__(count, max_object_per_img, max_object_scale, height, width)
+                 height: int = 256, width: int = 256,
+                 transform=None,
+                 target_transform=None) -> None:
+        super().__init__(count, max_object_per_img, max_object_scale, height, width, transform, target_transform)
 
     def __getitem__(self, index):
         img, global_mask, instance_mask = super().__getitem__(index)
@@ -262,16 +284,74 @@ class Seg_ShapesDataset(ShapesDataset):
 
 class Ins_ShapesDataset(ShapesDataset):
     def __init__(self, count: int = 1000, max_object_per_img=4, max_object_scale: float = 0.25,
-                 height: int = 256, width: int = 256) -> None:
-        super().__init__(count, max_object_per_img, max_object_scale, height, width)
+                 height: int = 256, width: int = 256,
+                 transform=None,
+                 target_transform=None) -> None:
+        super().__init__(count, max_object_per_img, max_object_scale, height, width, transform, target_transform)
 
     def __getitem__(self, index):
         img, global_mask, instance_mask = super().__getitem__(index)
         return img, global_mask.long(), instance_mask.long()
 
 
-dtransform = {
-    'tf1': '',
-    'tf2': '',
-    'tf3': '',
+transform_dict = {
+    'tf1': {
+        'img': {
+            'ToPILImage': {},
+            # 'RandomRotation': {'degrees': 25},
+            'randomcrop': {'size': (96, 96)},
+            'Resize': {'size': (128, 128), 'interpolation': 2},
+            'Img2Tensor': {'include_rgb': False, 'include_grey': True}
+        },
+        'target': {
+            'ToPILImage': {},
+            # 'RandomRotation': {'degrees': 25},
+            'randomcrop': {'size': (96, 96)},
+            'Resize': {'size': (128, 128), 'interpolation': 0},
+            'ToLabel': {}
+        }
+    },
+    'tf2': {
+        'img': {
+            'ToPILImage': {},
+            # 'RandomRotation': {'degrees': 25},
+            'randomcrop': {'size': (96, 96)},
+            'Resize': {'size': (128, 128), 'interpolation': 2},
+            'RandomHorizontalFlip': {'p': 0.5},
+            'ColorJitter': {'brightness': [0.6, 1.4],
+                            'contrast': [0.6, 1.4],
+                            'saturation': [0.6, 1.4],
+                            'hue': [-0.125, 0.125]},
+            'Img2Tensor': {'include_rgb': False, 'include_grey': True}
+        },
+        'target': {
+            'ToPILImage': {},
+            # 'RandomRotation': {'degrees': 25},
+            'randomcrop': {'size': (96, 96)},
+            'Resize': {'size': (128, 128), 'interpolation': 0},
+            'RandomHorizontalFlip': {'p': 0.5},
+            'ToLabel': {}
+        },
+
+    },
+    'tf3': {
+        'img': {
+            'ToPILImage': {},
+            'CenterCrop': {'size': (96, 96)},
+            'Resize': {'size': (128, 128), 'interpolation': 2},
+            'Img2Tensor': {'include_rgb': False, 'include_grey': True},
+        },
+        'target': {
+            'ToPILImage': {},
+            'CenterCrop': {'size': (96, 96)},
+            'Resize': {'size': (128, 128), 'interpolation': 0},
+            'ToLabel': {}
+        },
+
+    }
 }
+default_toy_img_transform = edict()
+for k, v in transform_dict.items():
+    default_toy_img_transform[k] = {}
+    for _k, _v in v.items():
+        default_toy_img_transform[k][_k] = TransformInterface(_v)
