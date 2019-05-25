@@ -7,9 +7,10 @@ from torch.utils.data import DataLoader
 
 from deepclustering import ModelMode
 from deepclustering.dataset.classification.clustering_helper import ClusterDatasetInterface
+from deepclustering.dataset.classification.mnist_helper import MNISTDatasetInterface, default_mnist_img_transform
 from deepclustering.dataset.segmentation.toydataset import Cls_ShapesDataset, default_toy_img_transform
 from deepclustering.loss.IMSAT_loss import MultualInformaton_IMSAT
-from deepclustering.loss.loss import JSD
+from deepclustering.loss.loss import JSD, KL_div
 from deepclustering.manager import ConfigManger
 from deepclustering.meters import MeterInterface, AverageValueMeter
 from deepclustering.model import Model
@@ -17,7 +18,7 @@ from deepclustering.trainer.Trainer import _Trainer
 from deepclustering.utils import tqdm_, simplex, tqdm, flatten_dict
 from deepclustering.utils.classification.assignment_mapping import hungarian_match, flat_acc
 
-matplotlib.use('qt5agg')
+# matplotlib.use('tkagg')
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -49,6 +50,7 @@ class Trainer(_Trainer):
         super().__init__(model, train_loader, val_loader, max_epoch, save_dir, checkpoint_path, device, config)
         self.criterion = MultualInformaton_IMSAT(mu=4, separate_return=True)
         self.jsd = JSD()
+        self.kl = KL_div()
         plt.ion()
 
     def __init_meters__(self) -> List[str]:
@@ -75,8 +77,8 @@ class Trainer(_Trainer):
         self.model.set_mode(mode)
         assert self.model.training
         _train_loader: tqdm = tqdm_(train_loader)
-        for _batch_num, (img_labels) in enumerate(_train_loader):
-            images, labels = zip(*img_labels)
+        for _batch_num, images_labels_indices in enumerate(_train_loader):
+            images, labels, indices = zip(*images_labels_indices)
             tf1_images = torch.cat(tuple([images[0] for _ in range(images.__len__() - 1)]), dim=0).to(self.device)
             tf2_images = torch.cat(tuple(images[1:]), dim=0).to(self.device)
             pred_tf1_simplex = self.model(tf1_images)
@@ -96,11 +98,11 @@ class Trainer(_Trainer):
             self.METERINTERFACE['train_entropy'].add(entrop_loss.item())
             self.METERINTERFACE['train_centropy'].add(centropy_loss.item())
 
-            _sat_loss = list(map(lambda p1, p2: self.jsd([p2, p1]), pred_tf1_simplex, pred_tf2_simplex))
+            _sat_loss = list(map(lambda p1, p2: self.kl(p2, p1.detach()), pred_tf1_simplex, pred_tf2_simplex))
             sat_loss = sum(_sat_loss) / len(_sat_loss)
             self.METERINTERFACE['train_sat'].add(sat_loss.item())
 
-            total_loss = mi_loss + 0.1 * sat_loss
+            total_loss = mi_loss + 5* sat_loss
             self.model.zero_grad()
             total_loss.backward()
             self.model.step()
@@ -130,8 +132,8 @@ class Trainer(_Trainer):
                              device=self.device)
         gts = torch.zeros(val_loader.dataset.__len__(), dtype=torch.long, device=self.device)
         _batch_done = 0
-        for _batch_num, (img_labels) in enumerate(_val_loader):
-            images, labels = zip(*img_labels)
+        for _batch_num, images_labels_indices in enumerate(_val_loader):
+            images, labels, _ = zip(*images_labels_indices)
             images, labels = images[0].to(self.device), labels[0].to(self.device)
             pred = self.model(images)
             _bSlice = slice(_batch_done, _batch_done + images.shape[0])
@@ -160,17 +162,17 @@ class Trainer(_Trainer):
                        'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']}
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Validating epoch: {epoch} : {report_dict_str}")
-        self.writer.add_histogram(tag='probas', values=probas[0], global_step=epoch)
+        # self.writer.add_histogram(tag='probas', values=probas[0], global_step=epoch)
 
         plt.clf()
         probas = pd.DataFrame(probas.squeeze().cpu().numpy())
-        probas[0].plot.density(label='0')
-        probas[1].plot.density(label='1')
-        probas[2].plot.density(label='2')
+        for k in probas.keys():
+            probas[k].plot.density(label=str(k))
         plt.legend()
         plt.grid()
         plt.show()
-        plt.pause(0.001)
+        plt.savefig(self.save_dir / 'distribution.png')
+        plt.close('all')
         print(pd.Series(preds.cpu().numpy().ravel()).value_counts())
 
         return self.METERINTERFACE.val_best_acc.summary()['mean']
@@ -178,17 +180,16 @@ class Trainer(_Trainer):
 
 config = ConfigManger(DEFAULT_CONFIG_PATH='./config.yml', verbose=True).config
 
-datainterface = ToyExampleInterFace(**config['DataLoader'])
+datainterface = MNISTDatasetInterface(**config['DataLoader'])
 train_loader = datainterface.ParallelDataLoader(
-    default_toy_img_transform['tf1']['img'],
-    default_toy_img_transform['tf2']['img'],
-    default_toy_img_transform['tf2']['img'],
-    default_toy_img_transform['tf2']['img'],
+    default_mnist_img_transform['tf1'],
+    default_mnist_img_transform['tf2'],
+    default_mnist_img_transform['tf2'],
+    default_mnist_img_transform['tf2'],
 
 )
 val_loader = datainterface.ParallelDataLoader(
-    default_toy_img_transform['tf3']['img'],
-    target_transform=[default_toy_img_transform['tf3']['target']]
+    default_mnist_img_transform['tf3'],
 )
 
 model = Model(config['Arch'], config['Optim'], config['Scheduler'])

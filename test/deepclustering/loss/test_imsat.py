@@ -12,5 +12,5 @@ class TestIMSATLoss(TestCase):
 
     def test_multinformation_imsat(self):
         criterion = MultualInformaton_IMSAT(mu=1.0)
-        MI = criterion(self.pred_log)
+        MI,_ = criterion(self.pred_log)
         assert MI > 0, f'MI should be aways positive, given {MI.item()}'

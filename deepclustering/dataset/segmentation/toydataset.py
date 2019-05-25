@@ -300,14 +300,14 @@ transform_dict = {
             'ToPILImage': {},
             # 'RandomRotation': {'degrees': 25},
             'randomcrop': {'size': (96, 96)},
-            'Resize': {'size': (128, 128), 'interpolation': 2},
+            'Resize': {'size': (96, 96), 'interpolation': 0},
             'Img2Tensor': {'include_rgb': False, 'include_grey': True}
         },
         'target': {
             'ToPILImage': {},
             # 'RandomRotation': {'degrees': 25},
             'randomcrop': {'size': (96, 96)},
-            'Resize': {'size': (128, 128), 'interpolation': 0},
+            'Resize': {'size': (96, 96), 'interpolation': 0},
             'ToLabel': {}
         }
     },
@@ -316,7 +316,7 @@ transform_dict = {
             'ToPILImage': {},
             # 'RandomRotation': {'degrees': 25},
             'randomcrop': {'size': (96, 96)},
-            'Resize': {'size': (128, 128), 'interpolation': 2},
+            'Resize': {'size': (96, 96), 'interpolation': 0},
             'RandomHorizontalFlip': {'p': 0.5},
             'ColorJitter': {'brightness': [0.6, 1.4],
                             'contrast': [0.6, 1.4],
@@ -328,7 +328,7 @@ transform_dict = {
             'ToPILImage': {},
             # 'RandomRotation': {'degrees': 25},
             'randomcrop': {'size': (96, 96)},
-            'Resize': {'size': (128, 128), 'interpolation': 0},
+            'Resize': {'size': (96, 96), 'interpolation': 0},
             'RandomHorizontalFlip': {'p': 0.5},
             'ToLabel': {}
         },
@@ -338,13 +338,13 @@ transform_dict = {
         'img': {
             'ToPILImage': {},
             'CenterCrop': {'size': (96, 96)},
-            'Resize': {'size': (128, 128), 'interpolation': 2},
+            'Resize': {'size': (96, 96), 'interpolation': 0},
             'Img2Tensor': {'include_rgb': False, 'include_grey': True},
         },
         'target': {
             'ToPILImage': {},
             'CenterCrop': {'size': (96, 96)},
-            'Resize': {'size': (128, 128), 'interpolation': 0},
+            'Resize': {'size': (96, 96), 'interpolation': 0},
             'ToLabel': {}
         },
 
