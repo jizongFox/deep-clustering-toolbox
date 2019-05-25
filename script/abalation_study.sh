@@ -18,6 +18,7 @@ wrapper(){
      --mail-user=jizong.peng.1@etsmtl.net \
      --mail-type=ALL   \
     ./tmp.sh
+    rm ./tmp.sh
 
 }
 cd ..

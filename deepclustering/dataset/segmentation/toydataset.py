@@ -3,12 +3,13 @@ import random
 
 import cv2
 import numpy as np
+from torch.utils.data import Dataset
+from torchvision import transforms
+
 # Import Mask RCNN
 # sys.path.append(ROOT_DIR)  # To find local version of the library
 # from . import utils
 from deepclustering.utils.segmentation import utils
-from torch.utils.data import Dataset
-from torchvision import transforms
 
 
 # ROOT_DIR = os.path.abspath("../")
@@ -33,7 +34,7 @@ class ShapesDataset(Dataset):
         super().__init__()
         assert max_object_per_img >= 1, f"max_object_per_img should be larger than 1, given {max_object_per_img}."
         self.max_object_per_img = max_object_per_img
-        assert 0 < max_object_scale <= 0.5
+        assert 0 < max_object_scale <= 0.75
         self.max_object_scale = max_object_scale
         self.height = height
         self.width = width
@@ -191,7 +192,7 @@ class ShapesDataset(Dataset):
         global_mask = utils.ToLabel()(global_mask)
         instance_mask = utils.ToLabel()(instance_mask)
 
-        return img, global_mask, instance_mask
+        return img.float(), global_mask.long(), instance_mask.long()
 
     def __len__(self):
         return self._image_ids.__len__()
@@ -244,9 +245,9 @@ class Cls_ShapesDataset(ShapesDataset):
 
     def __getitem__(self, index):
         img, global_mask, instance_mask = super().__getitem__(index)
-        assert len(global_mask.unique()) == 2, f'Only background and one type of foreground should be presented,\
-             given {len(global_mask.unique())} type.'
-        return img, sorted(global_mask.unique())[1].long()
+        assert len(global_mask.unique()) == 2, \
+            f'Only background and one type of foreground should be presented, given {len(global_mask.unique())} type.'
+        return img, sorted(global_mask.unique())[1].long()-1 # remove the background class
 
 
 class Seg_ShapesDataset(ShapesDataset):

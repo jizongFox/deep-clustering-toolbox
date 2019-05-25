@@ -25,7 +25,7 @@ class DrawCSV(object):
 
     def draw(self, dataframe, together=False):
         if together:
-            plt.figure(figsize=self.figsize)
+            fig = plt.figure(figsize=self.figsize)
             for k in self.columns_to_draw:
                 plt.plot(dataframe[k], label=k)
             plt.legend()
@@ -42,4 +42,4 @@ class DrawCSV(object):
                 _ax.grid()
                 _ax.set_title(f"{k} with max:{dataframe[k].max():.3f}, min:{dataframe[k].min():.3f}")
             plt.savefig(str(self.save_dir) + f'/{self.save_name}')
-        plt.close('all')
+        plt.close(fig)
