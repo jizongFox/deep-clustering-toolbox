@@ -193,11 +193,12 @@ class JSD(nn.Module):
     general JS divergence interface
     """
 
-    def __init__(self):
+    def __init__(self, reduce=True):
         super().__init__()
         self.entropy = Entropy()
+        self.reduce = reduce
 
-    def forward(self, input: List[torch.Tensor], reduce=True):
+    def forward(self, input: List[torch.Tensor]):
         for inprob in input:
             assert simplex(inprob, 1)
         # mean_prob = reduce(lambda x, y: x + y, input) / len(input)
@@ -205,7 +206,7 @@ class JSD(nn.Module):
         f_term = self.entropy(mean_prob)
         mean_entropy = sum(list(map(lambda x: self.entropy(x), input))) / len(input)
         assert f_term.shape == mean_entropy.shape
-        if reduce:
+        if self.reduce:
             return (f_term - mean_entropy).mean()
         return f_term - mean_entropy
 

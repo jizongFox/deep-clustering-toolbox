@@ -21,7 +21,7 @@ class TestToyExample(TestCase):
     def testToyDataLoader(self):
         print('dsfds')
         for i, (img, gt, instance_gt) in enumerate(self.dataloader):
-            assert img.shape == torch.Size([4, 1, 128, 128])
+            assert img.shape == torch.Size([4, 1, 96, 96])
 
     def test_classification(self):
         dataset = Cls_ShapesDataset()

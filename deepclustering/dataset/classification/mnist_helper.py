@@ -19,8 +19,8 @@ class MNISTDatasetInterface(ClusterDatasetInterface):
     ALLOWED_SPLIT = ['train', 'val']
 
     def __init__(self, split_partitions: List[str] = ['train', 'val'], batch_size: int = 1, shuffle: bool = False,
-                 num_workers: int = 1, pin_memory: bool = True) -> None:
-        super().__init__(MNIST, split_partitions, batch_size, shuffle, num_workers, pin_memory)
+                 num_workers: int = 1, pin_memory: bool = True, drop_last=False) -> None:
+        super().__init__(MNIST, split_partitions, batch_size, shuffle, num_workers, pin_memory, drop_last)
 
     def _creat_concatDataset(self, image_transform: Callable, target_transform: Callable, dataset_dict: dict = {}):
         for split in self.split_partitions:
