@@ -6,21 +6,23 @@ Arch:
 
 Optim:
   name: Adam
-  lr: 0.0005
+  lr: 0.0008
 
 Scheduler:
   name: MultiStepLR
   milestones: [100,200,300,400,500,600,700,800,900]
   gamma: 0.7
 
-Trainer:
-  max_epoch: 1000
-  save_dir: MI_toy_example
-  device: cuda
-
-
 DataLoader:
   batch_size: 40
   shuffle: true
   num_workers: 8
   drop_last: False
+
+Trainer:
+  max_epoch: 1000
+  save_dir: MI_toy_example
+  device: cuda
+  use_vat: true
+
+
