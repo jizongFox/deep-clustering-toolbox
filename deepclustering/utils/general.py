@@ -185,7 +185,7 @@ class DataIter(object):
             return self.__next__()
 
 
-## dictionary functions
+# dictionary functions
 def flatten_dict(d, parent_key='', sep='_'):
     items = []
     for k, v in d.items():

@@ -1,4 +1,3 @@
-import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
 from typing import List
@@ -11,6 +10,7 @@ from torch.utils.data import DataLoader
 from .. import ModelMode, PROJECT_PATH
 from ..meters import MeterInterface
 from ..model import Model
+from ..utils import flatten_dict, _warnings
 from ..writer import SummaryWriter, DrawCSV
 
 
@@ -59,6 +59,18 @@ class _Trainer(ABC):
         self.METERINTERFACE = MeterInterface(METER_CONFIG)
         return ["draw_columns_list"]
 
+    @property
+    @abstractmethod
+    def _training_report_dict(self):
+        report_dict = flatten_dict({})
+        return report_dict
+
+    @property
+    @abstractmethod
+    def _eval_report_dict(self):
+        report_dict = flatten_dict({})
+        return report_dict
+
     def start_training(self):
         for epoch in range(self._start_epoch, self.max_epoch):
             self._train_loop(
@@ -83,28 +95,16 @@ class _Trainer(ABC):
     @abstractmethod
     def _train_loop(self, train_loader=None, epoch=0, mode=ModelMode.TRAIN, *args, **kwargs):
         # warning control
-        if len(args) > 0:
-            warnings.warn(f'Received unassigned args with args: {args}.')
-        if len(kwargs) > 0:
-            kwarg_str = ", ".join([f"{k}:{v}" for k, v in kwargs.items()])
-            warnings.warn(f'Received unassigned kwargs: \n{kwarg_str}')
-        # warning control ends
+        _warnings(args, kwargs)
+
+    def _trainer_specific_loss(self, *args, **kwargs):
+        # warning control
+        _warnings(args, kwargs)
 
     @abstractmethod
     def _eval_loop(self, val_loader=None, epoch=None, mode=ModelMode.EVAL, *args, **kwargs) -> float:
-        """
-        return the
-        :param args:
-        :param kwargs:
-        :return:
-        """
         # warning control
-        if len(args) > 0:
-            warnings.warn(f'Received unassigned args with args: {args}.')
-        if len(kwargs) > 0:
-            kwarg_str = ", ".join([f"{k}:{v}" for k, v in kwargs.items()])
-            warnings.warn(f'Received unassigned kwargs: \n{kwarg_str}')
-        # warning control ends
+        _warnings(args, kwargs)
 
     @property
     def state_dict(self):
