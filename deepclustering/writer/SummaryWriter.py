@@ -1,7 +1,6 @@
 import matplotlib
 import numpy as np
 from tensorboardX import SummaryWriter as _SummaryWriter
-
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 

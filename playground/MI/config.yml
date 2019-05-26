@@ -6,7 +6,7 @@ Arch:
 
 Optim:
   name: Adam
-  lr: 0.0008
+  lr: 0.0001
 
 Scheduler:
   name: MultiStepLR
@@ -14,15 +14,17 @@ Scheduler:
   gamma: 0.7
 
 DataLoader:
-  batch_size: 40
+  batch_size: 20
   shuffle: true
   num_workers: 8
   drop_last: False
 
 Trainer:
+  name: IMSAT
   max_epoch: 1000
-  save_dir: MI_toy_example
+  save_dir: tmp
   device: cuda
   use_vat: true
+  sat_weight: 0.1
 
 

@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
 from typing import List
@@ -23,8 +24,10 @@ class _Trainer(ABC):
     ARCHIVE_PATH = str(Path(PROJECT_PATH) / 'archives')
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
-                 save_dir: str = 'base', checkpoint_path: str = None, device='cpu', config: dict = None) -> None:
+                 save_dir: str = 'base', checkpoint_path: str = None, device='cpu', config: dict = None,
+                 **kwargs) -> None:
         super().__init__()
+        _warnings((), kwargs)
         self.model = model
         self.train_loader = train_loader
         self.val_loader = val_loader
@@ -86,7 +89,8 @@ class _Trainer(ABC):
                 v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
             self.METERINTERFACE.summary().to_csv(self.save_dir / f'wholeMeter.csv')
             self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict(), global_step=epoch)
-            self.drawer.draw(self.METERINTERFACE.summary(), together=False)
+            if epoch % 10 == 0:
+                self.drawer.draw(self.METERINTERFACE.summary(), together=False)
             self.save_checkpoint(self.state_dict, epoch, current_score)
 
     def to(self, device):
@@ -129,7 +133,8 @@ class _Trainer(ABC):
         try:
             self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
         except KeyError:
-            pass
+            warnings.warn('Meter checkpoint does not match.')
+
         self.best_score = state_dict['best_score']
         self._start_epoch = state_dict['epoch'] + 1
 

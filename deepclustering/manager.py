@@ -11,7 +11,7 @@ class ConfigManger:
     def __init__(self, DEFAULT_CONFIG_PATH: str, verbose=True) -> None:
         self.SET_DEFAULT_CONFIG_PATH(DEFAULT_CONFIG_PATH)
         self.parsed_args: Dict[str, Any] = yaml_parser(True)
-        self.default_config = yaml_load(self.parsed_args.get('Config', self.DEFAULT_CONFIG), True)
+        self.default_config = yaml_load(self.parsed_args.get('Config', self.DEFAULT_CONFIG), verbose=verbose)
         self.merged_config = dict_merge(self.default_config, self.parsed_args, re=True)
         self._check_integrality(self.merged_config)
         if verbose:

@@ -1,4 +1,3 @@
-import warnings
 from typing import List
 
 import matplotlib
@@ -19,8 +18,10 @@ from deepclustering.utils import tqdm_, simplex, tqdm, flatten_dict
 from deepclustering.utils.VAT import VATLoss_Multihead
 from deepclustering.utils.classification.assignment_mapping import hungarian_match, flat_acc
 
-matplotlib.use('Agg')
-warnings.filterwarnings('ignore')
+matplotlib.use('agg')
+
+
+# warnings.filterwarnings('ignore')
 
 
 # class ToyExampleInterFace(ClusterDatasetInterface):
@@ -46,8 +47,9 @@ class IMSAT_Trainer(_Trainer):
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
                  save_dir: str = 'IMSAT', use_vat: bool = False, sat_weight: float = 0.1, checkpoint_path: str = None,
                  device='cpu',
-                 config: dict = None) -> None:
-        super().__init__(model, train_loader, val_loader, max_epoch, save_dir, checkpoint_path, device, config)
+                 config: dict = None, **kwargs) -> None:
+        super().__init__(model, train_loader, val_loader, max_epoch, save_dir, checkpoint_path, device, config,
+                         **kwargs)
         self.use_vat = use_vat
         self.sat_weight = float(sat_weight)
         self.criterion = MultualInformaton_IMSAT(mu=4, separate_return=True)
@@ -220,9 +222,9 @@ class IIC_Trainer(IMSAT_Trainer):
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
                  save_dir: str = 'IMSAT', use_vat: bool = False, sat_weight: float = 0.0, checkpoint_path: str = None,
-                 device='cpu', config: dict = None) -> None:
+                 device='cpu', config: dict = None, **kwargs) -> None:
         super().__init__(model, train_loader, val_loader, max_epoch, save_dir, use_vat, sat_weight, checkpoint_path,
-                         device, config)
+                         device, config, **kwargs)
         from deepclustering.loss.IID_losses import IIDLoss
         self.criterion = IIDLoss()
 
@@ -266,16 +268,17 @@ class IIC_Trainer(IMSAT_Trainer):
         self.METERINTERFACE[f'train_mi'].add(-batch_loss.item())
 
         # vat loss:
-        sat_loss, *_ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(self.model.torchnet, images)
-
-        self.METERINTERFACE['train_sat'].add(sat_loss.item())
+        sat_loss = 0
+        if self.sat_weight > 0:
+            sat_loss, *_ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(self.model.torchnet, images)
+            self.METERINTERFACE['train_sat'].add(sat_loss.item())
 
         total_loss = batch_loss + self.sat_weight * sat_loss
 
         return total_loss
 
 
-config = ConfigManger(DEFAULT_CONFIG_PATH='./config.yml', verbose=True).config
+config = ConfigManger(DEFAULT_CONFIG_PATH='./config.yml', verbose=False).config
 
 datainterface = MNISTDatasetInterface(**config['DataLoader'])
 train_loader = datainterface.ParallelDataLoader(
@@ -291,7 +294,10 @@ val_loader = datainterface.ParallelDataLoader(
 
 model = Model(config['Arch'], config['Optim'], config['Scheduler'])
 
-trainer = IMSAT_Trainer(
+assert config['Trainer']['name'] in ('IIC', 'IMSAT')
+Trainer = IMSAT_Trainer if config['Trainer']['name'] == 'IMSAT' else IIC_Trainer
+
+trainer = Trainer(
     model=model,
     train_loader=train_loader,
     val_loader=val_loader,
@@ -299,3 +305,4 @@ trainer = IMSAT_Trainer(
     config=config
 )
 trainer.start_training()
+trainer.clean_up()
