@@ -1,3 +1,4 @@
+import subprocess
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
@@ -11,8 +12,8 @@ from torch.utils.data import DataLoader
 from .. import ModelMode, PROJECT_PATH
 from ..meters import MeterInterface
 from ..model import Model
-from ..utils import flatten_dict, _warnings
-from ..writer import SummaryWriter, DrawCSV
+from ..utils import flatten_dict, _warnings, set_nicer
+from ..writer import SummaryWriter
 
 
 class _Trainer(ABC):
@@ -22,6 +23,7 @@ class _Trainer(ABC):
     """
     RUN_PATH = str(Path(PROJECT_PATH) / 'runs')
     ARCHIVE_PATH = str(Path(PROJECT_PATH) / 'archives')
+    wholemeter_filename = "wholeMeter.csv"
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
                  save_dir: str = 'base', checkpoint_path: str = None, device='cpu', config: dict = None,
@@ -48,8 +50,8 @@ class _Trainer(ABC):
 
         self.writer = SummaryWriter(str(self.save_dir))
         # todo: try to override the DrawCSV
-        columns_to_draw = self.__init_meters__()
-        self.drawer = DrawCSV(columns_to_draw=columns_to_draw, save_dir=str(self.save_dir), save_name='plot.png')
+        self._columns_to_draw = self.__init_meters__()
+        # self.drawer = DrawCSV(columns_to_draw=self._columns_to_draw, save_dir=str(self.save_dir), save_name='plot.png')
         if checkpoint_path:
             assert Path(checkpoint_path).exists() and Path(checkpoint_path).is_dir(), Path(checkpoint_path)
             state_dict = torch.load(str(Path(checkpoint_path) / 'last.pth'), map_location=torch.device('cpu'))
@@ -87,11 +89,22 @@ class _Trainer(ABC):
             # save meters and checkpoints
             for k, v in self.METERINTERFACE.aggregated_meter_dict.items():
                 v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
-            self.METERINTERFACE.summary().to_csv(self.save_dir / f'wholeMeter.csv')
+            self.METERINTERFACE.summary().to_csv(self.save_dir / self.wholemeter_filename)
             self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict(), global_step=epoch)
-            if epoch % 10 == 0:
-                self.drawer.draw(self.METERINTERFACE.summary(), together=False)
+
+            # self.drawer.draw(self.METERINTERFACE.summary(), together=False)
+            self._call_draw_csv()
             self.save_checkpoint(self.state_dict, epoch, current_score)
+
+    def _call_draw_csv(self):
+        _csv_path = self.save_dir / self.wholemeter_filename
+        _columns_to_draw = " ".join(self._columns_to_draw)
+        _save_dir = str(self.save_dir)
+        cmd = f"python  {PROJECT_PATH}/deepclustering/writer/draw_csv.py  " \
+            f"--csv_path={_csv_path} " \
+            f"--save_dir={_save_dir} " \
+            f"--columns_to_draw {_columns_to_draw} &"
+        subprocess.call(cmd, shell=True)
 
     def to(self, device):
         self.model.to(device=device)
@@ -145,3 +158,4 @@ class _Trainer(ABC):
         sub_dir = self.save_dir.relative_to(Path(self.RUN_PATH))
         save_dir = Path(self.ARCHIVE_PATH) / str(sub_dir)
         shutil.move(str(self.save_dir), str(save_dir))
+        shutil.rmtree(str(self.save_dir), ignore_errors=True)

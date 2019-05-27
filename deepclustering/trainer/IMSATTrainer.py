@@ -3,11 +3,12 @@ from typing import List
 import matplotlib
 import numpy as np
 import torch
-from deepclustering.model import Model
 from pathlib2 import Path
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+from deepclustering.model import Model
 
 matplotlib.use('tkagg')
 
@@ -43,6 +44,17 @@ class IMSATTrainer(_Trainer):
         self.METERINTERFACE = MeterInterface(METER_CONFIG)
         return ['train_sat_loss_mean', 'train_mi_loss_mean', 'val_acc_mean']
 
+    @property
+    def _training_report_dict(self):
+        report_dict = {'sat': self.METERINTERFACE['train_sat_loss'].summary()['mean'],
+                       'mi': self.METERINTERFACE['train_mi_loss'].summary()['mean']}
+        return report_dict
+
+    @property
+    def _eval_report_dict(self):
+        report_dict = {'val_acc': self.METERINTERFACE.val_acc.summary()['mean']}
+        return report_dict
+
     def _train_loop(self, train_loader, epoch, mode: ModelMode = ModelMode.TRAIN, **kwargs):
         self.model.set_mode(mode)
         assert self.model.training, f"Model should be in train() model, given {self.model.training}."
@@ -70,7 +82,7 @@ class IMSATTrainer(_Trainer):
 
             sat_loss = self.SAT_criterion(tf1_pred_logit.detach(), tf2_pred_logit)
 
-            ml_loss = self.MI_criterion(tf1_pred_logit)
+            ml_loss, *_ = self.MI_criterion(tf1_pred_logit)
             # sat_loss = torch.Tensor([0]).cuda()
             batch_loss: torch.Tensor = vat_loss + sat_loss - 0.1 * ml_loss
             # batch_loss: torch.Tensor = - 0.1 * ml_loss
@@ -80,8 +92,7 @@ class IMSATTrainer(_Trainer):
             self.model.zero_grad()
             batch_loss.backward()
             self.model.step()
-            report_dict = {'sat': self.METERINTERFACE['train_sat_loss'].summary()['mean'],
-                           'mi': self.METERINTERFACE['train_mi_loss'].summary()['mean']}
+            report_dict = self._training_report_dict
             train_loader_.set_postfix(report_dict)
 
     def _eval_loop(self, val_loader: DataLoader, epoch: int, mode: ModelMode = ModelMode.EVAL, **kwargs) -> float:
@@ -120,7 +131,7 @@ class IMSATTrainer(_Trainer):
         self.METERINTERFACE.val_acc.add(_acc)
 
         # record best acc
-        report_dict = {'val_acc': self.METERINTERFACE.val_acc.summary()['mean']}
+        report_dict = self._eval_report_dict
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Validating epoch: {epoch} : {report_dict_str}")
         return self.METERINTERFACE.val_acc.summary()['mean']

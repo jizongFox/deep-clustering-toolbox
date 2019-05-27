@@ -33,7 +33,7 @@ class SequentialWrapper(object):
         self.img_transform = img_transform if img_transform is not None else identical
         self.target_transform = target_transform if target_transform is not None else identical
 
-    def __call__(self, *imgs, if_is_target: List[bool] = [False, True, True]):
+    def __call__(self, *imgs, if_is_target: List[bool] = [False, True, True], random_seed=None):
         def _transform(is_target: bool) -> Callable:
             assert isinstance(is_target, bool)
             return self.img_transform if not is_target else self.target_transform
@@ -50,7 +50,7 @@ class SequentialWrapper(object):
             f"and {len(if_is_target)}."
         # assert cases
 
-        random_seed: int = int(random.randint(0, 1e8))
+        random_seed: int = int(random.randint(0, 1e8)) if random_seed is None else int(random_seed)
 
         _imgs = []
         for img, if_target in zip(imgs, if_is_target):

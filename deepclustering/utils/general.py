@@ -23,8 +23,15 @@ def identical(x):
     return x
 
 
-# reproducibility
+# set_priority
+def set_nicer(nice):
+    if nice:
+        import os
+        os.nice(nice)
+        print(f"Process priority has been changed to {nice}.")
 
+
+# reproducibility
 def fix_all_seed(seed):
     random.seed(seed)
     torch.manual_seed(seed)

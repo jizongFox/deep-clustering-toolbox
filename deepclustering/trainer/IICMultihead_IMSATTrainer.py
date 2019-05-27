@@ -73,6 +73,23 @@ class IICMultiHeadIMSATTrainer(_Trainer):
                 'val_average_acc_mean',
                 'val_best_acc_mean']
 
+    @property
+    def _training_report_dict(self):
+        report_dict = {'train_head_A': self.METERINTERFACE['train_head_A'].summary()['mean'],
+                       'train_head_B': self.METERINTERFACE['train_head_B'].summary()['mean'],
+                       'adv_loss': self.METERINTERFACE['adv_loss'].summary()['mean'],
+                       'imsat_loss': self.METERINTERFACE['imsat_mi'].summary()['mean'],
+                       }
+        return report_dict
+
+    @property
+    def _eval_report_dict(self):
+        report_dict = {
+            'average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
+            'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']
+        }
+        return report_dict
+
     def start_training(self):
         """
         main function to call for training
@@ -94,7 +111,7 @@ class IICMultiHeadIMSATTrainer(_Trainer):
                 v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
             self.METERINTERFACE.summary().to_csv(self.save_dir / f'wholeMeter.csv')
             self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict(), global_step=epoch)
-            self.drawer.draw(self.METERINTERFACE.summary(), together=False)
+            self._call_draw_csv()
             self.save_checkpoint(self.state_dict, epoch, current_score)
 
     def _train_loop(
@@ -167,11 +184,12 @@ class IICMultiHeadIMSATTrainer(_Trainer):
                     self.METERINTERFACE['adv_loss'].add(adv_loss.item())
                     mi_batch_loss = []  # type: ignore
                     for subhead in range(tf1_pred_simplex.__len__()):
-                        _loss = - self.MI(tf1_pred_simplex[subhead])
+                        _loss, *_ = self.MI(tf1_pred_simplex[subhead])
+                        _loss = -_loss
                         mi_batch_loss.append(_loss)
                     mi_batch_loss: torch.Tensor = sum(mi_batch_loss) / len(mi_batch_loss)
                     self.METERINTERFACE['imsat_mi'].add(- mi_batch_loss.item())
-                    imsat_loss = 0.01 * adv_loss + mi_batch_loss  # here the mi_batch_loss shoud be negative
+                    imsat_loss = adv_loss + mi_batch_loss  # here the mi_batch_loss shoud be negative
 
                     total_loss = self.IIC_weight * batch_loss + self.IMSAT_weight * imsat_loss
                     self.model.zero_grad()
@@ -179,9 +197,9 @@ class IICMultiHeadIMSATTrainer(_Trainer):
                     self.model.step()
                     train_loader_.set_postfix(self.METERINTERFACE[f'train_head_{head_name}'].summary())
                     # time_before = time.time()
-        report_dict = {'train_head_A': self.METERINTERFACE['train_head_A'].summary()['mean'],
-                       'train_head_B': self.METERINTERFACE['train_head_B'].summary()['mean']}
+        report_dict = self._training_report_dict
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
+
         print(f"Training epoch: {epoch} : {report_dict_str}")
 
     def _eval_loop(self, val_loader: DataLoader, epoch: int, mode: ModelMode = ModelMode.EVAL, *args,
@@ -229,10 +247,8 @@ class IICMultiHeadIMSATTrainer(_Trainer):
 
         # record best acc
         self.METERINTERFACE.val_best_acc.add(max(subhead_accs))
-        report_dict = {
-            'average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
-            'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']
-        }
+        report_dict = self._eval_report_dict
+
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Validating epoch: {epoch} : {report_dict_str}")
         return self.METERINTERFACE.val_best_acc.summary()['mean']

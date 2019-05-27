@@ -16,7 +16,7 @@ Scheduler:
 DataLoader:
   batch_size: 20
   shuffle: true
-  num_workers: 8
+  num_workers: 4
   drop_last: False
 
 Trainer:
@@ -26,5 +26,6 @@ Trainer:
   device: cuda
   use_vat: true
   sat_weight: 0.1
+  nice: 1
 
 

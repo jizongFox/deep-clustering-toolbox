@@ -58,6 +58,18 @@ class IICMultiHeadTrainer(_Trainer):
                 'val_average_acc_mean',
                 'val_best_acc_mean']
 
+    @property
+    def _training_report_dict(self):
+        report_dict = {'train_head_A': self.METERINTERFACE['train_head_A'].summary()['mean'],
+                       'train_head_B': self.METERINTERFACE['train_head_B'].summary()['mean']}
+        return report_dict
+
+    @property
+    def _eval_report_dict(self):
+        report_dict = {'average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
+                       'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']}
+        return report_dict
+
     def start_training(self):
         """
         main function to call for training
@@ -79,7 +91,7 @@ class IICMultiHeadTrainer(_Trainer):
                 v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
             self.METERINTERFACE.summary().to_csv(self.save_dir / f'wholeMeter.csv')
             self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict(), global_step=epoch)
-            self.drawer.draw(self.METERINTERFACE.summary(), together=False)
+            self._call_draw_csv()
             self.save_checkpoint(self.state_dict, epoch, current_score)
 
     def _train_loop(
@@ -137,19 +149,18 @@ class IICMultiHeadTrainer(_Trainer):
                     tf1_pred_simplex = self.model.torchnet(tf1_images, head=head_name)
                     tf2_pred_simplex = self.model.torchnet(tf2_images, head=head_name)
                     assert simplex(tf1_pred_simplex[0]) and tf1_pred_simplex.__len__() == tf2_pred_simplex.__len__()
-                    batch_loss: List[torch.Tensor] = [] # type: ignore
+                    batch_loss: List[torch.Tensor] = []  # type: ignore
                     for subhead in range(tf1_pred_simplex.__len__()):
                         _loss, _loss_no_lambda = self.criterion(tf1_pred_simplex[subhead], tf2_pred_simplex[subhead])
                         batch_loss.append(_loss)
                     batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)
-                    self.METERINTERFACE[f'train_head_{head_name}'].add(-batch_loss.item())
+                    self.METERINTERFACE[f'train_head_{head_name}'].add(-batch_loss.item())  # type: ignore
                     self.model.zero_grad()
                     batch_loss.backward()
                     self.model.step()
-                    train_loader_.set_postfix(self.METERINTERFACE[f'train_head_{head_name}'].summary())
-                    # time_before = time.time()
-        report_dict = {'train_head_A': self.METERINTERFACE['train_head_A'].summary()['mean'],
-                       'train_head_B': self.METERINTERFACE['train_head_B'].summary()['mean']}
+                    report_dict = self._training_report_dict
+                    train_loader_.set_postfix(report_dict)
+
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Training epoch: {epoch} : {report_dict_str}")
 
@@ -194,11 +205,11 @@ class IICMultiHeadTrainer(_Trainer):
             subhead_accs.append(_acc)
             # record average acc
             self.METERINTERFACE.val_average_acc.add(_acc)
+            report_dict = self._eval_report_dict
 
         # record best acc
         self.METERINTERFACE.val_best_acc.add(max(subhead_accs))
-        report_dict = {'average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
-                       'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']}
+
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Validating epoch: {epoch} : {report_dict_str}")
         return self.METERINTERFACE.val_best_acc.summary()['mean']
