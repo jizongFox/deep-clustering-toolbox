@@ -145,7 +145,7 @@ class MeterInterface(object):
         assert isinstance(checkpoint, dict)
         for k, v in self.aggregated_meter_dict.items():
             v.record = checkpoint[k]
-        print(self.summary())
+        print(self.summary().tail())
 
     @classmethod
     def initialize_from_state_dict(cls, checkpoint: Dict[str, dict]):
