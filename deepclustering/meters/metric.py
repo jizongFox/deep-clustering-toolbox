@@ -43,9 +43,9 @@ class Metric(object):
 
 @export
 class AggragatedMeter(object):
-    '''
+    """
     Aggregate historical information in a List.
-    '''
+    """
 
     def __init__(self) -> None:
         super().__init__()

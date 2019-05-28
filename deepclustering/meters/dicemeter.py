@@ -45,9 +45,8 @@ class _DiceMeter(Metric):
     def __init__(self, method='2d', report_axises=None, C=4) -> None:
         super().__init__()
         assert method in ('2d', '3d')
-        assert report_axises == None or isinstance(report_axises, list)
-        self.method = method
-        self.diceCall = dice_coef if self.method == '2d' else dice_batch
+        assert report_axises is None or isinstance(report_axises, list)
+        self.diceCall = dice_coef if method == '2d' else dice_batch
         self.report_axis = report_axises if report_axises is not None else list(range(C))
         self.diceLog = []
         self.C = C
