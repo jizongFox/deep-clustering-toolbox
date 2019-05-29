@@ -1,11 +1,12 @@
 import argparse
+import os
+import subprocess
 from pathlib import Path
 from pprint import pprint
-import subprocess
+
 import matplotlib
 import numpy as np
 import pandas as pd
-import os
 
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -53,6 +54,8 @@ class DrawCSV(object):
             if not isinstance(axs, np.ndarray):
                 axs = np.array([axs])
             for i, k in enumerate(self.columns_to_draw):
+                if len(dataframe[k]) == 0:
+                    continue
                 _ax = axs[i]
                 _ax.plot(dataframe[k], label=k)
                 _ax.legend()

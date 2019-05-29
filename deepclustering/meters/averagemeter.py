@@ -37,10 +37,10 @@ class AverageValueMeter(Metric):
         self.sum = 0.0
         self.var = 0.0
         self.val = 0.0
-        self.mean = np.nan
+        self.mean = 0.0
         self.mean_old = 0.0
         self.m_s = 0.0
-        self.std = np.nan
+        self.std = 0.0
 
     def summary(self) -> dict:
         # this function returns a dict and tends to aggregate the historical results.

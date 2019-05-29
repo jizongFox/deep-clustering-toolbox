@@ -81,7 +81,7 @@ class HaussdorffDistance(Metric):
             log = torch.cat(self._haussdorff_log)
         except RuntimeError:
             warnings.warn(f'No log has been found', RuntimeWarning)
-            log = torch.Tensor([np.nan for _ in range(self._C if self._C is not None else \
+            log = torch.Tensor([0 for _ in range(self._C if self._C is not None else \
                                                           self.default_class_num)])
             log = log.unsqueeze(0)
         assert len(log.shape) == 2
