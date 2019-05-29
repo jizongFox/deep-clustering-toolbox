@@ -3,7 +3,7 @@ from typing import Dict, Any
 
 from deepclustering.dataset.classification import Cifar10DatasetInterface, default_cifar10_img_transform
 from deepclustering.model import Model
-from deepclustering.trainer.IICMultihead_IMSATTrainer import IICMultiHeadIMSATTrainer
+from playground.IIC_VAT.IICMultihead_IMSATTrainer_backup import IICMultiHeadIMSATTrainer
 from deepclustering.utils import yaml_parser, yaml_load, dict_merge
 
 DEFAULT_CONFIG = '../config/IICClusterIMSAT.yaml'

@@ -1,7 +1,7 @@
-import subprocess
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
+from math import isnan
 from typing import List
 
 import torch
@@ -12,8 +12,8 @@ from torch.utils.data import DataLoader
 from .. import ModelMode, PROJECT_PATH
 from ..meters import MeterInterface
 from ..model import Model
-from ..utils import flatten_dict, _warnings, set_nicer
-from ..writer import SummaryWriter
+from ..utils import flatten_dict, _warnings, dict_filter
+from ..writer import SummaryWriter, DrawCSV
 
 
 class _Trainer(ABC):
@@ -50,8 +50,12 @@ class _Trainer(ABC):
 
         self.writer = SummaryWriter(str(self.save_dir))
         # todo: try to override the DrawCSV
-        self._columns_to_draw = self.__init_meters__()
-        # self.drawer = DrawCSV(columns_to_draw=self._columns_to_draw, save_dir=str(self.save_dir), save_name='plot.png')
+        _columns_to_draw = self.__init_meters__()
+        self.drawer = DrawCSV(columns_to_draw=_columns_to_draw,
+                              save_dir=str(self.save_dir),
+                              save_name='plot.png',
+                              csv_name=self.wholemeter_filename
+                              )
         if checkpoint_path:
             assert Path(checkpoint_path).exists() and Path(checkpoint_path).is_dir(), Path(checkpoint_path)
             state_dict = torch.load(str(Path(checkpoint_path) / 'last.pth'), map_location=torch.device('cpu'))
@@ -68,12 +72,14 @@ class _Trainer(ABC):
     @abstractmethod
     def _training_report_dict(self):
         report_dict = flatten_dict({})
+        report_dict = dict_filter(report_dict, lambda k, v: 1 - isnan(v))
         return report_dict
 
     @property
     @abstractmethod
     def _eval_report_dict(self):
         report_dict = flatten_dict({})
+        report_dict = dict_filter(report_dict, lambda k, v: 1 - isnan(v))
         return report_dict
 
     def start_training(self):
@@ -91,20 +97,8 @@ class _Trainer(ABC):
                 v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
             self.METERINTERFACE.summary().to_csv(self.save_dir / self.wholemeter_filename)
             self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict(), global_step=epoch)
-
-            # self.drawer.draw(self.METERINTERFACE.summary(), together=False)
-            self._call_draw_csv()
+            self.drawer.call_draw()
             self.save_checkpoint(self.state_dict, epoch, current_score)
-
-    def _call_draw_csv(self):
-        _csv_path = self.save_dir / self.wholemeter_filename
-        _columns_to_draw = " ".join(self._columns_to_draw)
-        _save_dir = str(self.save_dir)
-        cmd = f"python  {PROJECT_PATH}/deepclustering/writer/draw_csv.py  " \
-            f"--csv_path={_csv_path} " \
-            f"--save_dir={_save_dir} " \
-            f"--columns_to_draw {_columns_to_draw} &"
-        subprocess.call(cmd, shell=True)
 
     def to(self, device):
         self.model.to(device=device)
@@ -119,7 +113,7 @@ class _Trainer(ABC):
         _warnings(args, kwargs)
 
     @abstractmethod
-    def _eval_loop(self, val_loader=None, epoch=None, mode=ModelMode.EVAL, *args, **kwargs) -> float:
+    def _eval_loop(self, val_loader: DataLoader, epoch: int, mode=ModelMode.EVAL, *args, **kwargs) -> float:
         # warning control
         _warnings(args, kwargs)
 

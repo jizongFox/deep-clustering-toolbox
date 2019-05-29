@@ -13,8 +13,10 @@ from ..augment.augment import SobelProcess
 from ..loss.IID_losses import IIDLoss
 from ..meters import AverageValueMeter, MeterInterface
 from ..model import Model
-from ..utils import tqdm_, simplex, tqdm
+from ..utils import tqdm_, simplex, tqdm, dict_filter
 from ..utils.classification.assignment_mapping import flat_acc, hungarian_match
+
+__all__ = ['IICMultiHeadTrainer']
 
 
 class IICMultiHeadTrainer(_Trainer):
@@ -62,12 +64,14 @@ class IICMultiHeadTrainer(_Trainer):
     def _training_report_dict(self):
         report_dict = {'train_head_A': self.METERINTERFACE['train_head_A'].summary()['mean'],
                        'train_head_B': self.METERINTERFACE['train_head_B'].summary()['mean']}
+        report_dict = dict_filter(report_dict, lambda k, v: 1 - isnan(v))
         return report_dict
 
     @property
     def _eval_report_dict(self):
         report_dict = {'average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
                        'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']}
+        report_dict = dict_filter(report_dict, lambda k, v: 1 - isnan(v))
         return report_dict
 
     def start_training(self):
@@ -91,7 +95,7 @@ class IICMultiHeadTrainer(_Trainer):
                 v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
             self.METERINTERFACE.summary().to_csv(self.save_dir / f'wholeMeter.csv')
             self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict(), global_step=epoch)
-            self._call_draw_csv()
+            self.drawer.call_draw()
             self.save_checkpoint(self.state_dict, epoch, current_score)
 
     def _train_loop(
@@ -145,16 +149,7 @@ class IICMultiHeadTrainer(_Trainer):
                         tf1_images = self.sobel(tf1_images)
                         tf2_images = self.sobel(tf2_images)
                     assert tf1_images.shape == tf2_images.shape
-                    self.model.zero_grad()
-                    tf1_pred_simplex = self.model.torchnet(tf1_images, head=head_name)
-                    tf2_pred_simplex = self.model.torchnet(tf2_images, head=head_name)
-                    assert simplex(tf1_pred_simplex[0]) and tf1_pred_simplex.__len__() == tf2_pred_simplex.__len__()
-                    batch_loss: List[torch.Tensor] = []  # type: ignore
-                    for subhead in range(tf1_pred_simplex.__len__()):
-                        _loss, _loss_no_lambda = self.criterion(tf1_pred_simplex[subhead], tf2_pred_simplex[subhead])
-                        batch_loss.append(_loss)
-                    batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)
-                    self.METERINTERFACE[f'train_head_{head_name}'].add(-batch_loss.item())  # type: ignore
+                    batch_loss = self._trainer_specific_loss(tf1_images, tf2_images, head_name)
                     self.model.zero_grad()
                     batch_loss.backward()
                     self.model.step()
@@ -164,8 +159,14 @@ class IICMultiHeadTrainer(_Trainer):
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Training epoch: {epoch} : {report_dict_str}")
 
-    def _eval_loop(self, val_loader: DataLoader, epoch: int, mode: ModelMode = ModelMode.EVAL, *args,
-                   **kwargs) -> float:
+    def _eval_loop(
+            self,
+            val_loader: DataLoader,
+            epoch: int,
+            mode: ModelMode = ModelMode.EVAL,
+            *args,
+            **kwargs
+    ) -> float:
         self.model.set_mode(mode)
         assert not self.model.training, f"Model should be in eval model in _eval_loop, given {self.model.training}."
         val_loader_: tqdm = tqdm_(val_loader)
@@ -205,11 +206,23 @@ class IICMultiHeadTrainer(_Trainer):
             subhead_accs.append(_acc)
             # record average acc
             self.METERINTERFACE.val_average_acc.add(_acc)
-            report_dict = self._eval_report_dict
-
         # record best acc
         self.METERINTERFACE.val_best_acc.add(max(subhead_accs))
+        report_dict = self._eval_report_dict
 
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Validating epoch: {epoch} : {report_dict_str}")
         return self.METERINTERFACE.val_best_acc.summary()['mean']
+
+    def _trainer_specific_loss(self, tf1_images, tf2_images, head_name):
+        self.model.zero_grad()
+        tf1_pred_simplex = self.model.torchnet(tf1_images, head=head_name)
+        tf2_pred_simplex = self.model.torchnet(tf2_images, head=head_name)
+        assert simplex(tf1_pred_simplex[0]) and tf1_pred_simplex.__len__() == tf2_pred_simplex.__len__()
+        batch_loss: List[torch.Tensor] = []  # type: ignore
+        for subhead in range(tf1_pred_simplex.__len__()):
+            _loss, _loss_no_lambda = self.criterion(tf1_pred_simplex[subhead], tf2_pred_simplex[subhead])
+            batch_loss.append(_loss)
+        batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)
+        self.METERINTERFACE[f'train_head_{head_name}'].add(-batch_loss.item())  # type: ignore
+        return batch_loss

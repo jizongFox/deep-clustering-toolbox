@@ -4,7 +4,7 @@ import random
 import warnings
 from copy import deepcopy as dcopy
 from functools import partial
-from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Union, Any
+from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Union, Dict, Any
 
 import numpy as np
 import torch
@@ -204,7 +204,7 @@ def flatten_dict(d, parent_key='', sep='_'):
     return dict(items)
 
 
-def dict_merge(dct: dict, merge_dct: dict, re=False):
+def dict_merge(dct: dict, merge_dct: dict, re=True):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
     to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
@@ -241,6 +241,12 @@ def extract_from_big_dict(big_dict, keys) -> dict:
     """
     #   TODO a bug has been found
     return {key: big_dict.get(key) for key in keys if big_dict.get(key, 'not_found') != 'not_found'}
+
+
+# filter a flat dictionary with a lambda function
+
+def dict_filter(dictionary: Dict[str, np.ndarray], filter_func: Callable = lambda k, v: True):
+    return {k: v for k, v in dictionary.items() if filter_func(k, v)}
 
 
 # meta function for interface

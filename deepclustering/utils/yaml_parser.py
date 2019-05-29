@@ -5,7 +5,7 @@ from pprint import pprint
 from typing import Union, List, Dict, Any
 
 import yaml
-from pathlib2 import Path
+from pathlib2 import Path, PosixPath
 
 from .general import map_, dict_merge
 
@@ -17,7 +17,7 @@ D = Dict[str, Any]
 # todo, add type check
 # argparser
 def yaml_load(yaml_path: Union[Path, str], verbose=False) -> dict:
-    assert isinstance(yaml_path, (Path, str))
+    assert isinstance(yaml_path, (Path, str, PosixPath)), type(yaml_path)
     with open(str(yaml_path), 'r') as stream:
         data_loaded: dict = yaml.safe_load(stream)
     if verbose:

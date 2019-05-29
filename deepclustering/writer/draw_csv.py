@@ -1,17 +1,26 @@
 import argparse
 from pathlib import Path
 from pprint import pprint
-
+import subprocess
 import matplotlib
 import numpy as np
 import pandas as pd
+import os
 
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+from deepclustering import PROJECT_PATH
 
 
 class DrawCSV(object):
-    def __init__(self, columns_to_draw=None, save_dir=None, save_name='plot.png', figsize=[10, 15]) -> None:
+    def __init__(
+            self,
+            columns_to_draw=None,
+            save_dir=None,
+            save_name='plot.png',
+            csv_name='wholeMeter.csv',
+            figsize=[10, 15]
+    ) -> None:
         super().__init__()
         if columns_to_draw is not None and not isinstance(columns_to_draw, list):
             columns_to_draw = [columns_to_draw]
@@ -19,6 +28,17 @@ class DrawCSV(object):
         self.save_name = save_name
         self.save_dir = save_dir
         self.figsize = tuple(figsize)
+        self.csv_name = csv_name
+
+    def call_draw(self):
+        _csv_path = os.path.join(str(self.save_dir), self.csv_name)
+        _columns_to_draw = " ".join(self.columns_to_draw)
+        _save_dir = str(self.save_dir)
+        cmd = f"python  {PROJECT_PATH}/deepclustering/writer/draw_csv.py  " \
+            f"--csv_path={_csv_path} " \
+            f"--save_dir={_save_dir} " \
+            f"--columns_to_draw {_columns_to_draw} &"
+        subprocess.call(cmd, shell=True)
 
     def draw(self, dataframe, together=False):
         if together:
@@ -74,4 +94,3 @@ if __name__ == '__main__':
 
     csv_dataframe = pd.read_csv(args.csv_path)
     csv_drawer.draw(csv_dataframe, together=args.overlap)
-    print('draw ends')

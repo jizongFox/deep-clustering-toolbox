@@ -125,3 +125,4 @@ class VATLoss_Multihead(nn.Module):
             lds = sum(lds) / float(len(lds))
 
         return lds, (x + r_adv).detach(), r_adv.detach()
+
