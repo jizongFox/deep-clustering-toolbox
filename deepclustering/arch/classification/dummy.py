@@ -1,6 +1,18 @@
 from torch import nn
 
 
+class PlaceholderNet(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(128, 256, 3)
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+
+    def forward(self, input):
+        return input
+        # return self.avg_pool(self.conv1(input))
+
+
 class Dummy(nn.Module):
     """
     This is a dummy network for debug
