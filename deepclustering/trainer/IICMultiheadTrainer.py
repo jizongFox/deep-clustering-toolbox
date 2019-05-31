@@ -2,6 +2,7 @@
 This is the trainer for IIC multiple-header Clustering
 """
 from collections import OrderedDict
+from math import isnan
 from typing import List
 
 import torch

@@ -51,10 +51,7 @@ def weights_init(m):
 def get_arch(arch: str, kwargs) -> nn.Module:
     """ Get the architecture. Return a torch.nn.Module """
     arch_callable = ARCH_CALLABLES.get(arch.lower())
-    try:
-        kwargs.pop('arch')
-    except KeyError:
-        pass
+    kwargs.pop('arch', None)
     assert arch_callable, "Architecture {} is not found!".format(arch)
     net = arch_callable(**kwargs)
     # try:

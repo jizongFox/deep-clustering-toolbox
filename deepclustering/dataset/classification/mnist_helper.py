@@ -36,28 +36,101 @@ class MNISTDatasetInterface(ClusterDatasetInterface):
         return serial_dataset
 
 
-# default transform
+
 default_mnist_img_transform = {
-    "tf1": transforms.Compose([
-        augment.CenterCrop(size=(26, 26)),
-        augment.Resize(size=(28, 28), interpolation=PIL.Image.BILINEAR),
-        augment.Img2Tensor(include_rgb=False, include_grey=True),
-        transforms.Normalize((0.5,), (0.5,))
-    ]),
+    "tf1":
+        transforms.Compose([
+            augment.RandomChoice(transforms=
+                                 [augment.RandomCrop(size=(20, 20), padding=None),
+                                  augment.CenterCrop(size=(20, 20))
+                                  ]),
+            augment.Resize(size=24, interpolation=PIL.Image.BILINEAR),
+            transforms.ToTensor()
+        ]),
     "tf2":
         transforms.Compose([
-            augment.RandomCrop(size=(26, 26), padding=2),
-            augment.Resize(size=(28, 28), interpolation=PIL.Image.BILINEAR),
-            # transforms.RandomHorizontalFlip(p=0.5),
-            transforms.ColorJitter(brightness=[0.6, 1.4], contrast=[0.6, 1.4], saturation=[0.6, 1.4],
-                                   hue=[-0.125, 0.125]),
-            augment.Img2Tensor(include_rgb=False, include_grey=True),
-            transforms.Normalize((0.5,), (0.5,))
+            augment.RandomApply(transforms=[transforms.RandomRotation(
+                degrees=(-25.0, 25.0),
+                resample=False,
+                expand=False
+            )], p=0.5),
+            augment.RandomChoice(transforms=[
+                augment.RandomCrop(size=(16, 16), padding=None),
+                augment.RandomCrop(size=(20, 20), padding=None),
+                augment.RandomCrop(size=(24, 24), padding=None),
+            ]),
+            augment.Resize(size=24, interpolation=PIL.Image.BILINEAR),
+            transforms.ToTensor()
         ]),
-    "tf3": transforms.Compose([
-        augment.CenterCrop(size=(26, 26)),
-        augment.Resize(size=(28, 28), interpolation=PIL.Image.BILINEAR),
-        augment.Img2Tensor(include_rgb=False, include_grey=True),
-        transforms.Normalize((0.5,), (0.5,))
-    ])
+    "tf3":
+        transforms.Compose([
+            augment.CenterCrop(size=(20, 20)),
+            augment.Resize(size=24, interpolation=PIL.Image.BILINEAR),
+            transforms.ToTensor()
+        ]),
+
 }
+
+""" Taken from the IIC paper
+tf1
+Compose(
+    RandomChoice(
+    RandomCrop(size=(20, 20), padding=None)
+    CenterCrop(size=(20, 20))
+)
+    Resize(size=24, interpolation=PIL.Image.BILINEAR)
+    ToTensor()
+)
+tf2
+Compose(
+    RandomApply(
+        p=0.5
+        RandomRotation(degrees=(-25.0, 25.0), resample=False, expand=False)
+        )
+    RandomChoice(
+        RandomCrop(size=(16, 16), padding=None)
+        RandomCrop(size=(20, 20), padding=None)
+        RandomCrop(size=(24, 24), padding=None)
+    )
+    Resize(size=(24, 24), interpolation=PIL.Image.BILINEAR)
+    ColorJitter(
+        brightness=[0.6, 1.4], 
+        contrast=[0.6, 1.4], 
+        saturation=[0.6, 1.4], 
+        hue=[-0.125, 0.125]
+    )
+    ToTensor()
+)
+tf3:
+Compose(
+    CenterCrop(size=(20, 20))
+    Resize(size=24, interpolation=PIL.Image.BILINEAR)
+    ToTensor()
+)
+"""
+
+# default transform
+# default_mnist_img_transform = {
+#     "tf1": transforms.Compose([
+#         augment.CenterCrop(size=(26, 26)),
+#         augment.Resize(size=(28, 28), interpolation=PIL.Image.BILINEAR),
+#         augment.Img2Tensor(include_rgb=False, include_grey=True),
+#         transforms.Normalize((0.5,), (0.5,))
+#     ]),
+#     "tf2":
+#         transforms.Compose([
+#             augment.RandomCrop(size=(26, 26), padding=2),
+#             augment.Resize(size=(28, 28), interpolation=PIL.Image.BILINEAR),
+#             # transforms.RandomHorizontalFlip(p=0.5),
+#             transforms.ColorJitter(brightness=[0.6, 1.4], contrast=[0.6, 1.4], saturation=[0.6, 1.4],
+#                                    hue=[-0.125, 0.125]),
+#             augment.Img2Tensor(include_rgb=False, include_grey=True),
+#             transforms.Normalize((0.5,), (0.5,))
+#         ]),
+#     "tf3": transforms.Compose([
+#         augment.CenterCrop(size=(26, 26)),
+#         augment.Resize(size=(28, 28), interpolation=PIL.Image.BILINEAR),
+#         augment.Img2Tensor(include_rgb=False, include_grey=True),
+#         transforms.Normalize((0.5,), (0.5,))
+#     ])
+# }

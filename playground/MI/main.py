@@ -21,28 +21,6 @@ from deepclustering.utils.classification.assignment_mapping import hungarian_mat
 matplotlib.use('agg')
 
 
-# warnings.filterwarnings('ignore')
-
-
-# class ToyExampleInterFace(ClusterDatasetInterface):
-#     ALLOWED_SPLIT = ['1']
-#
-#     def __init__(self, batch_size: int = 1, shuffle: bool = False,
-#                  num_workers: int = 1, pin_memory: bool = True, drop_last=False) -> None:
-#         super().__init__(Cls_ShapesDataset, ['1'], batch_size, shuffle, num_workers, pin_memory, drop_last)
-#
-#     def _creat_concatDataset(self, image_transform: Callable, target_transform: Callable, dataset_dict: dict = {}):
-#         train_set = Cls_ShapesDataset(
-#             count=5000,
-#             height=100,
-#             width=100,
-#             max_object_scale=0.75,
-#             transform=image_transform,
-#             target_transform=target_transform,
-#             **dataset_dict)
-#         return train_set
-
-
 class IMSAT_Trainer(_Trainer):
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
                  save_dir: str = 'IMSAT', use_vat: bool = False, sat_weight: float = 0.1, checkpoint_path: str = None,
@@ -165,17 +143,6 @@ class IMSAT_Trainer(_Trainer):
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Validating epoch: {epoch} : {report_dict_str}")
 
-        # plt.clf()
-        # probas = pd.DataFrame(probas.squeeze().cpu().numpy())
-        # for k in probas.keys():
-        #     probas[k].plot.density(label=str(k))
-        # plt.legend()
-        # plt.grid()
-        # plt.show()
-        # plt.savefig(self.save_dir / 'distribution.png')
-        # plt.close('all')
-        # print(pd.Series(preds.cpu().numpy().ravel()).value_counts())
-
         return self.METERINTERFACE.val_best_acc.summary()['mean']
 
     def _trainer_specific_loss(
@@ -193,7 +160,7 @@ class IMSAT_Trainer(_Trainer):
         assert simplex(pred[0]), pred
         mi_losses, entropy_losses, centropy_losses = [], [], []
         for subhead_num in range(self.model.arch_dict['num_sub_heads']):
-            _mi_loss, (_entropy_loss, _centropy_loss) = self.criterion(pred_tf[subhead_num])
+            _mi_loss, (_entropy_loss, _centropy_loss) = self.criterion(pred[subhead_num])
             mi_losses.append(-_mi_loss)
             entropy_losses.append(_entropy_loss)
             centropy_losses.append(_centropy_loss)
@@ -205,12 +172,14 @@ class IMSAT_Trainer(_Trainer):
         self.METERINTERFACE['train_entropy'].add(entrop_loss.item())
         self.METERINTERFACE['train_centropy'].add(centropy_loss.item())
 
-        if not self.use_vat:
-            # use transformation
-            _sat_loss = list(map(lambda p1, p2: self.kl(p2, p1.detach()), pred, pred_tf))
-            sat_loss = sum(_sat_loss) / len(_sat_loss)
-        else:
-            sat_loss, *_ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(self.model.torchnet, images)
+        sat_loss = torch.Tensor([0])
+        if self.sat_weight > 0:
+            if not self.use_vat:
+                # use transformation
+                _sat_loss = list(map(lambda p1, p2: self.kl(p2, p1.detach()), pred, pred_tf))
+                sat_loss = sum(_sat_loss) / len(_sat_loss)
+            else:
+                sat_loss, *_ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(self.model.torchnet, images)
 
         self.METERINTERFACE['train_sat'].add(sat_loss.item())
 
@@ -283,6 +252,7 @@ config = ConfigManger(DEFAULT_CONFIG_PATH='./config.yml', verbose=False).config
 datainterface = MNISTDatasetInterface(**config['DataLoader'])
 train_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf1'],
+    default_mnist_img_transform['tf2'],
     default_mnist_img_transform['tf2'],
     default_mnist_img_transform['tf2'],
     default_mnist_img_transform['tf2'],
