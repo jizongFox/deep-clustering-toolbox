@@ -1,3 +1,8 @@
+###############################
+#   This file is to create experiments using Cifar10 dataset of IIC setting (double head) with acc = ~60.0%
+#   to verify whether the VAT can help better with IIC.
+#   This experiment can be long and a pretrained checkpoint can be used to reduce the time.
+##############################
 from pathlib import Path
 
 from deepclustering.dataset.classification import Cifar10DatasetInterface, default_cifar10_img_transform

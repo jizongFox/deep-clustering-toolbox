@@ -104,7 +104,7 @@ class _Trainer(ABC):
         self.model.to(device=device)
 
     @abstractmethod
-    def _train_loop(self, train_loader=None, epoch=0, mode=ModelMode.TRAIN, *args, **kwargs):
+    def _train_loop(self, train_loader=None, epoch: int = 0, mode=ModelMode.TRAIN, *args, **kwargs):
         # warning control
         _warnings(args, kwargs)
 
@@ -113,7 +113,7 @@ class _Trainer(ABC):
         _warnings(args, kwargs)
 
     @abstractmethod
-    def _eval_loop(self, val_loader: DataLoader, epoch: int, mode=ModelMode.EVAL, *args, **kwargs) -> float:
+    def _eval_loop(self, val_loader: DataLoader = None, epoch: int = 0, mode=ModelMode.EVAL, *args, **kwargs) -> float:
         # warning control
         _warnings(args, kwargs)
 
@@ -147,7 +147,8 @@ class _Trainer(ABC):
 
     def clean_up(self):
         import shutil
-
+        import time
+        time.sleep(60) # to prevent that the call_draw function is not ended.
         Path(self.ARCHIVE_PATH).mkdir(exist_ok=True, parents=True)
         sub_dir = self.save_dir.relative_to(Path(self.RUN_PATH))
         save_dir = Path(self.ARCHIVE_PATH) / str(sub_dir)

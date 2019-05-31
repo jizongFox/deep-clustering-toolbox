@@ -71,8 +71,6 @@ class ClusterNet6cTwoHead(VGGNet):
                                               num_sub_heads=num_sub_heads, semisup=semisup,
                                               batchnorm_track=self.batchnorm_track)
 
-        print("semisup: %s" % semisup)
-
         self.head_B = ClusterNet6cTwoHeadHead(input_size=input_size, output_k=output_k_B,
                                               num_sub_heads=num_sub_heads, semisup=semisup,
                                               batchnorm_track=self.batchnorm_track)

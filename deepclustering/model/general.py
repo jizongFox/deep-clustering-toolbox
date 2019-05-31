@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC
 from typing import *
 
@@ -9,14 +10,19 @@ from torch.nn import functional as F
 from torch.optim import lr_scheduler
 
 from deepclustering import ModelMode
-from deepclustering.arch import get_arch
+from deepclustering.arch import get_arch, PlaceholderNet
 # from torch import optim
 from .. import optim
 
 
 class Model(ABC):
 
-    def __init__(self, arch_dict: Dict[str, Any], optim_dict: Dict[str, Any], scheduler_dict: Dict[str, Any]) -> None:
+    def __init__(
+            self,
+            arch_dict: Dict[str, Any] = None,
+            optim_dict: Dict[str, Any] = None,
+            scheduler_dict: Dict[str, Any] = None
+    ) -> None:
         super().__init__()
         self.arch_dict = arch_dict
         self.optim_dict = optim_dict
@@ -25,19 +31,41 @@ class Model(ABC):
         self.to(device=torch.device('cpu'))
 
     def _setup(self) -> Tuple[nn.Module, optim.SGD, torch.optim.lr_scheduler.LambdaLR]:
-        self.arch_name = self.arch_dict['name']
-        self.arch_params = {k: v for k, v in self.arch_dict.items() if k != 'name'}
-        self.optim_name = self.optim_dict['name']
-        self.optim_params = {k: v for k, v in self.optim_dict.items() if k != 'name'}
-        self.scheduler_name = self.scheduler_dict['name']
-        self.scheduler_params = {k: v for k, v in self.scheduler_dict.items() if k != 'name'}
-        torchnet = get_arch(self.arch_name, self.arch_params)
+        if self.arch_dict is not None:
+            self.arch_name = self.arch_dict['name']
+            self.arch_params = {k: v for k, v in self.arch_dict.items() if k != 'name'}
+            torchnet = get_arch(self.arch_name, self.arch_params)
+        else:
+            warnings.warn(f'torchnet is a placeholder, override it later.', RuntimeWarning)
+            self.arch_name = None
+            self.arch_params = None
+            torchnet = PlaceholderNet()
         # this put the tensor to cuda directly, including the forward image implicitly.
         # torchnet = nn.DataParallel(torchnet)
-        optimizer: optim.SGD = getattr(optim, self.optim_name) \
-            (torchnet.parameters(), **self.optim_params)
-        scheduler: lr_scheduler.LambdaLR = getattr(lr_scheduler, self.scheduler_name) \
-            (optimizer, **self.scheduler_params)
+        if self.optim_dict is not None:
+            self.optim_name = self.optim_dict['name']
+            self.optim_params = {k: v for k, v in self.optim_dict.items() if k != 'name'}
+            optimizer: optim.SGD = getattr(optim, self.optim_name) \
+                (torchnet.parameters(), **self.optim_params)
+        else:
+            warnings.warn(f'optimizer is a placeholder, override it later.', RuntimeWarning)
+            self.optim_name = None
+            self.optim_params = None
+            optimizer: optim.SGD = getattr(optim, 'SGD')(torchnet.parameters(), lr=0.01)
+
+        if self.scheduler_dict is not None:
+            self.scheduler_name = self.scheduler_dict['name']
+            self.scheduler_params = {k: v for k, v in self.scheduler_dict.items() if
+                                     k != 'name'}
+            scheduler: lr_scheduler.LambdaLR = getattr(lr_scheduler, self.scheduler_name) \
+                (optimizer, **self.scheduler_params) if self.scheduler_name is not None else None
+        else:
+            warnings.warn(f'scheduler is a placeholder, override it later.', RuntimeWarning)
+            self.scheduler_name = None
+            self.scheduler_params = None
+            scheduler: lr_scheduler.LambdaLR = getattr(lr_scheduler, 'StepLR') \
+                (optimizer, 10, 0.1)
+
         return torchnet, optimizer, scheduler
 
     def predict(self, img: Tensor, logit=True) -> Tensor:

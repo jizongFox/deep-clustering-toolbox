@@ -1,8 +1,9 @@
 Arch:
-  name: dummy
-  num_channel: 1
+  name: clusternet6c
+  input_size: 24
   output_k: 10
-  num_sub_heads: 1
+  num_channel: 1
+  num_sub_heads: 5
 
 Optim:
   name: Adam
@@ -14,18 +15,17 @@ Scheduler:
   gamma: 0.7
 
 DataLoader:
-  batch_size: 20
+  batch_size: 200
   shuffle: true
-  num_workers: 4
+  num_workers: 16
   drop_last: False
 
 Trainer:
   name: IMSAT
-  max_epoch: 1000
+  max_epoch: 500
   save_dir: tmp
   device: cuda
   use_vat: true
   sat_weight: 0.1
-  nice: 1
 
 

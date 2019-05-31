@@ -1,3 +1,4 @@
+import warnings
 import argparse
 import os
 import subprocess
@@ -32,14 +33,17 @@ class DrawCSV(object):
         self.csv_name = csv_name
 
     def call_draw(self):
-        _csv_path = os.path.join(str(self.save_dir), self.csv_name)
-        _columns_to_draw = " ".join(self.columns_to_draw)
-        _save_dir = str(self.save_dir)
-        cmd = f"python  {PROJECT_PATH}/deepclustering/writer/draw_csv.py  " \
-            f"--csv_path={_csv_path} " \
-            f"--save_dir={_save_dir} " \
-            f"--columns_to_draw {_columns_to_draw} &"
-        subprocess.call(cmd, shell=True)
+        try:
+            _csv_path = os.path.join(str(self.save_dir), self.csv_name)
+            _columns_to_draw = " ".join(self.columns_to_draw)
+            _save_dir = str(self.save_dir)
+            cmd = f"python  {PROJECT_PATH}/deepclustering/writer/draw_csv.py  " \
+                f"--csv_path={_csv_path} " \
+                f"--save_dir={_save_dir} " \
+                f"--columns_to_draw {_columns_to_draw} &"
+            subprocess.call(cmd, shell=True)
+        except TypeError:
+            warnings.warn(f'Given columns to draw: {self.columns_to_draw}.', UserWarning)
 
     def draw(self, dataframe, together=False):
         if together:

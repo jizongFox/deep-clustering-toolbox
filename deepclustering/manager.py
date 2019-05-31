@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from pprint import pprint
 from typing import Dict, Any
@@ -8,9 +9,12 @@ from deepclustering.utils import yaml_parser, yaml_load, dict_merge
 class ConfigManger:
     DEFAULT_CONFIG = ""
 
-    def __init__(self, DEFAULT_CONFIG_PATH: str, verbose=True) -> None:
+    def __init__(self, DEFAULT_CONFIG_PATH: str = None, verbose=True) -> None:
+        self.parsed_args: Dict[str, Any] = yaml_parser(verbose=verbose)
+        if DEFAULT_CONFIG_PATH is None:
+            warnings.warn('No default yaml is provided, only used for parser input arguments.', UserWarning)
+            return
         self.SET_DEFAULT_CONFIG_PATH(DEFAULT_CONFIG_PATH)
-        self.parsed_args: Dict[str, Any] = yaml_parser(True)
         self.default_config = yaml_load(self.parsed_args.get('Config', self.DEFAULT_CONFIG), verbose=verbose)
         self.merged_config = dict_merge(self.default_config, self.parsed_args, re=True)
         self._check_integrality(self.merged_config)
