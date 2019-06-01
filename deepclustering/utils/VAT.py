@@ -71,7 +71,8 @@ class VATLoss(nn.Module):
                 model.zero_grad()
 
             # calc LDS
-            r_adv = d * self.eps.view(-1, 1) * self.prop_eps
+            r_adv = d * self.eps.view(-1, 1) * self.prop_eps if \
+                isinstance(self.eps, torch.Tensor) else d * self.eps * self.prop_eps
             pred_hat = model(x + r_adv)
             lds = _kl_div(F.softmax(pred_hat, dim=1), pred)
 

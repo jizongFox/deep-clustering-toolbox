@@ -1,6 +1,7 @@
 ###############################
 #   This file is to create experiments using Mnist dataset of IIC setting (single head)
-#   to verify whether the IMSAT (with VAT or random perturbation) or the IIC (baseline or vat) perform best in the simplest case.
+#   to verify whether the IMSAT (with VAT or random perturbation) or the IIC (baseline or vat) perform best in the
+#   simplest case.
 #
 ##############################
 from typing import List
@@ -8,8 +9,6 @@ from typing import List
 import matplotlib
 import matplotlib.pyplot as plt
 import torch
-from torch.utils.data import DataLoader
-
 from deepclustering import ModelMode
 from deepclustering.dataset.classification.mnist_helper import MNISTDatasetInterface, default_mnist_img_transform
 from deepclustering.loss.IMSAT_loss import MultualInformaton_IMSAT
@@ -18,9 +17,10 @@ from deepclustering.manager import ConfigManger
 from deepclustering.meters import MeterInterface, AverageValueMeter
 from deepclustering.model import Model
 from deepclustering.trainer.Trainer import _Trainer
-from deepclustering.utils import tqdm_, simplex, tqdm, flatten_dict
+from deepclustering.utils import tqdm_, simplex, tqdm, flatten_dict, dict_filter
 from deepclustering.utils.VAT import VATLoss_Multihead
 from deepclustering.utils.classification.assignment_mapping import hungarian_match, flat_acc
+from torch.utils.data import DataLoader
 
 matplotlib.use('agg')
 
@@ -60,12 +60,12 @@ class IMSAT_Trainer(_Trainer):
 
     @property
     def _training_report_dict(self):
-        report_dict = flatten_dict(
+        report_dict = dict_filter(flatten_dict(
             {'train_MI': self.METERINTERFACE.train_mi.summary()['mean'],
              'train_entropy': self.METERINTERFACE.train_entropy.summary()['mean'],
              'train_centropy': self.METERINTERFACE.train_centropy.summary()['mean'],
              'train_sat': self.METERINTERFACE.train_sat.summary()['mean']}
-        )
+        ), lambda k, v: v != 0.0)
         return report_dict
 
     @property
@@ -90,7 +90,6 @@ class IMSAT_Trainer(_Trainer):
             assert simplex(pred_tf1_simplex[0]), pred_tf1_simplex
             assert simplex(pred_tf2_simplex[0]), pred_tf2_simplex
             total_loss = self._trainer_specific_loss(tf1_images, tf2_images, pred_tf1_simplex, pred_tf2_simplex)
-
             self.model.zero_grad()
             total_loss.backward()
             self.model.step()
@@ -138,6 +137,7 @@ class IMSAT_Trainer(_Trainer):
                 targets_k=self.model.arch_dict['output_k']
             )
             _acc = flat_acc(reorder_pred, gts)
+            print(_acc)
             subhead_accs.append(_acc)
             # record average acc
             self.METERINTERFACE.val_average_acc.add(_acc)
@@ -146,6 +146,9 @@ class IMSAT_Trainer(_Trainer):
 
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Validating epoch: {epoch} : {report_dict_str}")
+        import pandas as pd
+        print(pd.Series(preds[-1].cpu().numpy()).value_counts())
+        print(pd.Series(reorder_pred.cpu().numpy()).value_counts())
 
         return self.METERINTERFACE.val_best_acc.summary()['mean']
 
@@ -218,16 +221,16 @@ class IIC_Trainer(IMSAT_Trainer):
 
     @property
     def _training_report_dict(self):
-        report_dict = flatten_dict({'train_MI': self.METERINTERFACE.train_mi.summary()['mean'],
-                                    'train_sat': self.METERINTERFACE.train_sat.summary()['mean']
-                                    })
+        report_dict = dict_filter(flatten_dict({'train_MI': self.METERINTERFACE.train_mi.summary()['mean'],
+                                                'train_sat': self.METERINTERFACE.train_sat.summary()['mean']
+                                                }), lambda k, v: v != 0.0)
         return report_dict
 
     @property
     def _eval_report_dict(self):
-        report_dict = flatten_dict({'val_average_acc': self.METERINTERFACE.val_best_acc.summary()['mean'],
-                                    'val_best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']
-                                    })
+        report_dict = dict_filter(flatten_dict({'val_average_acc': self.METERINTERFACE.val_best_acc.summary()['mean'],
+                                                'val_best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']
+                                                }), lambda k, v: v != 0.0)
         return report_dict
 
     def _trainer_specific_loss(self, images: torch.Tensor, images_tf: torch.Tensor, pred: List[torch.Tensor],
@@ -237,15 +240,15 @@ class IIC_Trainer(IMSAT_Trainer):
         for subhead in range(pred.__len__()):
             _loss, _loss_no_lambda = self.criterion(pred[subhead], pred_tf[subhead])
             batch_loss.append(_loss)
-        batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)
+        batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)  # type: ignore
         self.METERINTERFACE[f'train_mi'].add(-batch_loss.item())
 
-        # vat loss:
+        # # vat loss:
         sat_loss = 0
-        if self.sat_weight > 0:
-            sat_loss, *_ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(self.model.torchnet, images)
-            self.METERINTERFACE['train_sat'].add(sat_loss.item())
-
+        # if self.sat_weight > 0:
+        #     sat_loss, *_ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(self.model.torchnet, images)
+        #     self.METERINTERFACE['train_sat'].add(sat_loss.item())
+        #
         total_loss = batch_loss + self.sat_weight * sat_loss
 
         return total_loss
@@ -260,8 +263,10 @@ train_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf2'],
     default_mnist_img_transform['tf2'],
     default_mnist_img_transform['tf2'],
+    default_mnist_img_transform['tf2'],
 
 )
+datainterface.split_partitions = ['val']
 val_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf3'],
 )

@@ -34,7 +34,7 @@ class ConfigManger:
     def _check_integrality(merged_dict=Dict[str, Any]):
         assert merged_dict.get('Arch'), f"Merged dict integrity check failed,{merged_dict.keys()}"
         assert merged_dict.get('Optim'), f"Merged dict integrity check failed,{merged_dict.keys()}"
-        assert merged_dict.get('Scheduler'), f"Merged dict integrity check failed,{merged_dict.keys()}"
+        # assert merged_dict.get('Scheduler'), f"Merged dict integrity check failed,{merged_dict.keys()}"
         assert merged_dict.get('Trainer'), f"Merged dict integrity check failed,{merged_dict.keys()}"
 
     @property

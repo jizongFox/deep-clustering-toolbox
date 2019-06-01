@@ -103,7 +103,7 @@ class MNIST(data.Dataset):
         return img, target, index
 
     def __len__(self):
-        return int(len(self.data))
+        return int(len(self.data)/10)
 
     @property
     def raw_folder(self):

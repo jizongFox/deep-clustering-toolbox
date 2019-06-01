@@ -3,7 +3,10 @@ from typing import Dict, Tuple
 
 import numpy as np
 import torch
-from sklearn.utils.linear_assignment_ import linear_assignment
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    from sklearn.utils.linear_assignment_ import linear_assignment
 
 
 def flat_acc(flat_preds, flat_targets):
@@ -46,3 +49,26 @@ def hungarian_match(flat_preds, flat_targets, preds_k, targets_k) -> Tuple[torch
     for k, v in res.items():
         flat_preds_reorder[flat_preds == k] = torch.Tensor([v])
     return flat_preds_reorder.to(flat_preds.device), res
+
+
+def original_match(flat_preds, flat_targets, preds_k, targets_k):
+    # map each output channel to the best matching ground truth (many to one)
+
+    assert (isinstance(flat_preds, torch.Tensor) and
+            isinstance(flat_targets, torch.Tensor) and
+            flat_preds.is_cuda and flat_targets.is_cuda)
+
+    out_to_gts = {}
+    out_to_gts_scores = {}
+    for out_c in range(preds_k):
+        for gt_c in range(targets_k):
+            # the amount of out_c at all the gt_c samples
+            tp_score = int(((flat_preds == out_c) * (flat_targets == gt_c)).sum())
+            if (out_c not in out_to_gts) or (tp_score > out_to_gts_scores[out_c]):
+                out_to_gts[out_c] = gt_c
+                out_to_gts_scores[out_c] = tp_score
+
+    flat_preds_reorder = torch.zeros_like(flat_preds)
+    for k, v in out_to_gts.items():
+        flat_preds_reorder[flat_preds == k] = torch.Tensor([v])
+    return flat_preds_reorder.to(flat_preds.device), out_to_gts
