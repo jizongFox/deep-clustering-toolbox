@@ -9,10 +9,10 @@ Optim:
   name: Adam
   lr: 0.0001
 
-#Scheduler:
-#  name: MultiStepLR
-#  milestones: [100,200,300,400,500,600,700,800,900]
-#  gamma: 0.7
+Scheduler:
+  name: MultiStepLR
+  milestones: [100,200,300,400,500,600,700,800,900]
+  gamma: 0.7
 
 DataLoader:
   batch_size: 200
@@ -27,5 +27,6 @@ Trainer:
   device: cuda
   use_vat: true
   sat_weight: 0.0
+
 
 

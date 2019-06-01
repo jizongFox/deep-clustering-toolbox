@@ -27,7 +27,7 @@ Trainer:
   head_control_params:
     A: 1
     B: 2
-
+  use_sobel: false
 
 
 #Transform:
