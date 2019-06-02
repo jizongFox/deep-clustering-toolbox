@@ -9,6 +9,8 @@ from typing import List
 import matplotlib
 import matplotlib.pyplot as plt
 import torch
+from torch.utils.data import DataLoader
+
 from deepclustering import ModelMode
 from deepclustering.dataset.classification.mnist_helper import MNISTDatasetInterface, default_mnist_img_transform
 from deepclustering.loss.IMSAT_loss import MultualInformaton_IMSAT
@@ -20,7 +22,6 @@ from deepclustering.trainer.Trainer import _Trainer
 from deepclustering.utils import tqdm_, simplex, tqdm, flatten_dict, dict_filter
 from deepclustering.utils.VAT import VATLoss_Multihead
 from deepclustering.utils.classification.assignment_mapping import hungarian_match, flat_acc
-from torch.utils.data import DataLoader
 
 matplotlib.use('agg')
 
@@ -76,13 +77,31 @@ class IMSAT_Trainer(_Trainer):
         )
         return report_dict
 
+    def start_training(self):
+        for epoch in range(self._start_epoch, self.max_epoch):
+            self._train_loop(
+                train_loader=self.train_loader,
+                epoch=epoch,
+            )
+            with torch.no_grad():
+                current_score = self._eval_loop(self.val_loader, epoch)
+            self.METERINTERFACE.step()
+            self.model.schedulerStep()
+            # save meters and checkpoints
+            for k, v in self.METERINTERFACE.aggregated_meter_dict.items():
+                v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
+            self.METERINTERFACE.summary().to_csv(self.save_dir / self.wholemeter_filename)
+            self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict(), global_step=epoch)
+            self.drawer.call_draw()
+            self.save_checkpoint(self.state_dict, epoch, current_score)
+
     def _train_loop(self, train_loader: DataLoader, epoch: int, mode=ModelMode.TRAIN, *args, **kwargs):
         super()._train_loop(*args, **kwargs)
         self.model.set_mode(mode)
         assert self.model.training
         _train_loader: tqdm = tqdm_(train_loader)
         for _batch_num, images_labels_indices in enumerate(_train_loader):
-            images, labels, indices = zip(*images_labels_indices)
+            images, labels, *_ = zip(*images_labels_indices)
             tf1_images = torch.cat(tuple([images[0] for _ in range(images.__len__() - 1)]), dim=0).to(self.device)
             tf2_images = torch.cat(tuple(images[1:]), dim=0).to(self.device)
             pred_tf1_simplex = self.model(tf1_images)
@@ -116,7 +135,7 @@ class IMSAT_Trainer(_Trainer):
         gts = torch.zeros(val_loader.dataset.__len__(), dtype=torch.long, device=self.device)
         _batch_done = 0
         for _batch_num, images_labels_indices in enumerate(_val_loader):
-            images, labels, _ = zip(*images_labels_indices)
+            images, labels, *_ = zip(*images_labels_indices)
             images, labels = images[0].to(self.device), labels[0].to(self.device)
             pred = self.model(images)
             _bSlice = slice(_batch_done, _batch_done + images.shape[0])
@@ -137,7 +156,6 @@ class IMSAT_Trainer(_Trainer):
                 targets_k=self.model.arch_dict['output_k']
             )
             _acc = flat_acc(reorder_pred, gts)
-            print(_acc)
             subhead_accs.append(_acc)
             # record average acc
             self.METERINTERFACE.val_average_acc.add(_acc)
@@ -146,10 +164,6 @@ class IMSAT_Trainer(_Trainer):
 
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"Validating epoch: {epoch} : {report_dict_str}")
-        import pandas as pd
-        print(pd.Series(preds[-1].cpu().numpy()).value_counts())
-        print(pd.Series(reorder_pred.cpu().numpy()).value_counts())
-
         return self.METERINTERFACE.val_best_acc.summary()['mean']
 
     def _trainer_specific_loss(
@@ -179,7 +193,7 @@ class IMSAT_Trainer(_Trainer):
         self.METERINTERFACE['train_entropy'].add(entrop_loss.item())
         self.METERINTERFACE['train_centropy'].add(centropy_loss.item())
 
-        sat_loss = torch.Tensor([0])
+        sat_loss = torch.Tensor([0]).to(self.device)
         if self.sat_weight > 0:
             if not self.use_vat:
                 # use transformation
@@ -197,7 +211,7 @@ class IMSAT_Trainer(_Trainer):
 class IIC_Trainer(IMSAT_Trainer):
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
-                 save_dir: str = 'IMSAT', use_vat: bool = False, sat_weight: float = 0.0, checkpoint_path: str = None,
+                 save_dir: str = 'IIC', use_vat: bool = False, sat_weight: float = 0.0, checkpoint_path: str = None,
                  device='cpu', config: dict = None, **kwargs) -> None:
         super().__init__(model, train_loader, val_loader, max_epoch, save_dir, use_vat, sat_weight, checkpoint_path,
                          device, config, **kwargs)
@@ -245,10 +259,9 @@ class IIC_Trainer(IMSAT_Trainer):
 
         # # vat loss:
         sat_loss = 0
-        # if self.sat_weight > 0:
-        #     sat_loss, *_ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(self.model.torchnet, images)
-        #     self.METERINTERFACE['train_sat'].add(sat_loss.item())
-        #
+        if self.sat_weight > 0:
+            sat_loss, *_ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(self.model.torchnet, images)
+            self.METERINTERFACE['train_sat'].add(sat_loss.item())
         total_loss = batch_loss + self.sat_weight * sat_loss
 
         return total_loss
@@ -266,7 +279,7 @@ train_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf2'],
 
 )
-datainterface.split_partitions = ['val']
+# datainterface.split_partitions = ['val']
 val_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf3'],
 )

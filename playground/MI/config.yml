@@ -26,7 +26,7 @@ Trainer:
   save_dir: tmp
   device: cuda
   use_vat: true
-  sat_weight: 0.0
+  sat_weight: 0.1
 
 
 
