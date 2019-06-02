@@ -1,9 +1,9 @@
 Arch:
   name: clusternet6c
   input_size: 24
-  output_k: 10
   num_channel: 1
   num_sub_heads: 5
+  output_k: 10
 
 Optim:
   name: Adam
@@ -27,5 +27,6 @@ Trainer:
   device: cuda
   use_vat: true
   sat_weight: 0.1
+
 
 

@@ -141,7 +141,7 @@ class IICMultiHeadTrainer(_Trainer):
                     f'Training epoch: {epoch} head:{head_name}, head_epoch:{head_epoch + 1}/{head_iterations}')
                 # time_before = time.time()
                 for batch, image_labels in enumerate(train_loader_):
-                    images, _ = list(zip(*image_labels))
+                    images, *_ = list(zip(*image_labels))
                     # print(f"used time for data load:{time.time() - time_before}")
                     tf1_images = torch.cat(tuple([images[0] for _ in range(images.__len__() - 1)]), dim=0).to(
                         self.device)

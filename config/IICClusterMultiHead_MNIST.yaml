@@ -1,0 +1,65 @@
+Arch:
+  name: ClusterNet5gTwoHead
+  num_channel: 1
+  output_k_A: 50
+  output_k_B: 10
+  num_sub_heads: 5
+  semisup: False
+
+Optim:
+  name: Adam
+  lr: 0.0005
+
+Scheduler:
+  name: MultiStepLR
+  milestones: [100, 200, 300, 400, 500, 600, 700, 800, 900]
+  gamma: 0.75
+
+DataLoader:
+  batch_size: 20
+  shuffle: true
+  num_workers: 16
+
+Trainer:
+  max_epoch: 1000
+  save_dir: multihead_cifar
+  device: cuda
+  head_control_params:
+    A: 1
+    B: 2
+  use_sobel: false
+
+
+#Transform:
+#  tf1:
+#    randomcrop:
+#      size: [20, 20]
+#    resize:
+#      size: [32, 32]
+#    img2tensor:
+#      include_rgb: false
+#      include_grey: true
+#  tf2:
+#    randomcrop:
+#      size: [20, 20]
+#    resize:
+#      size: [32, 32]
+#    RandomHorizontalFlip:
+#      p: 0.5
+#    ColorJitter:
+#      brightness: [0.6, 1.4]
+#      contrast: [0.6, 1.4]
+#      saturation: [0.6, 1.4]
+#      hue: [-0.125, 0.125]
+#    img2tensor:
+#      include_rgb: false
+#      include_grey: true
+#  tf3:
+#    centercrop:
+#      size: [20, 20]
+#    resize:
+#      size: [32, 32]
+#    img2tensor:
+#      include_rgb: false
+#      include_grey: true
+

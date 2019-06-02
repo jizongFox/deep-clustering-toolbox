@@ -1,12 +1,12 @@
 from pprint import pprint
 from typing import Dict, Any
 
-from deepclustering.dataset import default_stl10_img_transform, STL10DatasetInterface
+from deepclustering.dataset import default_mnist_img_transform, MNISTDatasetInterface
 from deepclustering.model import Model
 from deepclustering.trainer.IICMultiheadTrainer import IICMultiHeadTrainer
 from deepclustering.utils import yaml_parser, yaml_load, dict_merge
 
-DEFAULT_CONFIG = '../config/IICClusterMultiHead_CIFAR.yaml'
+DEFAULT_CONFIG = '../config/IICClusterMultiHead_MNIST.yaml'
 
 parsed_args: Dict[str, Any] = yaml_parser(verbose=True)
 default_config = yaml_load(parsed_args.get('Config', DEFAULT_CONFIG), verbose=False)
@@ -21,25 +21,25 @@ model = Model(
     scheduler_dict=merged_config['Scheduler']
 )
 
-train_loader_A = STL10DatasetInterface(split_partitions=['train+unlabeled', 'test'],
+train_loader_A = MNISTDatasetInterface(split_partitions=['train', 'val'],
                                        **merged_config['DataLoader']).ParallelDataLoader(
-    default_stl10_img_transform['tf1'],
-    default_stl10_img_transform['tf2'],
-    default_stl10_img_transform['tf2'],
-    default_stl10_img_transform['tf2'],
-    default_stl10_img_transform['tf2'],
+    default_mnist_img_transform['tf1'],
+    default_mnist_img_transform['tf2'],
+    default_mnist_img_transform['tf2'],
+    default_mnist_img_transform['tf2'],
+    default_mnist_img_transform['tf2'],
 )
-train_loader_B = STL10DatasetInterface(split_partitions=['train', 'test'],
+train_loader_B = MNISTDatasetInterface(split_partitions=['train', 'val'],
                                        **merged_config['DataLoader']).ParallelDataLoader(
-    default_stl10_img_transform['tf1'],
-    default_stl10_img_transform['tf2'],
-    default_stl10_img_transform['tf2'],
-    default_stl10_img_transform['tf2'],
-    default_stl10_img_transform['tf2'],
+    default_mnist_img_transform['tf1'],
+    default_mnist_img_transform['tf2'],
+    default_mnist_img_transform['tf2'],
+    default_mnist_img_transform['tf2'],
+    default_mnist_img_transform['tf2'],
 )
-val_loader = STL10DatasetInterface(split_partitions=['train', 'test'],
+val_loader = MNISTDatasetInterface(split_partitions=['train', 'val'],
                                    **merged_config['DataLoader']).ParallelDataLoader(
-    default_stl10_img_transform['tf3'],
+    default_mnist_img_transform['tf3'],
 )
 
 trainer = IICMultiHeadTrainer(

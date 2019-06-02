@@ -58,7 +58,7 @@ class Model(ABC):
             self.scheduler_params = {k: v for k, v in self.scheduler_dict.items() if
                                      k != 'name'}
             scheduler: lr_scheduler.LambdaLR = getattr(lr_scheduler, self.scheduler_name) \
-                (optimizer, **self.scheduler_params) if self.scheduler_name is not None else None
+                (optimizer, **self.scheduler_params)
         else:
             warnings.warn(f'scheduler is a placeholder, override it later.', RuntimeWarning)
             self.scheduler_name = None
@@ -108,7 +108,8 @@ class Model(ABC):
         return [pred.detach(), loss.detach()]
 
     def schedulerStep(self):
-        self.scheduler.step()
+        if self.scheduler is not None:
+            self.scheduler.step()
 
     @property
     def state_dict(self):

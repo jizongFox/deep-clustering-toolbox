@@ -36,7 +36,6 @@ class MNISTDatasetInterface(ClusterDatasetInterface):
         return serial_dataset
 
 
-
 default_mnist_img_transform = {
     "tf1":
         transforms.Compose([
