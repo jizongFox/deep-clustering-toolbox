@@ -23,7 +23,7 @@ from deepclustering.utils import tqdm_, simplex, tqdm, flatten_dict, dict_filter
 from deepclustering.utils.VAT import VATLoss_Multihead
 from deepclustering.utils.classification.assignment_mapping import hungarian_match, flat_acc
 
-matplotlib.use('agg')
+matplotlib.use('tkagg')
 
 
 class IMSAT_Trainer(_Trainer):
@@ -114,6 +114,12 @@ class IMSAT_Trainer(_Trainer):
             self.model.step()
             report_dict = self._training_report_dict
             _train_loader.set_postfix(report_dict)
+            # visualization
+            # if _batch_num % 10 == 0:
+            joint_p = pred_tf1_simplex[0].unsqueeze(1) * pred_tf2_simplex[0].unsqueeze(2)
+            plt.imshow(joint_p.mean(0).detach().cpu())
+            plt.show(block=False)
+            plt.pause(0.001)
 
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"  Training epoch: {epoch} : {report_dict_str}")
@@ -266,6 +272,8 @@ class IIC_Trainer(IMSAT_Trainer):
 
         return total_loss
 
+from deepclustering.utils import fix_all_seed
+fix_all_seed(1)
 
 config = ConfigManger(DEFAULT_CONFIG_PATH='./config.yml', verbose=False).config
 
