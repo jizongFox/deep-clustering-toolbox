@@ -114,12 +114,6 @@ class IMSAT_Trainer(_Trainer):
             self.model.step()
             report_dict = self._training_report_dict
             _train_loader.set_postfix(report_dict)
-            # visualization
-            # if _batch_num % 10 == 0:
-            joint_p = pred_tf1_simplex[0].unsqueeze(1) * pred_tf2_simplex[0].unsqueeze(2)
-            plt.imshow(joint_p.mean(0).detach().cpu())
-            plt.show(block=False)
-            plt.pause(0.001)
 
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])
         print(f"  Training epoch: {epoch} : {report_dict_str}")
@@ -248,9 +242,10 @@ class IIC_Trainer(IMSAT_Trainer):
 
     @property
     def _eval_report_dict(self):
-        report_dict = dict_filter(flatten_dict({'val_average_acc': self.METERINTERFACE.val_best_acc.summary()['mean'],
-                                                'val_best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']
-                                                }), lambda k, v: v != 0.0)
+        report_dict = dict_filter(
+            flatten_dict({'val_average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
+                          'val_best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']
+                          }), lambda k, v: v != 0.0)
         return report_dict
 
     def _trainer_specific_loss(self, images: torch.Tensor, images_tf: torch.Tensor, pred: List[torch.Tensor],
@@ -272,12 +267,10 @@ class IIC_Trainer(IMSAT_Trainer):
 
         return total_loss
 
-from deepclustering.utils import fix_all_seed
-fix_all_seed(1)
 
 config = ConfigManger(DEFAULT_CONFIG_PATH='./config.yml', verbose=False).config
 
-datainterface = MNISTDatasetInterface(**config['DataLoader'])
+datainterface = MNISTDatasetInterface(split_partitions=['train'], **config['DataLoader'])
 train_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf1'],
     default_mnist_img_transform['tf2'],
@@ -285,9 +278,8 @@ train_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf2'],
     default_mnist_img_transform['tf2'],
     default_mnist_img_transform['tf2'],
-
 )
-# datainterface.split_partitions = ['val']
+datainterface.split_partitions = ['val']
 val_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf3'],
 )

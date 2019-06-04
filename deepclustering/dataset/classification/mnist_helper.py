@@ -59,6 +59,8 @@ default_mnist_img_transform = {
                 augment.RandomCrop(size=(24, 24), padding=None),
             ]),
             augment.Resize(size=24, interpolation=PIL.Image.BILINEAR),
+            transforms.ColorJitter(brightness=[0.6, 1.4], contrast=[0.6, 1.4], saturation=[0.6, 1.4],
+                                   hue=[-0.125, 0.125]),
             transforms.ToTensor()
         ]),
     "tf3":

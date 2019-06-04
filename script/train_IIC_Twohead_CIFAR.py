@@ -22,7 +22,7 @@ model = Model(
 )
 
 train_loader_A = Cifar10DatasetInterface(split_partitions=['train', 'val'],
-                                       **merged_config['DataLoader']).ParallelDataLoader(
+                                         **merged_config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf1'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
@@ -30,7 +30,7 @@ train_loader_A = Cifar10DatasetInterface(split_partitions=['train', 'val'],
     default_cifar10_img_transform['tf2'],
 )
 train_loader_B = Cifar10DatasetInterface(split_partitions=['train', 'val'],
-                                       **merged_config['DataLoader']).ParallelDataLoader(
+                                         **merged_config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf1'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
@@ -38,7 +38,7 @@ train_loader_B = Cifar10DatasetInterface(split_partitions=['train', 'val'],
     default_cifar10_img_transform['tf2'],
 )
 val_loader = Cifar10DatasetInterface(split_partitions=['train', 'val'],
-                                   **merged_config['DataLoader']).ParallelDataLoader(
+                                     **merged_config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf3'],
 )
 
