@@ -132,7 +132,7 @@ class CIFAR10(data.Dataset):
         return img, target
 
     def __len__(self):
-        return int(len(self.data)/200)
+        return int(len(self.data))
 
     def _check_integrity(self):
         root = self.root

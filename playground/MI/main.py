@@ -242,9 +242,10 @@ class IIC_Trainer(IMSAT_Trainer):
 
     @property
     def _eval_report_dict(self):
-        report_dict = dict_filter(flatten_dict({'val_average_acc': self.METERINTERFACE.val_best_acc.summary()['mean'],
-                                                'val_best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']
-                                                }), lambda k, v: v != 0.0)
+        report_dict = dict_filter(
+            flatten_dict({'val_average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
+                          'val_best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']
+                          }), lambda k, v: v != 0.0)
         return report_dict
 
     def _trainer_specific_loss(self, images: torch.Tensor, images_tf: torch.Tensor, pred: List[torch.Tensor],
@@ -269,7 +270,7 @@ class IIC_Trainer(IMSAT_Trainer):
 
 config = ConfigManger(DEFAULT_CONFIG_PATH='./config.yml', verbose=False).config
 
-datainterface = MNISTDatasetInterface(**config['DataLoader'])
+datainterface = MNISTDatasetInterface(split_partitions=['train'], **config['DataLoader'])
 train_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf1'],
     default_mnist_img_transform['tf2'],
@@ -277,9 +278,8 @@ train_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf2'],
     default_mnist_img_transform['tf2'],
     default_mnist_img_transform['tf2'],
-
 )
-# datainterface.split_partitions = ['val']
+datainterface.split_partitions = ['val']
 val_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf3'],
 )

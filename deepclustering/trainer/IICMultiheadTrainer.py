@@ -18,6 +18,10 @@ from ..utils import tqdm_, simplex, tqdm, dict_filter
 from ..utils.classification.assignment_mapping import flat_acc, hungarian_match
 
 __all__ = ['IICMultiHeadTrainer']
+import matplotlib
+
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
 
 
 class IICMultiHeadTrainer(_Trainer):
@@ -226,4 +230,11 @@ class IICMultiHeadTrainer(_Trainer):
             batch_loss.append(_loss)
         batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)
         self.METERINTERFACE[f'train_head_{head_name}'].add(-batch_loss.item())  # type: ignore
+
+        # if head_name == 'B':
+        joint_p = tf1_pred_simplex[0].unsqueeze(1) * tf2_pred_simplex[0].unsqueeze(2)
+        plt.imshow(joint_p.mean(0).detach().cpu())
+        plt.show(block=False)
+        plt.pause(0.001)
+
         return batch_loss

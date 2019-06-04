@@ -23,12 +23,12 @@ wrapper(){
 cd ..
 time=1
 # as in the paper
-wrapper ${time}  "python script/train_IIC_Twohead.py Trainer.save_dir=runs/2head_5subhead"
+wrapper ${time}  "python script/train_IIC_Twohead_CIFAR.py Trainer.save_dir=runs/2head_5subhead"
 # single head
-wrapper ${time}  "python script/train_IIC_Twohead.py Trainer.save_dir=runs/1head_5subhead Trainer.head_control_params.A=0 Trainer.head_control_params.B=3"
+wrapper ${time}  "python script/train_IIC_Twohead_CIFAR.py Trainer.save_dir=runs/1head_5subhead Trainer.head_control_params.A=0 Trainer.head_control_params.B=3"
 # single head with 1 subhead
-wrapper ${time}  "python script/train_IIC_Twohead.py Trainer.save_dir=runs/1head_1subhead Trainer.head_control_params.A=0 Trainer.head_control_params.B=3 Arch.num_sub_heads=1"
+wrapper ${time}  "python script/train_IIC_Twohead_CIFAR.py Trainer.save_dir=runs/1head_1subhead Trainer.head_control_params.A=0 Trainer.head_control_params.B=3 Arch.num_sub_heads=1"
 # two head with 1 subhead
-wrapper ${time}  "python script/train_IIC_Twohead.py Trainer.save_dir=runs/2head_1subhead Arch.num_sub_heads=1"
+wrapper ${time}  "python script/train_IIC_Twohead_CIFAR.py Trainer.save_dir=runs/2head_1subhead Arch.num_sub_heads=1"
 # two head with two subhead of 30
-wrapper ${time}  "python script/train_IIC_Twohead.py Trainer.save_dir=runs/2head_5subhead_k_30 Arch.num_sub_heads=5 Arch.output_k_A=30"
+wrapper ${time}  "python script/train_IIC_Twohead_CIFAR.py Trainer.save_dir=runs/2head_5subhead_k_30 Arch.num_sub_heads=5 Arch.output_k_A=30"
