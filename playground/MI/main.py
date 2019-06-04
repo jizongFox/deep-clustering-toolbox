@@ -15,6 +15,7 @@ from deepclustering import ModelMode
 from deepclustering.dataset.classification.mnist_helper import MNISTDatasetInterface, default_mnist_img_transform
 from deepclustering.loss.IMSAT_loss import MultualInformaton_IMSAT
 from deepclustering.loss.loss import JSD, KL_div
+from deepclustering.loss.IID_losses import IIDLoss
 from deepclustering.manager import ConfigManger
 from deepclustering.meters import MeterInterface, AverageValueMeter
 from deepclustering.model import Model
@@ -27,6 +28,10 @@ matplotlib.use('agg')
 
 
 class IMSAT_Trainer(_Trainer):
+    """
+    MI(x,p) + CE(p,adv(p)) or MI(x,p) + CE(p,geom(p))
+    """
+
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
                  save_dir: str = 'IMSAT', use_vat: bool = False, sat_weight: float = 0.1, checkpoint_path: str = None,
                  device='cpu',
@@ -208,14 +213,96 @@ class IMSAT_Trainer(_Trainer):
         return total_loss
 
 
+class IMSAT_Enhanced_Trainer(IMSAT_Trainer):
+    """
+    This class is to enhance the IMSAT by enhancing the MI on the original image and transformed image. That means a
+    sort of data augmentation.
+    MI(x,p) + CE(p,adv(p)) + CE(p,geom(p))
+    """
+
+    def __init_meters__(self) -> List[str]:
+        METER_CONFIG = {
+            'train_mi': AverageValueMeter(),
+            'train_entropy': AverageValueMeter(),
+            'train_centropy': AverageValueMeter(),
+            'train_vat': AverageValueMeter(),
+            'train_rt': AverageValueMeter(),
+            'val_best_acc': AverageValueMeter(),
+            'val_average_acc': AverageValueMeter()
+        }
+        self.METERINTERFACE = MeterInterface(METER_CONFIG)
+        return [
+            "train_mi_mean",
+            'train_entropy_mean',
+            'train_centropy_mean',
+            'train_vat_mean',
+            'train_rt_mean',
+            'val_average_acc_mean',
+            "val_best_acc_mean"
+        ]
+
+    @property
+    def _training_report_dict(self):
+        report_dict = dict_filter(flatten_dict(
+            {'train_MI': self.METERINTERFACE.train_mi.summary()['mean'],
+             'train_entropy': self.METERINTERFACE.train_entropy.summary()['mean'],
+             'train_centropy': self.METERINTERFACE.train_centropy.summary()['mean'],
+             'train_vat': self.METERINTERFACE.train_vat.summary()['mean'],
+             'train_rt': self.METERINTERFACE.train_rt.summary()['mean']}
+        ), lambda k, v: v != 0.0)
+        return report_dict
+
+    def _trainer_specific_loss(
+            self, images: torch.Tensor,
+            images_tf: torch.Tensor,
+            pred: List[torch.Tensor],
+            pred_tf: List[torch.Tensor]
+    ) -> torch.Tensor:
+        """
+        to override
+        :param pred:
+        :param pred_tf:
+        :return:
+        """
+        assert simplex(pred[0]), pred
+        mi_losses, entropy_losses, centropy_losses = [], [], []
+        for subhead_num in range(self.model.arch_dict['num_sub_heads']):
+            _mi_loss, (_entropy_loss, _centropy_loss) = self.criterion(pred[subhead_num])
+            mi_losses.append(-_mi_loss)
+            entropy_losses.append(_entropy_loss)
+            centropy_losses.append(_centropy_loss)
+        mi_loss = sum(mi_losses) / len(mi_losses)
+        entrop_loss = sum(entropy_losses) / len(entropy_losses)
+        centropy_loss = sum(centropy_losses) / len(centropy_losses)
+
+        self.METERINTERFACE['train_mi'].add(-mi_loss.item())
+        self.METERINTERFACE['train_entropy'].add(entrop_loss.item())
+        self.METERINTERFACE['train_centropy'].add(centropy_loss.item())
+
+        sat_loss = torch.Tensor([0]).to(self.device)
+        if self.sat_weight > 0:
+            rt_loss = list(map(lambda p1, p2: self.kl(p2, p1.detach()), pred, pred_tf))
+            rt_loss = sum(rt_loss) / len(rt_loss)
+            self.METERINTERFACE['train_rt'].add(rt_loss.item())
+            vat_loss, *_ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(self.model.torchnet, images)
+            regul_loss = rt_loss + vat_loss
+
+        total_loss = mi_loss + self.sat_weight * regul_loss
+        return total_loss
+
+
 class IIC_Trainer(IMSAT_Trainer):
+    """
+    This trainer is to let the VAT as a separated loss to be added to MI.
+
+    MI(p,geom(p)) or  MI(p,geom(p))+kl(p, adv(p))
+    """
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
-                 save_dir: str = 'IIC', use_vat: bool = False, sat_weight: float = 0.0, checkpoint_path: str = None,
+                 save_dir: str = 'IMSAT', use_vat: bool = False, sat_weight: float = 0.1, checkpoint_path: str = None,
                  device='cpu', config: dict = None, **kwargs) -> None:
         super().__init__(model, train_loader, val_loader, max_epoch, save_dir, use_vat, sat_weight, checkpoint_path,
                          device, config, **kwargs)
-        from deepclustering.loss.IID_losses import IIDLoss
         self.criterion = IIDLoss()
 
     def __init_meters__(self) -> List[str]:
@@ -268,9 +355,61 @@ class IIC_Trainer(IMSAT_Trainer):
         return total_loss
 
 
+class IIC_enhanced_Trainer(IIC_Trainer):
+    """
+    This trainer is to add VAT examples as one transformation of the image.
+    MI(p,geom(p)) + MI(p,adv(p))
+    """
+
+    def _trainer_specific_loss(self, images: torch.Tensor, images_tf: torch.Tensor, pred: List[torch.Tensor],
+                               pred_tf: List[torch.Tensor]) -> torch.Tensor:
+        assert simplex(pred[0]) and pred_tf.__len__() == pred.__len__()
+
+        # generate adversarial images: Take image without repetition
+        _, adv_images, _ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(self.model.torchnet,
+                                                                         images[:self.train_loader.batch_size])
+        adv_preds = self.model(adv_images)
+        assert adv_preds[0].__len__() == self.train_loader.batch_size
+
+        batch_loss: List[torch.Tensor] = []  # type: ignore
+        for subhead in range(pred.__len__()):
+            # add adv prediction to the whole prediction list
+            _loss, _loss_no_lambda = self.criterion(
+                torch.cat((pred[subhead], pred[subhead][:self.train_loader.batch_size]), dim=0),
+                torch.cat((pred_tf[subhead], adv_preds[subhead]), dim=0)
+            )
+            batch_loss.append(_loss)
+        batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)  # type: ignore
+        self.METERINTERFACE[f'train_mi'].add(-batch_loss.item())
+
+        total_loss = batch_loss
+
+        return total_loss
+
+
+class IIC_adv_Trainer(IIC_Trainer):
+
+    def _trainer_specific_loss(self, images: torch.Tensor, images_tf: torch.Tensor, pred: List[torch.Tensor],
+                               pred_tf: List[torch.Tensor]) -> torch.Tensor:
+        assert simplex(pred[0]) and pred_tf.__len__() == pred.__len__()
+        _, adv_images, _ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(self.model.torchnet,
+                                                                         images)
+        adv_pred = self.model(adv_images)
+        assert simplex(adv_pred[0])
+
+        batch_loss: List[torch.Tensor] = []  # type: ignore
+        for subhead in range(pred.__len__()):
+            _loss, _loss_no_lambda = self.criterion(pred[subhead], adv_pred[subhead])
+            batch_loss.append(_loss)
+        batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)  # type: ignore
+        self.METERINTERFACE[f'train_mi'].add(-batch_loss.item())
+        return batch_loss
+
+
 config = ConfigManger(DEFAULT_CONFIG_PATH='./config.yml', verbose=False).config
 
 datainterface = MNISTDatasetInterface(split_partitions=['train'], **config['DataLoader'])
+datainterface.drop_last = True
 train_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf1'],
     default_mnist_img_transform['tf2'],
@@ -280,14 +419,30 @@ train_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf2'],
 )
 datainterface.split_partitions = ['val']
+datainterface.drop_last = False
 val_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf3'],
 )
 
 model = Model(config['Arch'], config['Optim'], config['Scheduler'])
 
-assert config['Trainer']['name'] in ('IIC', 'IMSAT')
-Trainer = IMSAT_Trainer if config['Trainer']['name'] == 'IMSAT' else IIC_Trainer
+assert config['Trainer']['name'] in ('IIC', 'IIC_enhance', 'IIC_adv_enhance', 'IMSAT', 'IMSAT_enhance')
+if config['Trainer']['name'] == 'IMSAT':
+    # MI(x,p) + CE(p,adv(p)) or MI(x,p) + CE(p,geom(p))
+    Trainer = IMSAT_Trainer
+elif config['Trainer']['name'] == 'IMSAT_enhance':
+    # MI(x,p) + CE(p,adv(p)) + CE(p,geom(p))
+    Trainer = IMSAT_Enhanced_Trainer
+elif config['Trainer']['name'] == 'IIC':
+    # MI(p,geom(p)) or  MI(p,geom(p))+kl(p, adv(p))
+    Trainer = IIC_Trainer
+elif config['Trainer']['name'] == 'IIC_enhance':
+    # MI(p,geom(p)) + MI(p,adv(p))
+    Trainer = IIC_enhanced_Trainer
+elif config['Trainer']['name'] == 'IIC_adv_enhance':
+    Trainer = IIC_adv_Trainer
+else:
+    raise NotImplementedError(config['Trainer']['name'])
 
 trainer = Trainer(
     model=model,

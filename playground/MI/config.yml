@@ -15,18 +15,18 @@ Scheduler:
   gamma: 0.7
 
 DataLoader:
-  batch_size: 200
+  batch_size: 20
   shuffle: false
   num_workers: 16
   drop_last: False
 
 Trainer:
   name: IMSAT
-  max_epoch: 500
+  max_epoch: 1
   save_dir: tmp
   device: cuda
   use_vat: true
-  sat_weight: 0.1
+  sat_weight: 0
 
 
 

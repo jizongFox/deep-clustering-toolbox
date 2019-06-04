@@ -6,7 +6,7 @@ from typing import List
 
 import torch
 import yaml
-from pathlib2 import Path
+from pathlib import Path
 from torch.utils.data import DataLoader
 
 from .. import ModelMode, PROJECT_PATH
@@ -148,9 +148,11 @@ class _Trainer(ABC):
     def clean_up(self):
         import shutil
         import time
-        time.sleep(60) # to prevent that the call_draw function is not ended.
+        time.sleep(10)  # to prevent that the call_draw function is not ended.
         Path(self.ARCHIVE_PATH).mkdir(exist_ok=True, parents=True)
         sub_dir = self.save_dir.relative_to(Path(self.RUN_PATH))
         save_dir = Path(self.ARCHIVE_PATH) / str(sub_dir)
+        if Path(save_dir).exists():
+            shutil.rmtree(save_dir, ignore_errors=True)
         shutil.move(str(self.save_dir), str(save_dir))
         shutil.rmtree(str(self.save_dir), ignore_errors=True)
