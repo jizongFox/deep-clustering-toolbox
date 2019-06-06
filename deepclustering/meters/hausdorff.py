@@ -1,9 +1,11 @@
-from typing import *
 import warnings
+from typing import *
+
 import numpy as np
 import torch
+from medpy.metric.binary import hd
 from torch import Tensor
-from scipy.spatial.distance import directed_hausdorff
+
 from .metric import Metric
 from ..utils import one_hot
 
@@ -22,7 +24,7 @@ class HaussdorffDistance(Metric):
     def reset(self):
         self._haussdorff_log = []
 
-    def add(self, pred: Tensor, label: Tensor) -> None:
+    def add(self, pred: Tensor, label: Tensor, voxelspacing: Union[float, List[float]] = None) -> None:
         """
         Add function to add torch.Tensor for pred and label, which are all one-hot matrices.
         :param pred: one-hot prediction matrix
@@ -45,11 +47,11 @@ class HaussdorffDistance(Metric):
         n_target = label.cpu().numpy()
         for b in range(B):
             if C == 2:
-                res[b, :] = numpy_haussdorf(n_pred[b, 0], n_target[b, 0])
+                res[b, :] = numpy_haussdorf(n_pred[b, 0], n_target[b, 0], voxelspacing=voxelspacing)
                 continue
 
             for c in range(C):
-                res[b, c] = numpy_haussdorf(n_pred[b, c], n_target[b, c])
+                res[b, c] = numpy_haussdorf(n_pred[b, c], n_target[b, c], voxelspacing=voxelspacing)
 
         self._haussdorff_log.append(res)
 
@@ -82,14 +84,19 @@ class HaussdorffDistance(Metric):
         except RuntimeError:
             warnings.warn(f'No log has been found', RuntimeWarning)
             log = torch.Tensor([0 for _ in range(self._C if self._C is not None else \
-                                                          self.default_class_num)])
+                                                     self.default_class_num)])
             log = log.unsqueeze(0)
         assert len(log.shape) == 2
         return log
 
 
-def numpy_haussdorf(pred: np.ndarray, target: np.ndarray) -> float:
+def numpy_haussdorf(pred: np.ndarray, target: np.ndarray, voxelspacing: Union[float, List[float]] = None) -> float:
     assert len(pred.shape) == 2
     assert pred.shape == target.shape
 
-    return max(directed_hausdorff(pred, target)[0], directed_hausdorff(target, pred)[0])
+    # h = max(directed_hausdorff(pred, target)[0], directed_hausdorff(target, pred)[0])
+    try:
+        h = hd(pred, target, voxelspacing)
+    except RuntimeError:
+        h = 0
+    return h

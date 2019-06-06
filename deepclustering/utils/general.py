@@ -5,6 +5,7 @@ import warnings
 from copy import deepcopy as dcopy
 from functools import partial
 from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Union, Dict, Any
+from multiprocessing import Pool
 
 import numpy as np
 import torch
@@ -162,6 +163,23 @@ def meta_dice(sum_str: str, label: Tensor, pred: Tensor, smooth: float = 1e-8) -
 # functions
 def map_(fn: Callable[[A], B], iter: Iterable[A]) -> List[B]:
     return list(map(fn, iter))
+
+
+def mmap_(fn: Callable[[A], B], iter: Iterable[A]) -> List[B]:
+    pool = Pool()
+    return list(pool.map(fn, iter))
+
+
+def uc_(fn: Callable) -> Callable:
+    return partial(uncurry, fn)
+
+
+def uncurry(fn: Callable, args: List[Any]) -> Any:
+    return fn(*args)
+
+
+def id_(x):
+    return x
 
 
 # no-stop dataloader

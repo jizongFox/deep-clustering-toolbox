@@ -24,6 +24,7 @@ class _Trainer(ABC):
     RUN_PATH = str(Path(PROJECT_PATH) / 'runs')
     ARCHIVE_PATH = str(Path(PROJECT_PATH) / 'archives')
     wholemeter_filename = "wholeMeter.csv"
+    checkpoint_identifier = 'last.pth'
 
     def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
                  save_dir: str = 'base', checkpoint_path: str = None, device='cpu', config: dict = None,
@@ -58,7 +59,8 @@ class _Trainer(ABC):
                               )
         if checkpoint_path:
             assert Path(checkpoint_path).exists() and Path(checkpoint_path).is_dir(), Path(checkpoint_path)
-            state_dict = torch.load(str(Path(checkpoint_path) / 'last.pth'), map_location=torch.device('cpu'))
+            state_dict = torch.load(str(Path(checkpoint_path) / self.checkpoint_identifier),
+                                    map_location=torch.device('cpu'))
             self.load_checkpoint(state_dict)
         self.model.to(self.device)
 
