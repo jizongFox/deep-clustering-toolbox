@@ -1,4 +1,3 @@
-from math import isnan
 from typing import List
 
 from torch.utils.data import DataLoader
@@ -46,14 +45,14 @@ class IMSATIICTrainer(IICMultiHeadTrainer):
                        'train_MI_B': self.METERINTERFACE['train_head_B'].summary()['mean'],
                        'train_adv_A': self.METERINTERFACE['train_adv_A'].summary()['mean'],
                        'train_adv_B': self.METERINTERFACE['train_adv_B'].summary()['mean']}
-        report_dict = dict_filter(report_dict, lambda k, v: 1 - isnan(v))
+        report_dict = dict_filter(report_dict, lambda k, v: v != 0.0)
         return report_dict
 
     @property
     def _eval_report_dict(self):
         report_dict = {'average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
                        'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']}
-        report_dict = dict_filter(report_dict, lambda k, v: 1 - isnan(v))
+        report_dict = dict_filter(report_dict, lambda k, v: v != 0.0)
         return report_dict
 
     def _trainer_specific_loss(self, tf1_images, tf2_images, head_name):

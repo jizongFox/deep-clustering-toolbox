@@ -1,3 +1,5 @@
+__all__ = ['MNISTDatasetInterface', 'default_mnist_img_transform']
+
 from functools import reduce
 from typing import *
 
@@ -8,8 +10,6 @@ from .clustering_helper import ClusterDatasetInterface
 from .mnist import MNIST
 from ... import DATA_PATH
 from ...augment import augment
-
-__all__ = ['MNISTDatasetInterface', 'default_mnist_img_transform']
 
 
 class MNISTDatasetInterface(ClusterDatasetInterface):

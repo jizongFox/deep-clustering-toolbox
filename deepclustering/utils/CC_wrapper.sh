@@ -13,7 +13,7 @@ wrapper(){
      --cpus-per-task=6  \
      --mem=16000M \
      --time=0-${hour}:00 \
-     --account=def-mpederso \
+     --account=rrg-mpederso \
      --mail-user=jizong.peng.1@etsmtl.net \
      --mail-type=ALL   \
     ./tmp.sh

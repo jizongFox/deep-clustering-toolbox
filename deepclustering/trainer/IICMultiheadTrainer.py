@@ -1,10 +1,12 @@
 """
 This is the trainer for IIC multiple-header Clustering
 """
+__all__ = ['IICMultiHeadTrainer']
+
 from collections import OrderedDict
-from math import isnan
 from typing import List
 
+import matplotlib
 import torch
 from torch.utils.data import DataLoader
 
@@ -17,11 +19,7 @@ from ..model import Model
 from ..utils import tqdm_, simplex, tqdm, dict_filter
 from ..utils.classification.assignment_mapping import flat_acc, hungarian_match
 
-__all__ = ['IICMultiHeadTrainer']
-import matplotlib
-
 matplotlib.use('agg')
-import matplotlib.pyplot as plt
 
 
 class IICMultiHeadTrainer(_Trainer):
@@ -69,14 +67,14 @@ class IICMultiHeadTrainer(_Trainer):
     def _training_report_dict(self):
         report_dict = {'train_head_A': self.METERINTERFACE['train_head_A'].summary()['mean'],
                        'train_head_B': self.METERINTERFACE['train_head_B'].summary()['mean']}
-        report_dict = dict_filter(report_dict, lambda k, v: 1 - isnan(v))
+        report_dict = dict_filter(report_dict, lambda k, v: v != 0.0)
         return report_dict
 
     @property
     def _eval_report_dict(self):
         report_dict = {'average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
                        'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']}
-        report_dict = dict_filter(report_dict, lambda k, v: 1 - isnan(v))
+        report_dict = dict_filter(report_dict, lambda k, v: v != 0.0)
         return report_dict
 
     def start_training(self):
@@ -230,11 +228,5 @@ class IICMultiHeadTrainer(_Trainer):
             batch_loss.append(_loss)
         batch_loss: torch.Tensor = sum(batch_loss) / len(batch_loss)
         self.METERINTERFACE[f'train_head_{head_name}'].add(-batch_loss.item())  # type: ignore
-
-        # if head_name == 'B':
-        joint_p = tf1_pred_simplex[0].unsqueeze(1) * tf2_pred_simplex[0].unsqueeze(2)
-        plt.imshow(joint_p.mean(0).detach().cpu())
-        plt.show(block=False)
-        plt.pause(0.001)
 
         return batch_loss
