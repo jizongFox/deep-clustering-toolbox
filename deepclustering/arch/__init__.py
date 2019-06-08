@@ -1,3 +1,5 @@
+__all__ = ['weights_init', 'get_arch', 'ARCH_CALLABLES', 'PlaceholderNet']
+
 from functools import partial
 from typing import *
 
@@ -5,7 +7,6 @@ from .classification import *
 from .segmentation import *
 from ..utils.general import _register
 
-__all__ = ['weights_init', 'get_arch', 'ARCH_CALLABLES', 'PlaceholderNet']
 """
 Package
 """
