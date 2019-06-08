@@ -90,13 +90,13 @@ class HaussdorffDistance(Metric):
         return log
 
 
-# def numpy_haussdorf(pred: np.ndarray, target: np.ndarray, voxelspacing: Union[float, List[float]] = None) -> float:
-#     assert len(pred.shape) == 2
-#     assert pred.shape == target.shape
-#
-#     # h = max(directed_hausdorff(pred, target)[0], directed_hausdorff(target, pred)[0])
-#     try:
-#         h = hd(pred, target, voxelspacing)
-#     except RuntimeError:
-#         h = 0
-#     return h
+def numpy_haussdorf(pred: np.ndarray, target: np.ndarray, voxelspacing: Union[float, List[float]] = None) -> float:
+    assert len(pred.shape) == 2
+    assert pred.shape == target.shape
+
+    # h = max(directed_hausdorff(pred, target)[0], directed_hausdorff(target, pred)[0])
+    try:
+        h = hd(pred, target, voxelspacing)
+    except RuntimeError:
+        h = 0
+    return h

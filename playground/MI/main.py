@@ -12,7 +12,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from deepclustering import ModelMode
-from deepclustering.dataset.classification.mnist_helper import MNISTDatasetInterface, default_mnist_img_transform
+from deepclustering.dataset.classification.mnist_helper import MNISTClusteringDatasetInterface, default_mnist_img_transform
 from deepclustering.loss.IMSAT_loss import MultualInformaton_IMSAT
 from deepclustering.loss.loss import JSD, KL_div
 from deepclustering.loss.IID_losses import IIDLoss
@@ -408,7 +408,7 @@ class IIC_adv_Trainer(IIC_Trainer):
 
 config = ConfigManger(DEFAULT_CONFIG_PATH='./config.yml', verbose=False).config
 
-datainterface = MNISTDatasetInterface(split_partitions=['train'], **config['DataLoader'])
+datainterface = MNISTClusteringDatasetInterface(split_partitions=['train'], **config['DataLoader'])
 datainterface.drop_last = True
 train_loader = datainterface.ParallelDataLoader(
     default_mnist_img_transform['tf1'],

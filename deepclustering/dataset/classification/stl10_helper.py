@@ -14,9 +14,10 @@ __all__ = ['STL10DatasetInterface', 'default_stl10_img_transform']
 class STL10DatasetInterface(ClusterDatasetInterface):
     ALLOWED_SPLIT = ['train', 'test', 'train+unlabeled']
 
-    def __init__(self, split_partitions: List[str] = [], batch_size: int = 1, shuffle: bool = False,
+    def __init__(self, data_root=DATA_PATH, split_partitions: List[str] = [], batch_size: int = 1,
+                 shuffle: bool = False,
                  num_workers: int = 1, pin_memory: bool = True) -> None:
-        super().__init__(STL10, split_partitions, batch_size, shuffle, num_workers, pin_memory)
+        super().__init__(STL10, data_root, split_partitions, batch_size, shuffle, num_workers, pin_memory)
 
     def _creat_concatDataset(self, image_transform: Callable, target_transform: Callable, dataset_dict: dict = {}):
         for split in self.split_partitions:
@@ -24,7 +25,7 @@ class STL10DatasetInterface(ClusterDatasetInterface):
 
         _datasets = []
         for split in self.split_partitions:
-            dataset = self.DataClass(DATA_PATH, split=split,
+            dataset = self.DataClass(self.data_root, split=split,
                                      transform=image_transform, target_transform=target_transform,
                                      download=True, **dataset_dict)
             _datasets.append(dataset)

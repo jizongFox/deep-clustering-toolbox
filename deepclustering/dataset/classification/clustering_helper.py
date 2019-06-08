@@ -19,7 +19,8 @@ class ClusterDatasetInterface(object):
     """
     ALLOWED_SPLIT = []
 
-    def __init__(self, DataClass: Dataset, split_partitions: List[str], batch_size: int = 1, shuffle: bool = False,
+    def __init__(self, DataClass: Dataset, data_root: str, split_partitions: List[str], batch_size: int = 1,
+                 shuffle: bool = False,
                  num_workers: int = 1, pin_memory: bool = True, drop_last=False) -> None:
         """
         :param batch_size: batch_size = 1
@@ -40,6 +41,7 @@ class ClusterDatasetInterface(object):
         self.num_workers = num_workers
         self.pin_memory = pin_memory
         self.drop_last = drop_last
+        self.data_root = data_root
 
     @abstractmethod
     def _creat_concatDataset(self, image_transform: Callable, target_transform: Callable, dataset_dict: dict = {}):

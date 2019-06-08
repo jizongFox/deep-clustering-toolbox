@@ -5,7 +5,7 @@
 ##############################
 from pathlib import Path
 
-from deepclustering.dataset.classification import Cifar10DatasetInterface, default_cifar10_img_transform
+from deepclustering.dataset.classification import Cifar10ClusteringDatasetInterface, default_cifar10_img_transform
 from deepclustering.manager import ConfigManger
 from deepclustering.model import Model
 from playground.IIC_VAT.VATIICTrainer import IMSATIICTrainer
@@ -20,21 +20,21 @@ model = Model(
     scheduler_dict=config['Scheduler']
 )
 
-train_loader_A = Cifar10DatasetInterface(**config['DataLoader']).ParallelDataLoader(
+train_loader_A = Cifar10ClusteringDatasetInterface(**config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf1'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
 )
-train_loader_B = Cifar10DatasetInterface(**config['DataLoader']).ParallelDataLoader(
+train_loader_B = Cifar10ClusteringDatasetInterface(**config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf1'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
     default_cifar10_img_transform['tf2'],
 )
-val_loader = Cifar10DatasetInterface(**config['DataLoader']).ParallelDataLoader(
+val_loader = Cifar10ClusteringDatasetInterface(**config['DataLoader']).ParallelDataLoader(
     default_cifar10_img_transform['tf3'],
 )
 

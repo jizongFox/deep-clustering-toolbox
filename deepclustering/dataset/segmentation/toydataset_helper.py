@@ -9,7 +9,7 @@ class ToyExampleInterFace(ClusterDatasetInterface):
 
     def __init__(self, batch_size: int = 1, shuffle: bool = False,
                  num_workers: int = 1, pin_memory: bool = True, drop_last=False) -> None:
-        super().__init__(Cls_ShapesDataset, ['1'], batch_size, shuffle, num_workers, pin_memory, drop_last)
+        super().__init__(Cls_ShapesDataset, '', ['1'], batch_size, shuffle, num_workers, pin_memory, drop_last)
 
     def _creat_concatDataset(self, image_transform: Callable, target_transform: Callable, dataset_dict: dict = {}):
         train_set = Cls_ShapesDataset(

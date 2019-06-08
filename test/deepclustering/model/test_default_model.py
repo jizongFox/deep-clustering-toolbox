@@ -1,7 +1,6 @@
 from unittest import TestCase
 
 import torch
-
 from deepclustering.arch import ARCH_PARAM_DICT
 from deepclustering.model import Model
 
@@ -34,5 +33,8 @@ class Test_Default_Module(TestCase):
                     model.schedulerStep()
             else:
                 model = Model(arch_dict=arch_dict, optim_dict=self.optim_dict)
-                model(self.img)
+                try:
+                    model(self.img)
+                except:
+                    model(self.img[:, 0].unsqueeze(1))
                 model.schedulerStep()

@@ -56,13 +56,13 @@ pprint(merged_config)
 def get_dataloader(config: dict):
     if config.get('Config', DEFAULT_CONFIG).split('_')[-1].lower() == 'cifar.yaml':
         from deepclustering.dataset import default_cifar10_img_transform as img_transforms, \
-            Cifar10DatasetInterface as DatasetInterface
+            Cifar10ClusteringDatasetInterface as DatasetInterface
         train_split_partition = ['train', 'val']
         val_split_partition = ['train', 'val']
 
     elif config.get('Config', DEFAULT_CONFIG).split('_')[-1].lower() == 'mnist.yaml':
         from deepclustering.dataset import default_mnist_img_transform as img_transforms, \
-            MNISTDatasetInterface as DatasetInterface
+            MNISTClusteringDatasetInterface as DatasetInterface
         train_split_partition = ['train', 'val']
         val_split_partition = ['train', 'val']
     elif config.get('Config', DEFAULT_CONFIG).split('_')[-1].lower() == 'stl10.yaml':

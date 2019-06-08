@@ -2,7 +2,7 @@ import warnings
 from pprint import pprint
 from typing import Dict, Any
 
-from deepclustering.dataset.classification import MNISTDatasetInterface, default_mnist_img_transform
+from deepclustering.dataset.classification import MNISTClusteringDatasetInterface, default_mnist_img_transform
 from deepclustering.model import Model
 from deepclustering.trainer.IMSATTrainer import IMSATTrainer
 from deepclustering.utils import yaml_parser, yaml_load, dict_merge, fix_all_seed
@@ -26,7 +26,7 @@ model = Model(
     scheduler_dict=merged_config['Scheduler']
 )
 
-train_loader_A = MNISTDatasetInterface(**merged_config['DataLoader']).ParallelDataLoader(
+train_loader_A = MNISTClusteringDatasetInterface(**merged_config['DataLoader']).ParallelDataLoader(
     default_mnist_img_transform['tf1'],
     default_mnist_img_transform['tf2'],
     default_mnist_img_transform['tf2'],
@@ -34,7 +34,7 @@ train_loader_A = MNISTDatasetInterface(**merged_config['DataLoader']).ParallelDa
     default_mnist_img_transform['tf2'],
 )
 
-val_loader = MNISTDatasetInterface(**merged_config['DataLoader']).ParallelDataLoader(
+val_loader = MNISTClusteringDatasetInterface(**merged_config['DataLoader']).ParallelDataLoader(
     default_mnist_img_transform['tf3'],
 )
 

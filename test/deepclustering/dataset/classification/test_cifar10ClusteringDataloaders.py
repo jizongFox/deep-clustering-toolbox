@@ -2,14 +2,14 @@ import random
 from unittest import TestCase
 
 import torch
-from deepclustering.dataset import default_cifar10_img_transform, Cifar10DatasetInterface
+from deepclustering.dataset import default_cifar10_img_transform, Cifar10ClusteringDatasetInterface
 
 
 class TestCifar(TestCase):
     def setUp(self) -> None:
         self.transform_list = default_cifar10_img_transform
         cifar10_option = {"shuffle": True, "batch_size": 4, "num_workers": 1}
-        self.cifarGenerator = Cifar10DatasetInterface(**cifar10_option)
+        self.cifarGenerator = Cifar10ClusteringDatasetInterface(**cifar10_option)
 
     def _build_concat_dataloader(self, transform):
         return self.cifarGenerator.SerialDataLoader(image_transform=transform)
