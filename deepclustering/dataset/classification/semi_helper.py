@@ -20,6 +20,7 @@ class SemiDatasetInterface(object):
                  labeled_sample_num: int,
                  img_transformation: Callable = None,
                  target_transformation: Callable = None,
+                 verbose: bool = True,
                  *args,
                  **kwargs) -> None:
         super().__init__()
@@ -84,8 +85,10 @@ class SemiDatasetInterface(object):
         return labeled_loader, unlabeled_loader, val_loader
 
     @staticmethod
-    def _draw_indices(dataset: Dataset, labeled_sample_num: int) -> Tuple[List[int], List[int]]:
+    def _draw_indices(dataset: Dataset, labeled_sample_num: int, verbose: bool = True) -> Tuple[List[int], List[int]]:
         total_num = len(dataset)
         labeled_indices = sorted(choice(list(range(total_num)), labeled_sample_num, replace=False))
-        unlabeled_indices = [x for x in range(total_num) if x not in labeled_indices]
+        unlabeled_indices = sorted(list(set(range(total_num)) - set(labeled_indices)))
+        if verbose:
+            print(f'>>>Generating {len(labeled_indices)} labeled data and {len(unlabeled_indices)} unlabeled data.')
         return labeled_indices, unlabeled_indices

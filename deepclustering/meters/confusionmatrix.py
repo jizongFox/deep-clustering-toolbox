@@ -96,3 +96,14 @@ class ConfusionMatrix(Metric):
             return conf / conf.sum(1).clip(min=1e-12)[:, None]
         else:
             return self.conf
+
+    def summary(self) -> dict:
+        acc = np.diag(self.conf).sum() / np.sum(self.conf)
+        return {'acc': acc}
+
+    def detailed_summary(self) -> dict:
+        acc = np.diag(self.conf).sum() / np.sum(self.conf)
+        return {'acc': acc}
+
+    def log(self):
+        return self.conf

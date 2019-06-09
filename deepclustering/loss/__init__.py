@@ -1,1 +1,1 @@
-from .loss import Entropy_2D
+from .loss import *

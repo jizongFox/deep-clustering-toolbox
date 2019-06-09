@@ -4,8 +4,8 @@ import random
 import warnings
 from copy import deepcopy as dcopy
 from functools import partial
-from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Union, Dict, Any
 from multiprocessing import Pool
+from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Union, Dict, Any
 
 import numpy as np
 import torch
@@ -276,6 +276,23 @@ def extract_from_big_dict(big_dict, keys) -> dict:
 
 def dict_filter(dictionary: Dict[str, np.ndarray], filter_func: Callable = lambda k, v: True):
     return {k: v for k, v in dictionary.items() if filter_func(k, v)}
+
+
+def nice_dict(input_dict: dict) -> str:
+    """
+    this function is to return a nice string to dictionary displace propose.
+    :param input_dict: dictionary
+    :return: string
+    """
+    assert isinstance(input_dict, dict), f"{input_dict} should be a dict, given {type(input_dict)}."
+    is_flat_dict = True
+    for k, v in input_dict.items():
+        if isinstance(v, dict):
+            is_flat_dict = False
+            break
+    flat_dict = input_dict if is_flat_dict else flatten_dict(input_dict, sep='')
+    string_list = [f'{k}:{v:.3f}' for k, v in flat_dict.items()]
+    return ', '.join(string_list)
 
 
 # meta function for interface
