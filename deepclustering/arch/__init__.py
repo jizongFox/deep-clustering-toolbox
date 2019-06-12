@@ -1,4 +1,4 @@
-__all__ = ['weights_init', 'get_arch', 'ARCH_CALLABLES', 'PlaceholderNet']
+__all__ = ['weights_init', 'get_arch', 'ARCH_CALLABLES', 'PlaceholderNet', '_register_arch']
 
 from functools import partial
 from typing import *

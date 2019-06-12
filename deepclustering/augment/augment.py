@@ -9,7 +9,7 @@ import torchvision.transforms.functional as tf
 from PIL import Image
 from torch import nn
 
-__all__ = ["Img2Tensor", "PILCutout", "RandomCrop", "Resize", "CenterCrop"]
+__all__ = ["Img2Tensor", "PILCutout", "RandomCrop", "Resize", "CenterCrop", "ToTensor", "ToLabel"]
 
 Iterable = collections.abc.Iterable
 

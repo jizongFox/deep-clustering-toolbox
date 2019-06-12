@@ -114,7 +114,7 @@ class RandomCrop(object):
     """
 
     def __init__(self, size: Union[int, Tuple[int, int], List[int]],
-                 padding: Union[int, Tuple[int, int, int, int], List[int]] = None,
+                 padding: Union[int, Tuple[int, int], Tuple[int, int, int, int], List[int]] = None,
                  pad_if_needed: bool = False,
                  fill: Union[int, float] = 0,
                  padding_mode: str = 'constant'):
