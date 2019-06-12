@@ -66,12 +66,13 @@ class Entropy(nn.Module):
     General Entropy interface
     """
 
-    def __init__(self, eps=1e-16):
+    def __init__(self, reduce=True, eps=1e-16):
         super().__init__()
         r'''
         the definition of Entropy is - \sum p(xi) log (p(xi))
         '''
         self.eps = eps
+        self.reduce = reduce
 
     def forward(self, input: torch.Tensor):
         assert input.shape.__len__() >= 2
@@ -80,6 +81,8 @@ class Entropy(nn.Module):
         e = input * (input + self.eps).log()
         e = -1.0 * e.sum(1)
         assert e.shape == torch.Size([b, *s])
+        if self.reduce:
+            return e.mean()
         return e
 
 

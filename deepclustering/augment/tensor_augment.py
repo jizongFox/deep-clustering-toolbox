@@ -4,13 +4,43 @@ Data augmentation given only the high dimensional Tensors, instead of PIL images
 import numbers
 import random
 from typing import *
-from torchvision.transforms import Compose
+
 import numpy as np
 import torch
 from torch.nn import functional as F
 
 T = Union[np.ndarray, torch.Tensor]
 _Tensor = (np.ndarray, torch.Tensor)
+
+
+class Compose(object):
+    """Composes several transforms together.
+
+    Args:
+        transforms (list of ``Transform`` objects): list of transforms to compose.
+
+    Example:
+        >>> transforms.Compose([
+        >>>     transforms.CenterCrop(10),
+        >>>     transforms.ToTensor(),
+        >>> ])
+    """
+
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, img):
+        for t in self.transforms:
+            img = t(img)
+        return img
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '('
+        for t in self.transforms:
+            format_string += '\n'
+            format_string += '    {0}'.format(t)
+        format_string += '\n)'
+        return format_string
 
 
 class TensorCutout(object):
@@ -133,8 +163,11 @@ class RandomCrop(object):
                 padding = (self.padding, self.padding)
             else:
                 padding = self.padding
-            r_img = np.pad(r_img, pad_width=((0, 0), (0, 0), padding, padding),
-                           constant_values=self.fill, mode=self.padding_mode)
+            if isinstance(r_img, np.ndarray):
+                r_img = np.pad(r_img, pad_width=((0, 0), (0, 0), padding, padding),
+                               constant_values=self.fill, mode=self.padding_mode)
+            else:
+                r_img = F.pad(r_img, padding)
 
         # pad the width if needed
         if self.pad_if_needed and r_img.shape[2] < self.size[0]:

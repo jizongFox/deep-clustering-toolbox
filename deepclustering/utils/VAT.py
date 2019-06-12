@@ -32,12 +32,6 @@ def _l2_normalize(d):
 _kl_div = KL_div(reduce=True)
 
 
-# def _kl_div(log_probs, probs):
-#     # pytorch KLDLoss is averaged over all dim if size_average=True
-#     kld = F.kl_div(log_probs, probs, size_average=False)
-#     return kld / log_probs.shape[0]
-
-
 class VATLoss(nn.Module):
 
     def __init__(self, xi=10.0, eps=1.0, prop_eps=0.25, ip=1):
@@ -126,4 +120,3 @@ class VATLoss_Multihead(nn.Module):
             lds = sum(lds) / float(len(lds))
 
         return lds, (x + r_adv).detach(), r_adv.detach()
-
