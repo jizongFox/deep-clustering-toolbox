@@ -4,6 +4,7 @@ import random
 import warnings
 from copy import deepcopy as dcopy
 from functools import partial
+from math import isnan
 from multiprocessing import Pool
 from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Union, Dict, Any
 
@@ -274,7 +275,7 @@ def extract_from_big_dict(big_dict, keys) -> dict:
 
 # filter a flat dictionary with a lambda function
 
-def dict_filter(dictionary: Dict[str, np.ndarray], filter_func: Callable = lambda k, v: True):
+def dict_filter(dictionary: Dict[str, np.ndarray], filter_func: Callable = lambda k, v: (v != 0 or not isnan(v))):
     return {k: v for k, v in dictionary.items() if filter_func(k, v)}
 
 

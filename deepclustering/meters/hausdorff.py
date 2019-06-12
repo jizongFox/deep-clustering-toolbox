@@ -3,7 +3,7 @@ from typing import *
 
 import numpy as np
 import torch
-# from medpy.metric.binary import hd
+from medpy.metric.binary import hd
 from torch import Tensor
 
 from .metric import Metric

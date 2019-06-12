@@ -3,14 +3,14 @@ from abc import ABC
 from typing import *
 
 import torch
+from deepclustering import ModelMode
+from deepclustering.arch import get_arch, PlaceholderNet
 from torch import Tensor
 from torch import nn
 from torch.nn import NLLLoss
 from torch.nn import functional as F
 from torch.optim import lr_scheduler
 
-from deepclustering import ModelMode
-from deepclustering.arch import get_arch, PlaceholderNet
 # from torch import optim
 from .. import optim
 
@@ -68,8 +68,8 @@ class Model(ABC):
 
         return torchnet, optimizer, scheduler
 
-    def predict(self, img: Tensor, logit=True) -> Tensor:
-        pred_logit = self.torchnet(img)
+    def predict(self, img: Tensor, logit=True, *args, **kwargs) -> Tensor:
+        pred_logit = self.torchnet(img, *args, **kwargs)
         if logit:
             return pred_logit
         return F.softmax(pred_logit, 1)
