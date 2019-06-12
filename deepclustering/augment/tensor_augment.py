@@ -4,7 +4,7 @@ Data augmentation given only the high dimensional Tensors, instead of PIL images
 import numbers
 import random
 from typing import *
-
+from torchvision.transforms import Compose
 import numpy as np
 import torch
 from torch.nn import functional as F
@@ -163,6 +163,7 @@ class RandomCrop(object):
                            ),
                            constant_values=self.fill, mode=self.padding_mode)
 
+        # todo: set padding as default when the size is larger than the current size.
         i, j, h, w = self.get_params(r_img, self.size)
 
         return r_img[:, :, int(j):int(j + w), int(i):int(i + h)]
@@ -250,3 +251,58 @@ class CenterCrop(object):
 
     def __repr__(self) -> str:
         return self.__class__.__name__ + '(size={0})'.format(self.size)
+
+
+class RandomHorizontalFlip(object):
+    """Horizontally flip the given PIL Image randomly with a given probability.
+
+    Args:
+        p (float): probability of the image being flipped. Default value is 0.5
+    """
+
+    def __init__(self, p=0.5, dim=3):
+        self.p = p
+        self.dim = dim
+
+    def __call__(self, img):
+        """
+        Args:
+            img (Tensor Image): Image Tensor to be flipped. Must have 4 dimensions
+
+        Returns:
+            Tensor Image: Randomly flipped image.
+        """
+        if random.random() < self.p:
+            img = img.flip(self.dim)
+
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(p={})'.format(self.p)
+
+
+class RandomVerticalFlip(object):
+    """Vertically flip the given PIL Image randomly with a given probability.
+
+    Args:
+        p (float): probability of the image being flipped. Default value is 0.5
+    """
+
+    def __init__(self, p=0.5, dim=2):
+        self.p = p
+        self.dim = dim
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be flipped.
+
+        Returns:
+            PIL Image: Randomly flipped image.
+        """
+        if random.random() < self.p:
+            img = img.flip(self.dim)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(p={})'.format(self.p)
