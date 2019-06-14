@@ -111,7 +111,7 @@ class KL_div(nn.Module):
     p is the target and q is the distribution to get approached.
     '''
 
-    def __init__(self, reduce=True, eps=1e-8):
+    def __init__(self, reduce=True, eps=1e-16):
         super().__init__()
         self.eps = eps
         self.reduce = reduce
@@ -122,10 +122,10 @@ class KL_div(nn.Module):
         assert prob.shape == target.shape
         assert simplex(prob)
         assert simplex(target)
-        b, *_ = target.shape
+        b, c, *_ = target.shape
         kl = (- target * torch.log((prob + self.eps) / (target + self.eps))).sum(1)
         if self.reduce:
-            return kl.mean()
+            return kl.sum() / float(b)
         return kl
 
 

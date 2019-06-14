@@ -51,7 +51,7 @@ class VATLoss(nn.Module):
             pred = F.softmax(model(x), dim=1)
 
         # prepare random unit tensor
-        d = torch.rand(x.shape).sub(0.5).to(x.device)
+        d = torch.randn_like(x).to(x.device)
         d = _l2_normalize(d)
 
         with _disable_tracking_bn_stats(model):
@@ -62,7 +62,6 @@ class VATLoss(nn.Module):
                 adv_distance = _kl_div(F.softmax(pred_hat, dim=1), pred)
                 adv_distance.backward()
                 d = _l2_normalize(d.grad.clone())
-                model.zero_grad()
 
             # calc LDS
             r_adv = d * self.eps.view(-1, 1) * self.prop_eps if \
