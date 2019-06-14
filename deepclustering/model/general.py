@@ -64,7 +64,7 @@ class Model(ABC):
             self.scheduler_name = None
             self.scheduler_params = None
             scheduler: lr_scheduler.LambdaLR = getattr(lr_scheduler, 'StepLR') \
-                (optimizer, 10, 0.1)
+                (optimizer, 100, 1)
 
         return torchnet, optimizer, scheduler
 
