@@ -160,9 +160,13 @@ class RandomCrop(object):
         r_img = img.copy() if isinstance(img, np.ndarray) else img.clone()
         if self.padding is not None:
             if isinstance(self.padding, int):
-                padding = (self.padding, self.padding)
-            else:
+                padding = (self.padding, self.padding, self.padding, self.padding)
+            elif isinstance(self.padding, tuple) and self.padding.__len__() == 2:
+                padding = self.padding + self.padding
+            elif isinstance(self.padding, tuple) and self.padding.__len__() == 4:
                 padding = self.padding
+            assert isinstance(padding, tuple) and padding.__len__() == 4
+
             if isinstance(r_img, np.ndarray):
                 r_img = np.pad(r_img, pad_width=((0, 0), (0, 0), padding, padding),
                                constant_values=self.fill, mode=self.padding_mode)
