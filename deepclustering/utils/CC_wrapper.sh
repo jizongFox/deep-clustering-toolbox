@@ -5,6 +5,7 @@ wrapper(){
     module load python/3.6
     source $HOME/torchenv36/bin/activate
     module load scipy-stack
+	module load cmake
     echo ${command} > tmp.sh
     sed -i '1i\#!/bin/bash' tmp.sh
     sbatch  --job-name="${commend}" \
