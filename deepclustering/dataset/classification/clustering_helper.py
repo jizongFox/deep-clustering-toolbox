@@ -19,9 +19,17 @@ class ClusterDatasetInterface(object):
     """
     ALLOWED_SPLIT = []
 
-    def __init__(self, DataClass: Dataset, data_root: str, split_partitions: List[str], batch_size: int = 1,
-                 shuffle: bool = False,
-                 num_workers: int = 1, pin_memory: bool = True, drop_last=False) -> None:
+    def __init__(
+            self,
+            DataClass: Dataset,
+            data_root: str,
+            split_partitions: List[str],
+            batch_size: int = 1,
+            shuffle: bool = False,
+            num_workers: int = 1,
+            pin_memory: bool = True,
+            drop_last=False
+    ) -> None:
         """
         :param batch_size: batch_size = 1
         :param shuffle: shuffle the dataset, default = False

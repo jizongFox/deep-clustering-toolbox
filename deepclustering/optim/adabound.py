@@ -1,10 +1,10 @@
 import math
 
 import torch
-from torch.optim import Optimizer
+from torch.optim import optimizer
 
 
-class AdaBound(Optimizer):
+class AdaBound(optimizer.Optimizer):
     """Implements AdaBound algorithm.
     It has been proposed in `Adaptive Gradient Methods with Dynamic Bound of Learning Rate`_.
     Arguments:
@@ -119,7 +119,7 @@ class AdaBound(Optimizer):
         return loss
 
 
-class AdaBoundW(Optimizer):
+class AdaBoundW(optimizer.Optimizer):
     """Implements AdaBound algorithm with Decoupled Weight Decay (arxiv.org/abs/1711.05101)
     It has been proposed in `Adaptive Gradient Methods with Dynamic Bound of Learning Rate`_.
     Arguments:

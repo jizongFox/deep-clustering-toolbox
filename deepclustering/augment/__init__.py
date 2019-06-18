@@ -1,15 +1,14 @@
 """
-Interface to build the data transformation, taking a dict to return a corresponding cascaded transformation.
+Interface to build the data transformation, taking a dict to
+return a corresponding cascaded transformation.
 """
+__all__ = ['SequentialWrapper', 'transforms', 'TransformInterface', '_register_transform']
 from functools import partial
 from typing import *
-
+from .sychronized_augment import SequentialWrapper
 from torchvision import transforms
-
 from . import augment
 from ..utils.general import _register
-
-__all__ = ['TRANSFORM_CALLABLE', 'TransformInterface']
 
 TRANSFORM_CALLABLE: Dict[str, Callable] = {}
 

@@ -1,3 +1,6 @@
+__all__ = ["Compose", "Img2Tensor", "PILCutout", "RandomCrop", "RandomHorizontalFlip", "Resize", "CenterCrop",
+           "ToTensor", "ToLabel"]
+from torchvision.transforms import Compose
 import collections
 import numbers
 import random
@@ -8,8 +11,6 @@ import torch
 import torchvision.transforms.functional as tf
 from PIL import Image
 from torch import nn
-
-__all__ = ["Img2Tensor", "PILCutout", "RandomCrop", "Resize", "CenterCrop", "ToTensor", "ToLabel"]
 
 Iterable = collections.abc.Iterable
 
@@ -203,6 +204,13 @@ class Resize(object):
             (size * height / width, size)
         interpolation (int, optional): Desired interpolation. Default is
             ``PIL.Image.BILINEAR``
+
+            NEAREST = NONE = 0
+            BOX = 4
+            BILINEAR = LINEAR = 2
+            HAMMING = 5
+            BICUBIC = CUBIC = 3
+            LANCZOS = ANTIALIAS = 1
     """
 
     def __init__(self, size, interpolation=Image.BILINEAR):
@@ -449,10 +457,14 @@ class ToTensor(object):
 
 
 class ToLabel(object):
-    def __init__(self) -> None:
+
+    def __init__(self, mapping: Dict[int, int] = None) -> None:
         super().__init__()
+        self.mapping_call = np.vectorize(lambda x: mapping[x]) if mapping else None
 
     def __call__(self, img):
         np_img = np.array(img)[None, ...].astype(np.float32)
+        if self.mapping_call:
+            np_img = self.mapping_call(np_img)
         t_img = torch.from_numpy(np_img)
         return t_img.long()

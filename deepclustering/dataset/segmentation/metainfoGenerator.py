@@ -1,9 +1,8 @@
 from typing import List
 
-import torch
 from torch import Tensor
 
-from generalframework.utils import class2one_hot
+from deepclustering.utils import class2one_hot
 
 
 class classSizeCalulator():

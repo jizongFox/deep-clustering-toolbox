@@ -16,7 +16,7 @@ class Test_semisupervised_CIFAR(TestCase):
 
     def test_cifar_split(self):
         dataHandler = Cifar10SemiSupervisedDatasetInterface(
-            data_root='/home/jizong/Workspace/deep-clustering-toolbox/.data(4000 + 46000) + 10000',
+            data_root='/home/jizong/Workspace/deep-clustering-toolbox/.data',
             labeled_sample_num=4000,
             img_transformation=default_cifar10_img_transform['tf1'],
         )
@@ -31,7 +31,7 @@ class Test_semisupervised_CIFAR(TestCase):
 
     def test_mnist_split(self):
         dataHandler = MNISTSemiSupervisedDatasetInterface(
-            data_root='/home/jizong/Workspace/deep-clustering-toolbox/.data(4000 + 46000) + 10000',
+            data_root='/home/jizong/Workspace/deep-clustering-toolbox/.data',
             labeled_sample_num=100,
             img_transformation=default_mnist_img_transform['tf1'],
         )
