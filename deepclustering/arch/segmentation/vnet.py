@@ -1,8 +1,3 @@
-#
-#
-#   file description
-#
-#
 __all__ = ['VNet']
 import torch
 import torch.nn as nn
@@ -20,8 +15,7 @@ def ELUCons(elu, nchan):
         return nn.PReLU(nchan)
 
 
-# normalization between sub-volumes is necessary
-# for good performance
+# normalization between sub-volumes is necessary for good performance
 class ContBatchNorm3d(nn.modules.batchnorm._BatchNorm):
     def _check_input_dim(self, input):
         if input.dim() != 5:
@@ -66,8 +60,9 @@ class InputTransition(nn.Module):
         # do we want a PRELU here as well?
         out = self.bn1(self.conv1(x))
         # split input in to 16 channels
-        x16 = torch.cat((x, x, x, x, x, x, x, x,
-                         x, x, x, x, x, x, x, x), 0)
+        x16 = torch.cat(
+            (x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x), 0
+        )
         out = self.relu1(torch.add(out, x16))
         return out
 
@@ -158,22 +153,6 @@ class VNet(nn.Module):
         self.up_tr32 = UpTransition(64, 32, 1, elu)
         self.out_tr = OutputTransition(32, elu, nll)
 
-    # The network topology as described in the diagram
-    # in the VNet paper
-    # def __init__(self):
-    #     super(VNet, self).__init__()
-    #     self.in_tr =  InputTransition(16)
-    #     # the number of convolutions in each layer corresponds
-    #     # to what is in the actual prototxt, not the intent
-    #     self.down_tr32 = DownTransition(16, 2)
-    #     self.down_tr64 = DownTransition(32, 3)
-    #     self.down_tr128 = DownTransition(64, 3)
-    #     self.down_tr256 = DownTransition(128, 3)
-    #     self.up_tr256 = UpTransition(256, 3)
-    #     self.up_tr128 = UpTransition(128, 3)
-    #     self.up_tr64 = UpTransition(64, 2)
-    #     self.up_tr32 = UpTransition(32, 1)
-    #     self.out_tr = OutputTransition(16)
     def forward(self, x):
         out16 = self.in_tr(x)
         out32 = self.down_tr32(out16)
