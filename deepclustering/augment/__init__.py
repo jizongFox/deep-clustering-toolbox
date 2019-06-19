@@ -7,21 +7,21 @@ from functools import partial
 from typing import *
 from .sychronized_augment import SequentialWrapper
 from torchvision import transforms
-from . import augment
+from . import pil_augment
 from ..utils.general import _register
 
 TRANSFORM_CALLABLE: Dict[str, Callable] = {}
 
 _register_transform = partial(_register, CALLABLE_DICT=TRANSFORM_CALLABLE)
 
-_register_transform('img2tensor', augment.Img2Tensor)
-_register_transform('pilcutout', augment.PILCutout)
-_register_transform('randomcrop', augment.RandomCrop)
-_register_transform('resize', augment.Resize)
-_register_transform('centercrop', augment.CenterCrop)
-_register_transform('sobelprocess', augment.SobelProcess)
-_register_transform('tolabel', augment.ToLabel)
-_register_transform('totensor', augment.ToTensor)
+_register_transform('img2tensor', pil_augment.Img2Tensor)
+_register_transform('pilcutout', pil_augment.PILCutout)
+_register_transform('randomcrop', pil_augment.RandomCrop)
+_register_transform('resize', pil_augment.Resize)
+_register_transform('centercrop', pil_augment.CenterCrop)
+_register_transform('sobelprocess', pil_augment.SobelProcess)
+_register_transform('tolabel', pil_augment.ToLabel)
+_register_transform('totensor', pil_augment.ToTensor)
 
 config = {
     'randomcrop': {'size': (20, 20)},

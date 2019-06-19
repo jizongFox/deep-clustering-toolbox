@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
 from deepclustering import DATA_PATH
-from deepclustering.augment.augment import Resize, PILCutout, RandomCrop, RandomHorizontalFlip, ToTensor, ToLabel, \
+from deepclustering.augment.pil_augment import Resize, PILCutout, RandomCrop, RandomHorizontalFlip, ToTensor, ToLabel, \
     Compose
 from deepclustering.augment.sychronized_augment import SequentialWrapper
 from deepclustering.dataset.segmentation.medicalSegmentationDataset import MedicalImageSegmentationDataset

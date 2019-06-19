@@ -6,7 +6,7 @@ from torchvision import transforms
 from .clustering_helper import ClusterDatasetInterface
 from .stl10 import STL10
 from ... import DATA_PATH
-from ...augment import augment
+from ...augment import pil_augment
 
 __all__ = ['STL10DatasetInterface', 'default_stl10_img_transform']
 
@@ -34,11 +34,11 @@ class STL10DatasetInterface(ClusterDatasetInterface):
 
 
 default_stl10_img_transform = {
-    'tf1': transforms.Compose([augment.RandomCrop(size=(64, 64), padding=None),
-                               augment.Resize(size=(64, 64), interpolation=0),
-                               augment.Img2Tensor(include_grey=True, include_rgb=False)]),
-    'tf2': transforms.Compose([augment.RandomCrop(size=(64, 64), padding=None),
-                               augment.Resize(size=(64, 64), interpolation=0),
+    'tf1': transforms.Compose([pil_augment.RandomCrop(size=(64, 64), padding=None),
+                               pil_augment.Resize(size=(64, 64), interpolation=0),
+                               pil_augment.Img2Tensor(include_grey=True, include_rgb=False)]),
+    'tf2': transforms.Compose([pil_augment.RandomCrop(size=(64, 64), padding=None),
+                               pil_augment.Resize(size=(64, 64), interpolation=0),
                                transforms.RandomHorizontalFlip(p=0.5),
                                transforms.ColorJitter(
                                    brightness=[0.6, 1.4],
@@ -46,9 +46,9 @@ default_stl10_img_transform = {
                                    saturation=[0.6, 1.4],
                                    hue=[-0.125, 0.125]
                                ),
-                               augment.Img2Tensor(include_grey=True, include_rgb=False)]),
-    'tf3': transforms.Compose([augment.CenterCrop(size=(64, 64)),
-                               augment.Resize(size=(64, 64), interpolation=0),
-                               augment.Img2Tensor(include_grey=True, include_rgb=False)]),
+                               pil_augment.Img2Tensor(include_grey=True, include_rgb=False)]),
+    'tf3': transforms.Compose([pil_augment.CenterCrop(size=(64, 64)),
+                               pil_augment.Resize(size=(64, 64), interpolation=0),
+                               pil_augment.Img2Tensor(include_grey=True, include_rgb=False)]),
 
 }

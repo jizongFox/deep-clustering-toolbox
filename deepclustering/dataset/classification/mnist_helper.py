@@ -10,7 +10,7 @@ from .clustering_helper import ClusterDatasetInterface
 from .mnist import MNIST
 from .semi_helper import SemiDatasetInterface
 from ... import DATA_PATH
-from ...augment import augment
+from ...augment import pil_augment
 
 
 class MNISTClusteringDatasetInterface(ClusterDatasetInterface):
@@ -70,34 +70,40 @@ class MNISTSemiSupervisedDatasetInterface(SemiDatasetInterface):
 default_mnist_img_transform = {
     "tf1":
         transforms.Compose([
-            augment.RandomChoice(transforms=
-                                 [augment.RandomCrop(size=(20, 20), padding=None),
-                                  augment.CenterCrop(size=(20, 20))
-                                  ]),
-            augment.Resize(size=24, interpolation=PIL.Image.BILINEAR),
+            pil_augment.RandomChoice(transforms=
+                                     [pil_augment.RandomCrop(size=(20, 20), padding=None),
+                                      pil_augment.CenterCrop(size=(20, 20))
+                                      ]),
+            pil_augment.Resize(size=24, interpolation=PIL.Image.BILINEAR),
             transforms.ToTensor()
         ]),
     "tf2":
         transforms.Compose([
-            augment.RandomApply(transforms=[transforms.RandomRotation(
-                degrees=(-25.0, 25.0),
-                resample=False,
-                expand=False
-            )], p=0.5),
-            augment.RandomChoice(transforms=[
-                augment.RandomCrop(size=(16, 16), padding=None),
-                augment.RandomCrop(size=(20, 20), padding=None),
-                augment.RandomCrop(size=(24, 24), padding=None),
-            ]),
-            augment.Resize(size=24, interpolation=PIL.Image.BILINEAR),
-            transforms.ColorJitter(brightness=[0.6, 1.4], contrast=[0.6, 1.4], saturation=[0.6, 1.4],
-                                   hue=[-0.125, 0.125]),
+            pil_augment.RandomApply(transforms=[
+                transforms.RandomRotation(
+                    degrees=(-25.0, 25.0),
+                    resample=False,
+                    expand=False
+                )], p=0.5),
+            pil_augment.RandomChoice(
+                transforms=[
+                    pil_augment.RandomCrop(size=(16, 16), padding=None),
+                    pil_augment.RandomCrop(size=(20, 20), padding=None),
+                    pil_augment.RandomCrop(size=(24, 24), padding=None),
+                ]),
+            pil_augment.Resize(size=24, interpolation=PIL.Image.BILINEAR),
+            transforms.ColorJitter(
+                brightness=[0.6, 1.4],
+                contrast=[0.6, 1.4],
+                saturation=[0.6, 1.4],
+                hue=[-0.125, 0.125]
+            ),
             transforms.ToTensor()
         ]),
     "tf3":
         transforms.Compose([
-            augment.CenterCrop(size=(20, 20)),
-            augment.Resize(size=24, interpolation=PIL.Image.BILINEAR),
+            pil_augment.CenterCrop(size=(20, 20)),
+            pil_augment.Resize(size=24, interpolation=PIL.Image.BILINEAR),
             transforms.ToTensor()
         ]),
 

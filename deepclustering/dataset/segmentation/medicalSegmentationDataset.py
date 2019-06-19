@@ -12,7 +12,7 @@ from torch.utils.data import Dataset
 
 from deepclustering import ModelMode
 from deepclustering.augment import SequentialWrapper
-from deepclustering.augment.augment import ToTensor, ToLabel
+from deepclustering.augment.pil_augment import ToTensor, ToLabel
 from deepclustering.utils import map_
 
 

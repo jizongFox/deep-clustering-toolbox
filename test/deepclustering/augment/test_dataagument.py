@@ -3,7 +3,7 @@ from unittest import TestCase
 import numpy as np
 import requests
 from PIL import Image
-from deepclustering.augment.augment import Img2Tensor, PILCutout, RandomCrop, CenterCrop, RandomApply, SobelProcess
+from deepclustering.augment.pil_augment import Img2Tensor, PILCutout, RandomCrop, CenterCrop, RandomApply, SobelProcess
 
 __doc__ = """this file tests functions in augment model"""
 

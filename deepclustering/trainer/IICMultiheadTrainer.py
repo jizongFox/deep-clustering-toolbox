@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 
 from .Trainer import _Trainer
 from .. import ModelMode
-from ..augment.augment import SobelProcess
+from ..augment.pil_augment import SobelProcess
 from ..loss.IID_losses import IIDLoss
 from ..meters import AverageValueMeter, MeterInterface
 from ..model import Model
