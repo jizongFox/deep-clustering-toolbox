@@ -137,11 +137,11 @@ class _Trainer(ABC):
         self._start_epoch = state_dict['epoch'] + 1
 
     def save_checkpoint(self, state_dict, current_epoch, best_score):
-        save_best: bool = True if best_score > self.best_score else False
+        save_best: bool = True if float(best_score) > float(self.best_score) else False
         if save_best:
-            self.best_score = best_score
+            self.best_score = float(best_score)
         state_dict['epoch'] = current_epoch
-        state_dict['best_score'] = self.best_score
+        state_dict['best_score'] = float(self.best_score)
 
         torch.save(state_dict, str(self.save_dir / 'last.pth'))
         if save_best:
