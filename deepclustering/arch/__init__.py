@@ -27,6 +27,9 @@ _register_arch('clusternetimsat', IMSATNet)
 _register_arch('dummy', Dummy)
 _register_arch('vatnet', VATNetwork)
 _register_arch('enet', Enet)
+_register_arch('unet', UNet)
+_register_arch('unet_bn', UNet_bn)
+_register_arch('cnet', CorstemNet)
 # Adding default keys here to enable automatic testing
 _register_param('clusternet5g', ClusterNet5g_Param)
 _register_param('clusternet5gtwohead', ClusterNet5gTwoHead_Param)
@@ -37,6 +40,9 @@ _register_param('clusternetimsat', IMSATNet_Param)
 _register_param('dummy', Dummy_Param)
 _register_param('vatnet', VatNet_Param)
 _register_param('enet', Enet_Param)
+_register_param('unet', Unet_Param)
+_register_param('unet_bn', Unetbn_Param)
+_register_param('cnet', CorstemNet_Param)
 """
 Public interface
 """

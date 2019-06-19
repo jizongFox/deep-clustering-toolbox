@@ -126,6 +126,16 @@ class _Trainer(ABC):
         state_dictionary['meter_state_dict'] = self.METERINTERFACE.state_dict
         return state_dictionary
 
+    def load_checkpoint(self, state_dict):
+        self.model.load_state_dict(state_dict['model_state_dict'])
+        try:
+            self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
+        except KeyError:
+            warnings.warn('Meter checkpoint does not match.')
+
+        self.best_score = state_dict['best_score']
+        self._start_epoch = state_dict['epoch'] + 1
+
     def save_checkpoint(self, state_dict, current_epoch, best_score):
         save_best: bool = True if best_score > self.best_score else False
         if save_best:
@@ -136,16 +146,6 @@ class _Trainer(ABC):
         torch.save(state_dict, str(self.save_dir / 'last.pth'))
         if save_best:
             torch.save(state_dict, str(self.save_dir / 'best.pth'))
-
-    def load_checkpoint(self, state_dict):
-        self.model.load_state_dict(state_dict['model_state_dict'])
-        try:
-            self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
-        except KeyError:
-            warnings.warn('Meter checkpoint does not match.')
-
-        self.best_score = state_dict['best_score']
-        self._start_epoch = state_dict['epoch'] + 1
 
     def clean_up(self):
         import shutil
