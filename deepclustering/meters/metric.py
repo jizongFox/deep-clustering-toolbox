@@ -108,6 +108,12 @@ class MeterInterface(object):
     def __getitem__(self, meter_name) -> Metric:
         return self.ind_meter_dict[meter_name]
 
+    def register_new_meter(self, name: str, meter: Metric):
+        assert isinstance(name, str), name
+        assert isinstance(meter, Metric), meter
+        self.ind_meter_dict[name] = meter
+        self.aggregated_meter_dict[name] = AggragatedMeter()
+
     def summary(self) -> pd.DataFrame:
         """
         summary on the list of sub summarys, merging them together.
