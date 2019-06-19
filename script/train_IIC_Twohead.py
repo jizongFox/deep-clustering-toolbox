@@ -40,10 +40,12 @@ def get_dataloader(config: dict):
         img_transforms['tf2'],
         img_transforms['tf2'],
         img_transforms['tf2'],
+        img_transforms['tf2'],
     )
     train_loader_B = DatasetInterface(split_partitions=train_split_partition,
                                       **merged_config['DataLoader']).ParallelDataLoader(
         img_transforms['tf1'],
+        img_transforms['tf2'],
         img_transforms['tf2'],
         img_transforms['tf2'],
         img_transforms['tf2'],

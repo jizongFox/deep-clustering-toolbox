@@ -1,5 +1,6 @@
 Arch:
-  name: ClusterNet5gTwoHead
+  name: clusternet6cTwoHead
+  input_size: 24
   num_channel: 1
   output_k_A: 50
   output_k_B: 10
@@ -8,15 +9,15 @@ Arch:
 
 Optim:
   name: Adam
-  lr: 0.0005
+  lr: 0.0001
 
 Scheduler:
   name: MultiStepLR
   milestones: [100, 200, 300, 400, 500, 600, 700, 800, 900]
-  gamma: 0.75
+  gamma: 1
 
 DataLoader:
-  batch_size: 200
+  batch_size: 140
   shuffle: true
   num_workers: 16
 
