@@ -534,13 +534,19 @@ class ToTensor(object):
 
 
 class ToLabel(object):
+    """
+    PIL image to Label (long) with mapping (dict)
+    """
 
     def __init__(self, mapping: Dict[int, int] = None) -> None:
+        """
+        :param mapping: Optional dictionary containing the mapping.
+        """
         super().__init__()
         self.mapping_call = np.vectorize(lambda x: mapping[x]) if mapping else None
 
-    def __call__(self, img):
-        np_img = np.array(img)[None, ...].astype(np.float32)
+    def __call__(self, img: Image.Image):
+        np_img = np.array(img)[None, ...].astype(np.float32)  # type: ignore
         if self.mapping_call:
             np_img = self.mapping_call(np_img)
         t_img = torch.from_numpy(np_img)

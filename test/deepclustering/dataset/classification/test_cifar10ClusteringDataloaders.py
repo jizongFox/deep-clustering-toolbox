@@ -2,8 +2,10 @@ import random
 from unittest import TestCase
 
 import torch
-from deepclustering.dataset import default_cifar10_img_transform, Cifar10ClusteringDatasetInterface
+from tqdm import tqdm
 
+from deepclustering.dataset import default_cifar10_img_transform, Cifar10ClusteringDatasetInterface, BackgroundGenerator
+import time
 
 class TestCifar(TestCase):
     def setUp(self) -> None:
@@ -36,3 +38,29 @@ class TestCifar(TestCase):
         for _ in range(5):
             batch_1, batch_2, batch_3 = combineIter.__next__()
             assert torch.allclose(batch_1[1], batch_2[1]) and torch.allclose(batch_1[1], batch_3[1])
+
+    def test_conventional_speed(self):
+        combineLoader = self.cifarGenerator.ParallelDataLoader(
+            self.transform_list['tf1'],
+            self.transform_list['tf2'],
+            self.transform_list['tf2'],
+            self.transform_list['tf2'],
+            self.transform_list['tf2'],
+            self.transform_list['tf2'],
+            self.transform_list['tf3']
+        )
+        for i, data in enumerate(tqdm(combineLoader)):
+            time.sleep(0.1)
+
+    def test_threading_speed(self):
+        combineLoader = self.cifarGenerator.ParallelDataLoader(
+            self.transform_list['tf1'],
+            self.transform_list['tf2'],
+            self.transform_list['tf2'],
+            self.transform_list['tf2'],
+            self.transform_list['tf2'],
+            self.transform_list['tf2'],
+            self.transform_list['tf3']
+        )
+        for i, data in enumerate(tqdm(BackgroundGenerator(combineLoader, max_prefetch=20))):
+            time.sleep(0.1)

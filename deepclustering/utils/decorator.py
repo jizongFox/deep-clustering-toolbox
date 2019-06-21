@@ -1,6 +1,7 @@
 import contextlib
 import inspect
 import sys
+import time
 
 from typing_inspect import is_union_type
 
@@ -15,9 +16,31 @@ def _disable_tracking_bn_stats(model):
 
     # let the track_running_stats to be inverse
     model.apply(switch_attr)
+    # return the model
     yield
     # let the track_running_stats to be inverse
     model.apply(switch_attr)
+
+
+class Timer(object):
+    """
+    with Timer() as timer:
+        ...
+        ...
+    print(timer.cost)
+    ...
+    """
+
+    def __init__(self, start=None):
+        self.start = start if start is not None else time.time()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop = time.time()
+        self.cost = self.stop - self.start
+        return exc_type is None
 
 
 def export(fn):

@@ -1,30 +1,23 @@
 import os
+import time
 from unittest import TestCase
 
-import matplotlib.pyplot as plt
+import numpy as np
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from deepclustering import DATA_PATH
 from deepclustering.augment.pil_augment import Resize, PILCutout, RandomCrop, RandomHorizontalFlip, ToTensor, ToLabel, \
     Compose
 from deepclustering.augment.sychronized_augment import SequentialWrapper
+from deepclustering.dataset import BackgroundGenerator
 from deepclustering.dataset.segmentation.medicalSegmentationDataset import MedicalImageSegmentationDataset
+from deepclustering.utils.decorator import Timer
 
 
-class TestMedicalDataSegmentation(TestCase):
-    def test_segmentation_dataset(self):
-        dataset_dict = {
-            'root_dir': os.path.join(DATA_PATH, 'ACDC-all'),
-            'mode': 'train',
-            'subfolders': ['img', 'gt'],
-            'verbose': True
-        }
-        dataset = MedicalImageSegmentationDataset(**dataset_dict)
-        data, filename = dataset[2]
-        print(data[0].shape)
-        print(filename)
+class TestMedicalDataSegmentationWithBackgroundGenerator(TestCase):
 
-    def test_segmentatin_dataset_with_SequentialWrapper(self):
+    def setUp(self) -> None:
         dataset_dict = {
             'root_dir': os.path.join(DATA_PATH, 'ACDC-all'),
             'mode': 'train',
@@ -47,15 +40,27 @@ class TestMedicalDataSegmentation(TestCase):
         ])
         transforms = SequentialWrapper(img_transform=img_transform, target_transform=target_transform,
                                        if_is_target=[False, True])
+        self.dataset = MedicalImageSegmentationDataset(**dataset_dict, transforms=transforms)
 
-        dataset = MedicalImageSegmentationDataset(**dataset_dict, transforms=transforms)
-        dataloader = iter(DataLoader(dataset, batch_size=1, shuffle=True))
-        for i in range(100):
-            data, filename = dataloader.__next__()
-            plt.clf()
-            plt.imshow(data[0].squeeze(), cmap='gray')
-            plt.contourf(data[1].squeeze(), alpha=0.1)
-            plt.show(block=False)
-            plt.pause(1)
-            if i == 10:
-                break
+    def test_conventional_dataloader(self):
+        dataloader = DataLoader(self.dataset, batch_size=8, num_workers=8)
+        with Timer() as timer:
+            for i, (data, filename) in enumerate(tqdm(dataloader)):
+                time1 = time.time()
+                while True:
+                    _ = np.random.randn(512, )
+                    if time.time() - time1 > 0.1:
+                        break
+
+        print(timer.cost)
+
+    def test_backgroundGenerator_dataloader(self):
+        dataloader = BackgroundGenerator(DataLoader(self.dataset, batch_size=8, num_workers=8), max_prefetch=10)
+        with Timer() as timer:
+            for i, (data, filename) in enumerate(tqdm(dataloader)):
+                time1 = time.time()
+                while True:
+                    _ = np.random.randn(512,)
+                    if time.time() - time1 > 0.1:
+                        break
+        print(timer.cost)

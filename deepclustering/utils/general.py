@@ -1,18 +1,16 @@
 import collections
 import os
 import random
-import warnings
 from copy import deepcopy as dcopy
 from functools import partial
 from math import isnan
 from multiprocessing import Pool
-from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Union, Dict, Any
+from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Dict, Any
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import Tensor, einsum
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 A = TypeVar("A")
@@ -20,15 +18,22 @@ B = TypeVar("B")
 T = TypeVar("T", Tensor, np.ndarray)
 
 
-# identical function
-def identical(x):
+def identical(x: Any) -> Any:
+    """
+    identical function
+    :param x: function x
+    :return: function x
+    """
     return x
 
 
-# set_priority
-def set_nicer(nice):
+def set_nicer(nice) -> None:
+    """
+    set program priority
+    :param nice: number to be set.
+    :return: None
+    """
     if nice:
-        import os
         os.nice(nice)
         print(f"Process priority has been changed to {nice}.")
 
@@ -42,6 +47,13 @@ def fix_all_seed(seed):
     os.environ['PYTHONHASHSEED'] = str(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+
+def set_benchmark(seed):
+    torch.backends.cudnn.benchmark = True
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
 
 
 # tqdm
@@ -62,10 +74,22 @@ def uniq(a: Tensor) -> Set:
 
 
 def sset(a: Tensor, sub: Iterable) -> bool:
+    """
+    if a tensor is the subset of the other
+    :param a:
+    :param sub:
+    :return:
+    """
     return uniq(a).issubset(sub)
 
 
 def eq(a: Tensor, b) -> bool:
+    """
+    if a and b are equal for torch.Tensor
+    :param a:
+    :param b:
+    :return:
+    """
     return torch.eq(a, b).all()
 
 
@@ -137,7 +161,7 @@ def probs2one_hot(probs: Tensor) -> Tensor:
     return res
 
 
-def predlogit2one_hot(logit: Tensor) -> Tensor:
+def logit2one_hot(logit: Tensor) -> Tensor:
     _, C, _, _ = logit.shape
     probs = F.softmax(logit, 1)
     assert simplex(probs)
@@ -167,8 +191,8 @@ def map_(fn: Callable[[A], B], iter: Iterable[A]) -> List[B]:
 
 
 def mmap_(fn: Callable[[A], B], iter: Iterable[A]) -> List[B]:
-    pool = Pool()
-    return list(pool.map(fn, iter))
+    with Pool() as pool:
+        return list(pool.map(fn, iter))
 
 
 def uc_(fn: Callable) -> Callable:
@@ -183,35 +207,7 @@ def id_(x):
     return x
 
 
-# no-stop dataloader
-class DataIter(object):
-    def __init__(self, dataloader: Union[DataLoader, List[Any]]) -> None:
-        super().__init__()
-        self.dataloader = dcopy(dataloader)
-        self.iter_dataloader = iter(dataloader)
-        self.cache = None
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        try:
-            self.cache = self.iter_dataloader.__next__()
-            return self.cache
-        except StopIteration:
-            self.iter_dataloader = iter(self.dataloader)
-            self.cache = self.iter_dataloader.__next__()
-            return self.cache
-
-    def __cache__(self):
-        if self.cache is not None:
-            return self.cache
-        else:
-            warnings.warn('No cache found, iterator forward')
-            return self.__next__()
-
-
-# dictionary functions
+# dictionary helper functions
 def flatten_dict(d, parent_key='', sep='_'):
     items = []
     for k, v in d.items():
@@ -223,22 +219,13 @@ def flatten_dict(d, parent_key='', sep='_'):
     return dict(items)
 
 
-def dict_flatten(d, parent_key='', sep='_'):
-    items = []
-    for k, v in d.items():
-        new_key = parent_key + sep + k if parent_key else k
-        if isinstance(v, collections.MutableMapping):
-            items.extend(flatten_dict(v, new_key, sep=sep).items())
-        else:
-            items.append((new_key, v))
-    return dict(items)
-
-
+# merge hierarchically two dictionaries
+# todo: improve this function
 def dict_merge(dct: dict, merge_dct: dict, re=True):
-    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
+    """
+    Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
-    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
-    ``dct``.
+    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into``dct``.
     :param dct: dict onto which the merge is executed
     :param merge_dct: dct merged into dct
     :return: None
@@ -263,22 +250,12 @@ def dict_merge(dct: dict, merge_dct: dict, re=True):
         return dcopy(dct)
 
 
-def extract_from_big_dict(big_dict, keys) -> dict:
-    """ Get a small dictionary with key in `keys` and value
-        in big dict. If the key doesn't exist, give None.
-        :param big_dict: A dict
-        :param keys: A list of keys
-    """
-    #   TODO a bug has been found
-    return {key: big_dict.get(key) for key in keys if big_dict.get(key, 'not_found') != 'not_found'}
-
-
 # filter a flat dictionary with a lambda function
-
 def dict_filter(dictionary: Dict[str, np.ndarray], filter_func: Callable = lambda k, v: (v != 0 or not isnan(v))):
     return {k: v for k, v in dictionary.items() if filter_func(k, v)}
 
 
+# make a flatten dictionary to be printablely nice.
 def nice_dict(input_dict: dict) -> str:
     """
     this function is to return a nice string to dictionary displace propose.
@@ -294,6 +271,21 @@ def nice_dict(input_dict: dict) -> str:
     flat_dict = input_dict if is_flat_dict else flatten_dict(input_dict, sep='')
     string_list = [f'{k}:{v:.3f}' for k, v in flat_dict.items()]
     return ', '.join(string_list)
+
+
+dict_flatten = flatten_dict
+merge_dict = dict_merge
+filter_dict = dict_filter
+
+
+def extract_from_big_dict(big_dict, keys) -> dict:
+    """ Get a small dictionary with key in `keys` and value
+        in big dict. If the key doesn't exist, give None.
+        :param big_dict: A dict
+        :param keys: A list of keys
+    """
+    #   TODO a bug has been found
+    return {key: big_dict.get(key) for key in keys if big_dict.get(key, 'not_found') != 'not_found'}
 
 
 # meta function for interface
