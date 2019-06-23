@@ -2,7 +2,7 @@ import time
 from unittest import TestCase
 
 import torch
-from deepclustering.loss.dice_loss import DiceLoss, dice_batch, MetaDice
+from deepclustering.loss.dice_loss import TwoDimDiceLoss, dice_batch, MetaDice, ThreeDimDiceLoss
 from deepclustering.utils import class2one_hot, logit2one_hot
 from torch.nn import functional as F
 
@@ -48,3 +48,13 @@ class TestDiceLoss(TestCase):
             loss2 = dice_batch(pred, onehot_target)
             loss2.mean().backward()
             assert torch.allclose(1 - loss1, loss2, rtol=1e-3, atol=1e-2)
+
+    def test_2ddice_loss(self):
+        criterion = TwoDimDiceLoss(reduce=False, ignore_index=0)
+        loss, dices = criterion(F.softmax(self.predict_logit, 1), class2one_hot(self.target, 3))
+        print()
+
+    def test_3ddice_loss(self):
+        criterion = ThreeDimDiceLoss()
+        loss, dices = criterion(F.softmax(self.predict_logit, 1), class2one_hot(self.target, 3))
+        print()

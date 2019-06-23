@@ -1,10 +1,12 @@
 import torch
 from torch import nn, Tensor
 
+from ..utils import simplex, one_hot
 
-class MetaDice(object):
+
+class MetaDice(nn.Module):
     """
-    3D and 2D dice computator
+    3D and 2D dice computator, not the loss
     """
 
     def __init__(self, method: str, weight: Tensor = None, reduce: bool = False, eps: float = 1e-8) -> None:
@@ -15,13 +17,14 @@ class MetaDice(object):
         :param reduce: if reduce classwise mean. mean on batch samples.
         :return:
         """
+        super(MetaDice, self).__init__()
         assert method in ('2d', '3d'), method
         self.method = method
         self.reduce = reduce
         self.eps = eps
         self.weight = weight
 
-    def __call__(self, pred: Tensor, target: Tensor):
+    def forward(self, pred: Tensor, target: Tensor):
         """
         :param pred: softmax or one_hot prediction, with or without gradient. having the shape of B C H W etc
         :param target: One_hot mask of the target, must have the same shape as the `pred`
@@ -55,44 +58,56 @@ dice_coef = MetaDice(method='2d', reduce=False)
 dice_batch = MetaDice(method='3d', reduce=False)  # used for 3d dice
 
 
-class DiceLoss(nn.Module):
+class TwoDimDiceLoss(MetaDice):
     """Computes Dice Loss, which just 1 - DiceCoefficient described above.
     Additionally allows per-class weights to be provided.
+    return the classwise loss average on individual images.
+    # todo: not sure how to handle with the ignore index
     """
 
-    def __init__(self, weight=None, ignore_index=None, sigmoid_normalization=False,
-                 skip_last_target=False, epsilon=1e-5, ):
-        super(DiceLoss, self).__init__()
-        self.epsilon = epsilon
-        self.register_buffer('weight', weight)
+    def __init__(
+            self,
+            weight: Tensor = None,
+            ignore_index: int = None,
+            reduce: bool = False,
+    ) -> None:
+        super(TwoDimDiceLoss, self).__init__('2d', weight, reduce, 1e-8)
         self.ignore_index = ignore_index
-        # The output from the network during training is assumed to be un-normalized probabilities and we would
-        # like to normalize the logits. Since Dice (or soft Dice in this case) is usually used for binary data,
-        # normalizing the channels with Sigmoid is the default choice even for multi-class segmentation problems.
-        # However if one would like to apply Softmax in order to get the proper probability distribution from the
-        # output, just specify sigmoid_normalization=False.
-        if sigmoid_normalization:
-            self.normalization = nn.Sigmoid()
-        else:
-            self.normalization = nn.Softmax(dim=1)
-        # if True skip the last channel in the target
-        self.skip_last_target = skip_last_target
 
-    def forward(self, input, target):
-        # get probabilities from logits
-        # input = self.normalization(input)
-        if self.weight is not None:
-            weight = self.weight
-        else:
-            weight = None
+    def forward(self, pred: Tensor, target: Tensor):
+        assert simplex(pred)
+        assert one_hot(target)
+        if self.ignore_index is not None:
+            mask = target.clone().ne_(self.ignore_index).type(torch.float)
+            mask.requires_grad = False
+            pred = pred * mask
+            target = target.float() * mask
 
-        if self.skip_last_target:
-            target = target[:, :-1, ...]
+        dices = super().forward(pred, target)
+        loss = (1.0 - dices).mean()
 
-        per_channel_dice = compute_per_channel_dice(input, target, epsilon=self.epsilon, ignore_index=self.ignore_index,
-                                                    weight=weight)
-        # Average the Dice score across all channels/classes
-        return 1. - per_channel_dice
+        return loss, dices
+
+
+class ThreeDimDiceLoss(MetaDice):
+
+    def __init__(self, weight: Tensor = None, ignore_index: int = None) -> None:
+        super().__init__('3d', weight, True, 1e-8)
+        self.ignore_index = ignore_index
+
+    def forward(self, pred: Tensor, target: Tensor):
+        assert simplex(pred)
+        assert one_hot(target)
+        if self.ignore_index is not None:
+            mask = target.clone().ne_(self.ignore_index).type(torch.float)
+            mask.requires_grad = False
+            pred = pred * mask
+            target = target.float() * mask
+
+        dices = super().forward(pred, target)
+        loss = (1.0 - dices).mean()
+
+        return loss, dices
 
 
 class GeneralizedDiceLoss(nn.Module):
@@ -124,8 +139,8 @@ class GeneralizedDiceLoss(nn.Module):
             input = input * mask
             target = target * mask
 
-        input = flatten(input)
-        target = flatten(target)
+        # input = flatten(input)
+        # target = flatten(target)
 
         target = target.float()
         target_sum = target.sum(-1)
@@ -141,43 +156,3 @@ class GeneralizedDiceLoss(nn.Module):
 
         return 1. - 2. * intersect / denominator.clamp(min=self.epsilon)
 
-
-def compute_per_channel_dice(input, target, epsilon=1e-5, ignore_index=None, weight=None):
-    # assumes that input is a normalized probability
-
-    # input and target shapes must match
-    assert input.size() == target.size(), "'input' and 'target' must have the same shape"
-
-    # mask ignore_index if present
-    if ignore_index is not None:
-        mask = target.clone().ne_(ignore_index)
-        mask.requires_grad = False
-
-        input = input * mask
-        target = target * mask
-
-    input = flatten(input)
-    target = flatten(target)
-
-    target = target.float()
-    # Compute per channel Dice Coefficient
-    intersect = (input * target).sum(-1)
-    if weight is not None:
-        intersect = weight * intersect
-
-    denominator = (input + target).sum(-1)
-    return 2. * intersect / denominator.clamp(min=epsilon)
-
-
-def flatten(tensor):
-    """Flattens a given tensor such that the channel axis is first.
-    The shapes are transformed as follows:
-       (N, C, D, H, W) -> (C, N * D * H * W)
-    """
-    C = tensor.size(1)
-    # new axis order
-    axis_order = (1, 0) + tuple(range(2, tensor.dim()))
-    # Transpose: (N, C, D, H, W) -> (C, N, D, H, W)
-    transposed = tensor.permute(axis_order).contiguous()
-    # Flatten: (C, N, D, H, W) -> (C, N * D * H * W)
-    return transposed.view(C, -1)
