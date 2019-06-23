@@ -19,7 +19,6 @@ from ... import DATA_PATH
 from ...augment import TransformInterface
 
 
-# todo try to extend the class to support semi supervised cases ....
 class Cifar10ClusteringDatasetInterface(ClusterDatasetInterface):
     """
     For unsupervised learning with parallel transformed datasets.
@@ -110,5 +109,3 @@ default_cifar10_img_transform = {}
 for k, v in transform_dict.items():
     default_cifar10_img_transform[k] = TransformInterface(v)
 
-# todo: generate a custom function to generate the transform from yaml file.
-# todo: add semi supervised interface

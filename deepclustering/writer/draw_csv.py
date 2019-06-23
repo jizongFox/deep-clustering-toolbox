@@ -1,9 +1,10 @@
-import warnings
 import argparse
 import os
 import subprocess
+import warnings
 from pathlib import Path
 from pprint import pprint
+from typing import List
 
 import matplotlib
 import numpy as np
@@ -15,6 +16,9 @@ from deepclustering import PROJECT_PATH
 
 
 class DrawCSV(object):
+    """
+    directly override the columns_to_draw would be fine
+    """
     def __init__(
             self,
             columns_to_draw=None,
@@ -26,7 +30,7 @@ class DrawCSV(object):
         super().__init__()
         if columns_to_draw is not None and not isinstance(columns_to_draw, list):
             columns_to_draw = [columns_to_draw]
-        self.columns_to_draw = columns_to_draw
+        self.columns_to_draw: List[str] = columns_to_draw
         self.save_name = save_name
         self.save_dir = save_dir
         self.figsize = tuple(figsize)

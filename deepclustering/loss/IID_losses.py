@@ -6,7 +6,7 @@ import sys
 import torch
 from torch import Tensor
 from torch import nn
-import matplotlib.pyplot as plt
+
 from ..utils.general import simplex
 
 

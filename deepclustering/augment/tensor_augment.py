@@ -235,7 +235,7 @@ class Resize(object):
         Returns:
             PIL Image: Rescaled image.
         """
-        ## todo speed up the resize.
+        # todo speed up the resize.
         assert isinstance(img, _Tensor)
         b, c, h, w = img.shape
         torch_img = torch.Tensor(img.copy()).float() if isinstance(img, np.ndarray) else img.clone()

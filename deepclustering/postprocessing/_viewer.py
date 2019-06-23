@@ -30,6 +30,9 @@ Tensor = Union[np.ndarray, torch.Tensor]
 
 
 def multi_slice_viewer(img_volume: Tensor, gt_volumes: Union[Tensor, List[Tensor]] = None) -> None:
+    import matplotlib
+    matplotlib.use('tkagg')
+    import matplotlib.pyplot as plt
     if not isinstance(gt_volumes, list):
         gt_volumes = [gt_volumes]
     if gt_volumes[0] is not None:

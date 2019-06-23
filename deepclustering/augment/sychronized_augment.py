@@ -4,6 +4,7 @@ import random
 from typing import Callable, List
 
 import numpy as np
+from PIL import Image
 
 from ..utils import identical
 
@@ -38,7 +39,7 @@ class SequentialWrapper(object):
         self.target_transform = target_transform if target_transform is not None else identical
         self.if_is_target = if_is_target
 
-    def __call__(self, *imgs, random_seed=None):
+    def __call__(self, *imgs, random_seed=None) -> List[Image.Image]:
         # assert cases
         imgs = imgs[0]  # imgs: Tuple[List]
         assert len(imgs) == len(self.if_is_target), f"len(imgs) should match len(if_is_target), " \
@@ -46,7 +47,7 @@ class SequentialWrapper(object):
         # assert cases ends
         random_seed: int = int(random.randint(0, 1e8)) if random_seed is None else int(random_seed)  # type ignore
 
-        _imgs = []
+        _imgs: List[Image.Image] = []
         for img, if_target in zip(imgs, self.if_is_target):
             with FixRandomSeed(random_seed):
                 _img = self._transform(if_target)(img)

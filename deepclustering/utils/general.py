@@ -74,10 +74,10 @@ class tqdm_(tqdm):
 def uniq(a: Tensor) -> Set:
     '''
     return unique element of Tensor
+    Use python Optimized mode to skip assert statement.
     :rtype set
     :param a: input tensor
     :return: Set(a_npized)
-    todo: too slow
     '''
     return set(torch.unique(a.cpu()).numpy())
 

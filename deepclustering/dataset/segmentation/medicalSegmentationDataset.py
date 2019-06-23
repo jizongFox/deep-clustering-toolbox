@@ -7,13 +7,12 @@ from pathlib import Path
 from typing import Callable, List, Tuple
 
 from PIL import Image
-from torch import Tensor
-from torch.utils.data import Dataset
-
 from deepclustering import ModelMode
 from deepclustering.augment import SequentialWrapper
 from deepclustering.augment.pil_augment import ToTensor, ToLabel
 from deepclustering.utils import map_
+from torch import Tensor
+from torch.utils.data import Dataset
 
 
 def allow_extension(path: str, extensions: List[str]) -> bool:
