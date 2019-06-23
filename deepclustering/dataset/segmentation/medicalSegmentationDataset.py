@@ -1,18 +1,20 @@
 from __future__ import print_function, division
 
 import os
+from functools import lru_cache
 from functools import reduce
 from operator import and_
 from pathlib import Path
 from typing import Callable, List, Tuple
 
 from PIL import Image
+from torch import Tensor
+from torch.utils.data import Dataset
+
 from deepclustering import ModelMode
 from deepclustering.augment import SequentialWrapper
 from deepclustering.augment.pil_augment import ToTensor, ToLabel
 from deepclustering.utils import map_
-from torch import Tensor
-from torch.utils.data import Dataset
 
 
 def allow_extension(path: str, extensions: List[str]) -> bool:
@@ -67,8 +69,8 @@ class MedicalImageSegmentationDataset(Dataset):
             self.training = mode
 
     def __getitem__(self, index) -> Tuple[List[Tensor], str]:
-        img_list, filename_list = [Image.open(self.imgs[subfolder][index]) for subfolder in self.subfolders], \
-                                  [self.filenames[subfolder][index] for subfolder in self.subfolders]
+
+        img_list, filename_list = self._getitem_index(index)
         assert img_list.__len__() == self.subfolders.__len__()
         # make sure the filename is the same image
         assert set(map_(lambda x: Path(x).stem, filename_list)).__len__() == 1, \
@@ -76,6 +78,12 @@ class MedicalImageSegmentationDataset(Dataset):
         filename = Path(filename_list[0]).stem
         img_list = self.transform(img_list)
         return img_list, filename
+
+    @lru_cache(maxsize=128)
+    def _getitem_index(self, index):
+        img_list = [Image.open(self.imgs[subfolder][index]) for subfolder in self.subfolders]
+        filename_list = [self.filenames[subfolder][index] for subfolder in self.subfolders]
+        return img_list, filename_list
 
     @classmethod
     def make_dataset(cls, root: str, mode: str, subfolders: List[str], verbose=True):

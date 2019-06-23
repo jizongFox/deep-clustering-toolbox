@@ -15,8 +15,9 @@ class ConfigManger:
             warnings.warn('No default yaml is provided, only used for parser input arguments.', UserWarning)
             return
         self.SET_DEFAULT_CONFIG_PATH(DEFAULT_CONFIG_PATH)
-        self.default_config = yaml_load(self.parsed_args.get('Config', self.DEFAULT_CONFIG), verbose=verbose)
-        self.merged_config = dict_merge(self.default_config, self.parsed_args, re=True)
+        self.default_config: Dict[str, Any] = yaml_load(self.parsed_args.get('Config', self.DEFAULT_CONFIG),
+                                                        verbose=verbose)
+        self.merged_config: Dict[str, Any] = dict_merge(self.default_config, self.parsed_args, re=True)
         if integrality_check:
             self._check_integrality(self.merged_config)
         if verbose:

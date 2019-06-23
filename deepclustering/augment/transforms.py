@@ -1,5 +1,6 @@
 # taken from https://github.com/wolny/pytorch-3dunet
 import importlib
+from typing import Tuple, List, Union, Any
 
 import numpy as np
 import torch
@@ -10,7 +11,7 @@ from skimage.segmentation import find_boundaries
 from torchvision.transforms import Compose
 
 
-class RandomFlip:
+class RandomFlip(object):
     """
     Randomly flips the image across the given axes. Image can be either 3D (DxHxW) or 4D (CxDxHxW).
 
@@ -18,26 +19,27 @@ class RandomFlip:
     otherwise the models won't converge.
     """
 
-    def __init__(self, random_state, **kwargs):
+    def __init__(self, random_state: np.random.RandomState, **kwargs):
         assert random_state is not None, 'RandomState cannot be None'
         self.random_state = random_state
-        self.axes = (0, 1, 2)
+        self.axes: Tuple[int, ...] = (0, 1, 2)
 
-    def __call__(self, m):
+    def __call__(self, m: np.ndarray) -> np.ndarray:
         assert m.ndim in [3, 4], 'Supports only 3D (DxHxW) or 4D (CxDxHxW) images'
 
         for axis in self.axes:
             if self.random_state.uniform() > 0.5:
                 if m.ndim == 3:
-                    m = np.flip(m, axis)
+                    m = np.flip(m, axis)  # flip by applying ::-1 at given axis
                 else:
+                    # slice the 4d matrices to 3d
                     channels = [np.flip(m[c], axis) for c in range(m.shape[0])]
                     m = np.stack(channels, axis=0)
 
         return m
 
 
-class RandomRotate90:
+class RandomRotate90(object):
     """
     Rotate an array by 90 degrees around a randomly chosen plane. Image can be either 3D (DxHxW) or 4D (CxDxHxW).
 
@@ -47,31 +49,32 @@ class RandomRotate90:
     IMPORTANT: assumes DHW axis order (that's why rotation is performed across (1,2) axis)
     """
 
-    def __init__(self, random_state, **kwargs):
+    def __init__(self, random_state: np.random.RandomState, **kwargs):
         self.random_state = random_state
 
-    def __call__(self, m):
+    def __call__(self, m: np.ndarray) -> np.ndarray:
         assert m.ndim in [3, 4], 'Supports only 3D (DxHxW) or 4D (CxDxHxW) images'
 
         # pick number of rotations at random
         k = self.random_state.randint(0, 4)
         # rotate k times around a given plane
         if m.ndim == 3:
-            m = np.rot90(m, k, (1, 2))
+            m: np.ndarray = np.rot90(m, k, (1, 2))
         else:
-            channels = [np.rot90(m[c], k, (1, 2)) for c in range(m.shape[0])]
-            m = np.stack(channels, axis=0)
+            channels: List[np.ndarray] = [np.rot90(m[c], k, (1, 2)) for c in range(m.shape[0])]
+            m: np.ndarray = np.stack(channels, axis=0)
 
         return m
 
 
-class RandomRotate:
+class RandomRotate(object):
     """
     Rotate an array by a random degrees from taken from (-angle_spectrum, angle_spectrum) interval.
     Rotation axis is picked at random from the list of provided axes.
     """
 
-    def __init__(self, random_state, angle_spectrum=10, axes=None, mode='constant', order=0, **kwargs):
+    def __init__(self, random_state: np.random.RandomState, angle_spectrum: Union[float, int] = 10,
+                 axes: List[Tuple[int, ...]] = None, mode='constant', order=0, **kwargs):
         if axes is None:
             axes = [(1, 0), (2, 1), (2, 0)]
         else:
@@ -83,9 +86,9 @@ class RandomRotate:
         self.mode = mode
         self.order = order
 
-    def __call__(self, m):
-        axis = self.axes[self.random_state.randint(len(self.axes))]
-        angle = self.random_state.randint(-self.angle_spectrum, self.angle_spectrum)
+    def __call__(self, m: np.ndarray) -> np.ndarray:
+        axis: Tuple[int, ...] = self.axes[self.random_state.randint(len(self.axes))]
+        angle: float = self.random_state.randint(-self.angle_spectrum, self.angle_spectrum)
 
         if m.ndim == 3:
             m = rotate(m, angle, axes=axis, reshape=False, order=self.order, mode=self.mode, cval=-1)
@@ -97,7 +100,7 @@ class RandomRotate:
         return m
 
 
-class RandomContrast:
+class RandomContrast(object):
     """
         Adjust the brightness of an image by a random factor.
     """
@@ -117,13 +120,21 @@ class RandomContrast:
 
 # it's relatively slow, i.e. ~1s per patch of size 64x200x200, so use multiple workers in the DataLoader
 # remember to use spline_order=3 when transforming the labels
-class ElasticDeformation:
+class ElasticDeformation(object):
     """
     Apply elasitc deformations of 3D patches on a per-voxel mesh. Assumes ZYX axis order!
     Based on: https://github.com/fcalvet/image_tools/blob/master/image_augmentation.py#L62
     """
 
-    def __init__(self, random_state, spline_order, alpha=15, sigma=3, execution_probability=0.3, **kwargs):
+    def __init__(
+            self,
+            random_state: np.random.RandomState,
+            spline_order: int,
+            alpha: int = 15,
+            sigma: int = 3,
+            execution_probability: float = 0.3,
+            **kwargs
+    ):
         """
         :param spline_order: the order of spline interpolation (use 0 for labeled images)
         :param alpha: scaling factor for deformations
@@ -135,7 +146,7 @@ class ElasticDeformation:
         self.sigma = sigma
         self.execution_probability = execution_probability
 
-    def __call__(self, m):
+    def __call__(self, m: np.ndarray):
         if self.random_state.uniform() < self.execution_probability:
             assert m.ndim == 3
             dz = gaussian_filter(self.random_state.randn(*m.shape), self.sigma, mode="constant", cval=0) * self.alpha
@@ -150,7 +161,7 @@ class ElasticDeformation:
         return m
 
 
-def blur_boundary(boundary, sigma):
+def blur_boundary(boundary: np.ndarray, sigma: float):
     boundary = gaussian(boundary, sigma=sigma)
     boundary[boundary >= 0.5] = 1
     boundary[boundary < 0.5] = 0
@@ -177,7 +188,7 @@ class AbstractLabelToBoundary:
         self.aggregate_affinities = aggregate_affinities
         self.append_label = append_label
 
-    def __call__(self, m):
+    def __call__(self, m: np.ndarray) -> np.ndarray:
         """
         Extract boundaries from a given 3D label tensor.
         :param m: input 3D tensor
@@ -335,7 +346,7 @@ class Normalize:
         self.std = std
         self.eps = eps
 
-    def __call__(self, m):
+    def __call__(self, m: np.ndarray) -> np.ndarray:
         return (m - self.mean) / (self.std + self.eps)
 
 
@@ -343,7 +354,7 @@ class RangeNormalize:
     def __init__(self, max_value=255, **kwargs):
         self.max_value = max_value
 
-    def __call__(self, m):
+    def __call__(self, m: np.ndarray) -> np.ndarray:
         return m / self.max_value
 
 
@@ -353,7 +364,7 @@ class GaussianNoise:
         self.max_sigma = max_sigma
         self.max_value = max_value
 
-    def __call__(self, m):
+    def __call__(self, m: np.ndarray) -> np.ndarray:
         # pick std dev from [0; max_sigma]
         std = self.random_state.randint(self.max_sigma)
         gaussian_noise = self.random_state.normal(0, std, m.shape)
@@ -371,7 +382,7 @@ class ToTensor:
         self.expand_dims = expand_dims
         self.dtype = dtype
 
-    def __call__(self, m):
+    def __call__(self, m: np.ndarray) -> torch.Tensor:
         assert m.ndim in [3, 4], 'Supports only 3D (DxHxW) or 4D (CxDxHxW) images'
         # add channel dimension
         if self.expand_dims and m.ndim == 3:
@@ -381,7 +392,7 @@ class ToTensor:
 
 
 class Identity:
-    def __call__(self, m):
+    def __call__(self, m: Any) -> Any:
         return m
 
 

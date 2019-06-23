@@ -40,19 +40,17 @@ class TestMedicalDataSegmentationWithBackgroundGenerator(TestCase):
         ])
         transforms = SequentialWrapper(img_transform=img_transform, target_transform=target_transform,
                                        if_is_target=[False, True])
-        self.dataset = MedicalImageSegmentationDataset(**dataset_dict, transforms=transforms)
+        self.dataset = MedicalImageSegmentationDataset(transforms=None, **dataset_dict)
 
     def test_conventional_dataloader(self):
         dataloader = DataLoader(self.dataset, batch_size=8, num_workers=8)
-        with Timer() as timer:
-            for i, (data, filename) in enumerate(tqdm(dataloader)):
-                time1 = time.time()
-                while True:
-                    _ = np.random.randn(512, )
-                    if time.time() - time1 > 0.1:
-                        break
+        for _ in range(30):
+            with Timer() as timer:
+                for i, (data, filename) in enumerate(dataloader):
+                    for i in range(100):
+                        _ = np.random.randn(512, )
 
-        print(timer.cost)
+            print(timer.cost)
 
     def test_backgroundGenerator_dataloader(self):
         dataloader = BackgroundGenerator(DataLoader(self.dataset, batch_size=8, num_workers=8), max_prefetch=10)
@@ -60,7 +58,7 @@ class TestMedicalDataSegmentationWithBackgroundGenerator(TestCase):
             for i, (data, filename) in enumerate(tqdm(dataloader)):
                 time1 = time.time()
                 while True:
-                    _ = np.random.randn(512,)
+                    _ = np.random.randn(512, )
                     if time.time() - time1 > 0.1:
                         break
         print(timer.cost)

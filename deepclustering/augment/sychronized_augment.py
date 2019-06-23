@@ -1,7 +1,9 @@
+import torch
+
 __all__ = ['FixRandomSeed', 'SequentialWrapper']
 
 import random
-from typing import Callable, List
+from typing import Callable, List, Union
 
 import numpy as np
 from PIL import Image
@@ -39,7 +41,7 @@ class SequentialWrapper(object):
         self.target_transform = target_transform if target_transform is not None else identical
         self.if_is_target = if_is_target
 
-    def __call__(self, *imgs, random_seed=None) -> List[Image.Image]:
+    def __call__(self, *imgs, random_seed=None) -> List[Union[Image.Image, torch.Tensor, np.ndarray]]:
         # assert cases
         imgs = imgs[0]  # imgs: Tuple[List]
         assert len(imgs) == len(self.if_is_target), f"len(imgs) should match len(if_is_target), " \
