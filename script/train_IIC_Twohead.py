@@ -1,17 +1,6 @@
-from pprint import pprint
-from typing import Dict, Any
-
+from deepclustering.manager import ConfigManger
 from deepclustering.model import Model
 from deepclustering.trainer.IICMultiheadTrainer import IICMultiHeadTrainer
-from deepclustering.utils import yaml_parser, yaml_load, dict_merge
-
-DEFAULT_CONFIG = '../config/IICClusterMultiHead_CIFAR.yaml'
-
-parsed_args: Dict[str, Any] = yaml_parser(verbose=True)
-default_config = yaml_load(parsed_args.get('Config', DEFAULT_CONFIG), verbose=False)
-merged_config = dict_merge(default_config, parsed_args, re=True)
-print('Merged config:')
-pprint(merged_config)
 
 
 def get_dataloader(config: dict):
@@ -57,6 +46,10 @@ def get_dataloader(config: dict):
     )
     return train_loader_A, train_loader_B, val_loader
 
+
+DEFAULT_CONFIG = '../config/IICClusterMultiHead_CIFAR.yaml'
+
+merged_config = ConfigManger(DEFAULT_CONFIG_PATH=DEFAULT_CONFIG, verbose=True, integrality_check=True).merged_config
 
 train_loader_A, train_loader_B, val_loader = get_dataloader(merged_config)
 

@@ -10,7 +10,7 @@ from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Dict, Any
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch import Tensor, einsum
+from torch import Tensor
 from tqdm import tqdm
 
 A = TypeVar("A")
@@ -57,9 +57,17 @@ def set_benchmark(seed):
 
 
 # tqdm
-tqdm_ = partial(tqdm, ncols=15,
-                leave=False,
-                bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [' '{rate_fmt}{postfix}]')
+class tqdm_(tqdm):
+
+    def __init__(self, iterable=None, desc=None, total=None, leave=False, file=None, ncols=15, mininterval=0.1,
+                 maxinterval=10.0, miniters=None, ascii=None, disable=False, unit='it', unit_scale=False,
+                 dynamic_ncols=False, smoothing=0.3,
+                 bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [' '{rate_fmt}{postfix}]', initial=0, position=None,
+                 postfix=None,
+                 unit_divisor=1000, write_bytes=None, gui=False, **kwargs):
+        super().__init__(iterable, desc, total, leave, file, ncols, mininterval, maxinterval, miniters, ascii, disable,
+                         unit, unit_scale, dynamic_ncols, smoothing, bar_format, initial, position, postfix,
+                         unit_divisor, write_bytes, gui, **kwargs)
 
 
 # Assert utils
@@ -69,6 +77,7 @@ def uniq(a: Tensor) -> Set:
     :rtype set
     :param a: input tensor
     :return: Set(a_npized)
+    todo: too slow
     '''
     return set(torch.unique(a.cpu()).numpy())
 
@@ -83,7 +92,7 @@ def sset(a: Tensor, sub: Iterable) -> bool:
     return uniq(a).issubset(sub)
 
 
-def eq(a: Tensor, b) -> bool:
+def eq(a: Tensor, b: Tensor) -> bool:
     """
     if a and b are equal for torch.Tensor
     :param a:
@@ -107,7 +116,8 @@ def simplex(t: Tensor, axis=1) -> bool:
 
 def one_hot(t: Tensor, axis=1) -> bool:
     '''
-    check if the Tensor is one hot
+    check if the Tensor is one hot.
+    The tensor shape can be float or int or others.
     :param t:
     :param axis: default = 1
     :return: bool
@@ -117,6 +127,8 @@ def one_hot(t: Tensor, axis=1) -> bool:
 
 def intersection(a: Tensor, b: Tensor) -> Tensor:
     assert a.shape == b.shape
+    assert a.dtype == torch.int, a.dtype
+    assert b.dtype == torch.int, b.dtype
     assert sset(a, [0, 1])
     assert sset(b, [0, 1])
     return a & b
@@ -143,17 +155,17 @@ def class2one_hot(seg: Tensor, C: int) -> Tensor:
         seg = seg.unsqueeze(dim=0)
     assert sset(seg, list(range(C)))
 
-    b, w, h = seg.shape  # type:  Tuple[int, int, int]
+    b, *wh = seg.shape  # type:  Tuple[int, int, int]
 
     res: Tensor = torch.stack([seg == c for c in range(C)], dim=1).type(torch.int32)
-    assert res.shape == (b, C, w, h)
+    assert res.shape == (b, C, *wh)
     assert one_hot(res)
 
     return res
 
 
 def probs2one_hot(probs: Tensor) -> Tensor:
-    _, C, _, _ = probs.shape
+    _, C, *_ = probs.shape
     assert simplex(probs)
     res = class2one_hot(probs2class(probs), C)
     assert res.shape == probs.shape
@@ -162,27 +174,8 @@ def probs2one_hot(probs: Tensor) -> Tensor:
 
 
 def logit2one_hot(logit: Tensor) -> Tensor:
-    _, C, _, _ = logit.shape
     probs = F.softmax(logit, 1)
-    assert simplex(probs)
-    res = class2one_hot(probs2class(probs), C)
-    assert res.shape == probs.shape
-    assert one_hot(res)
-    return res
-
-
-# # Metrics and shitz
-def meta_dice(sum_str: str, label: Tensor, pred: Tensor, smooth: float = 1e-8) -> Tensor:
-    assert label.shape == pred.shape
-    assert one_hot(label)
-    assert one_hot(pred)
-
-    inter_size: Tensor = einsum(sum_str, [intersection(label, pred)]).type(torch.float32)
-    sum_sizes: Tensor = (einsum(sum_str, [label]) + einsum(sum_str, [pred])).type(torch.float32)
-
-    dices: Tensor = (2 * inter_size + smooth) / (sum_sizes + smooth)
-
-    return dices
+    return probs2one_hot(probs)
 
 
 # functions

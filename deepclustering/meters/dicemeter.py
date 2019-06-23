@@ -1,27 +1,39 @@
-from functools import partial
-
 import torch
 import torch.nn.functional as F
-from torch import einsum, Tensor
+from torch import Tensor
 
 from .metric import Metric
-from ..utils import one_hot, intersection, probs2one_hot, class2one_hot
+from ..loss.dice_loss import dice_coef, dice_batch
+from ..utils import probs2one_hot, class2one_hot
 
 __all__ = ["SliceDiceMeter", "BatchDiceMeter"]
 
-
-# # Metrics and shitz
-def meta_dice(sum_str: str, label: Tensor, pred: Tensor, smooth: float = 1e-8) -> float:
+'''
+# todo: improve it very slow.
+def meta_dice(sum_str: str, pred: Tensor, label: Tensor, smooth: float = 1e-8) -> Tensor:
+    """
+    This dice can only measure the dice for one_hot predictions, not for dice loss.
+    :param sum_str:
+    :param label:
+    :param pred:
+    :param smooth:
+    :return:
+    """
     assert label.shape == pred.shape
-    assert one_hot(label)
-    assert one_hot(pred)
+    # assert one_hot(label)
+    # assert one_hot(pred)
 
     inter_size: Tensor = einsum(sum_str, [intersection(label, pred)]).type(torch.float32)
     sum_sizes: Tensor = (einsum(sum_str, [label]) + einsum(sum_str, [pred])).type(torch.float32)
 
-    dices: Tensor = (2 * inter_size + smooth) / (sum_sizes + smooth)
+    dices: Tensor = (2 * inter_size) / sum_sizes.clamp(min=smooth)
 
     return dices
+    
+    
+# dice_coef = partial(meta_dice, "bcwh->bc")
+# dice_batch = partial(meta_dice, "bcwh->c")  # used for 3d dice
+'''
 
 
 def toOneHot(pred_logit, mask):
@@ -30,23 +42,17 @@ def toOneHot(pred_logit, mask):
     :param mask: gt mask with b,h,w
     :return: onehot presentation of prediction and mask, pred.shape == mask.shape == b,c, h , w
     """
-    # todo
     oh_predmask = probs2one_hot(F.softmax(pred_logit, 1))
     oh_mask = class2one_hot(mask.squeeze(1), C=pred_logit.shape[1])
     assert oh_predmask.shape == oh_mask.shape
     return oh_predmask, oh_mask
 
 
-dice_coef = partial(meta_dice, "bcwh->bc")
-dice_batch = partial(meta_dice, "bcwh->c")  # used for 3d dice
-
-
 class _DiceMeter(Metric):
-    def __init__(self, method='2d', report_axises=None, C=4) -> None:
+    def __init__(self, call_function, report_axises=None, C=4) -> None:
         super().__init__()
-        assert method in ('2d', '3d')
         assert report_axises is None or isinstance(report_axises, list)
-        self.diceCall = dice_coef if method == '2d' else dice_batch
+        self.diceCall = call_function
         self.report_axis = report_axises if report_axises is not None else list(range(C))
         self.diceLog = []
         self.C = C
@@ -106,7 +112,7 @@ class SliceDiceMeter(_DiceMeter):
     """
 
     def __init__(self, C=4, report_axises=None, ) -> None:
-        super().__init__(method='2d', report_axises=report_axises, C=C)
+        super().__init__(call_function=dice_coef, report_axises=report_axises, C=C)
 
 
 class BatchDiceMeter(_DiceMeter):
@@ -115,4 +121,4 @@ class BatchDiceMeter(_DiceMeter):
     """
 
     def __init__(self, C=4, report_axises=None, ) -> None:
-        super().__init__(method='3d', report_axises=report_axises, C=C)
+        super().__init__(call_function=dice_batch, report_axises=report_axises, C=C)
