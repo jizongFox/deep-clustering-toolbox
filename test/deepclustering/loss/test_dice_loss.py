@@ -14,7 +14,7 @@ class TestDiceLoss(TestCase):
 
     def test_mask_dice(self):
         iteration = 1000
-        criterion = DiceLoss()
+        criterion = ThreeDimDiceLoss()
         onehot_pred = logit2one_hot(self.predict_logit)
         onehot_target = class2one_hot(self.target, 3)
         start = time.time()

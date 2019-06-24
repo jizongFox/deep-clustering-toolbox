@@ -47,7 +47,7 @@ class MetaDice(nn.Module):
         if self.weight is not None:
             intersect = self.weight * intersect
 
-        dices = 2. * intersect / union.clamp(min=self.eps)
+        dices = (2. * intersect + self.eps) / (union + self.eps)
         assert dices.shape == torch.Size([B, C]) if self.method == '2d' else torch.Size([C])
         if self.reduce and self.method == '2d':
             return dices.mean(0)
