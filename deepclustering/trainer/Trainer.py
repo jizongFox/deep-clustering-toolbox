@@ -2,11 +2,11 @@ import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
 from math import isnan
+from pathlib import Path
 from typing import List
 
 import torch
 import yaml
-from pathlib import Path
 from torch.utils.data import DataLoader
 
 from .. import ModelMode, PROJECT_PATH
@@ -119,14 +119,32 @@ class _Trainer(ABC):
         # warning control
         _warnings(args, kwargs)
 
+    def inference(self, *args, **kwargs):
+        """
+        Inference using the checkpoint, to be override by subclasses.
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        raise NotImplementedError(f'inference method must be override by subclasses')
+
     @property
     def state_dict(self):
-        state_dictionary = {}
-        state_dictionary['model_state_dict'] = self.model.state_dict
-        state_dictionary['meter_state_dict'] = self.METERINTERFACE.state_dict
+        """
+        return trainer's state dict, can be extended by subclasses
+        :return:
+        """
+        state_dictionary = {'model_state_dict': self.model.state_dict,
+                            'meter_state_dict': self.METERINTERFACE.state_dict}
         return state_dictionary
 
     def load_checkpoint(self, state_dict):
+        """
+        load checkpoint to models, meters, best score and _start_epoch
+        Can be extended by add more state_dict
+        :param state_dict:
+        :return:
+        """
         self.model.load_state_dict(state_dict['model_state_dict'])
         try:
             self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
@@ -137,6 +155,13 @@ class _Trainer(ABC):
         self._start_epoch = state_dict['epoch'] + 1
 
     def save_checkpoint(self, state_dict, current_epoch, best_score):
+        """
+        save checkpoint with adding 'epoch' and 'best_score' attributes
+        :param state_dict:
+        :param current_epoch:
+        :param best_score:
+        :return:
+        """
         save_best: bool = True if float(best_score) > float(self.best_score) else False
         if save_best:
             self.best_score = float(best_score)
@@ -148,6 +173,10 @@ class _Trainer(ABC):
             torch.save(state_dict, str(self.save_dir / 'best.pth'))
 
     def clean_up(self):
+        """
+        Do not touch
+        :return:
+        """
         import shutil
         import time
         time.sleep(10)  # to prevent that the call_draw function is not ended.

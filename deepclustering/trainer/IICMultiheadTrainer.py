@@ -103,9 +103,9 @@ class IICMultiHeadTrainer(_Trainer):
 
     def _train_loop(
             self,
-            train_loader_A: DataLoader,
-            train_loader_B: DataLoader,
-            epoch: int,
+            train_loader_A: DataLoader = None,
+            train_loader_B: DataLoader = None,
+            epoch: int = 0,
             mode: ModelMode = ModelMode.TRAIN,
             head_control_param={},
             *args,
@@ -164,8 +164,8 @@ class IICMultiHeadTrainer(_Trainer):
 
     def _eval_loop(
             self,
-            val_loader: DataLoader,
-            epoch: int,
+            val_loader: DataLoader = None,
+            epoch: int = 0,
             mode: ModelMode = ModelMode.EVAL,
             *args,
             **kwargs
@@ -173,13 +173,17 @@ class IICMultiHeadTrainer(_Trainer):
         self.model.set_mode(mode)
         assert not self.model.training, f"Model should be in eval model in _eval_loop, given {self.model.training}."
         val_loader_: tqdm = tqdm_(val_loader)
-        preds = torch.zeros(self.model.arch_dict['num_sub_heads'],
-                            val_loader.dataset.__len__(),
-                            dtype=torch.long,
-                            device=self.device)
-        target = torch.zeros(val_loader.dataset.__len__(),
-                             dtype=torch.long,
-                             device=self.device)
+        preds = torch.zeros(
+            self.model.arch_dict['num_sub_heads'],
+            val_loader.dataset.__len__(),
+            dtype=torch.long,
+            device=self.device
+        )
+        target = torch.zeros(
+            val_loader.dataset.__len__(),
+            dtype=torch.long,
+            device=self.device
+        )
         slice_done = 0
         subhead_accs = []
         val_loader_.set_description(f'Validating epoch: {epoch}')
