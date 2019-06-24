@@ -46,7 +46,7 @@ class _Trainer(ABC):
         if config:
             self.config = dcopy(config)
             self.config.pop('Config', None)  # delete the Config attribute
-            with open(self.save_dir / 'config.yaml', 'w') as outfile:
+            with open(self.save_dir / 'config.yaml', 'w') as outfile:  # type: ignore
                 yaml.dump(self.config, outfile, default_flow_style=False)
 
         self.writer = SummaryWriter(str(self.save_dir))

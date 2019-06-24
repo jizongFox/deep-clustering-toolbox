@@ -1,7 +1,9 @@
+import _thread
 import contextlib
 import inspect
 import sys
 import time
+from functools import wraps
 
 from typing_inspect import is_union_type
 
@@ -99,3 +101,22 @@ def onehot(name):
         return new_f
 
     return check_onehot
+
+
+def convert_params(f):
+    """Decorator to call the process_params method of the class."""
+
+    @wraps(f)
+    def wrapper(self, *args, **kwargs):
+        return self.process_params(f, *args, **kwargs)
+
+    return wrapper
+
+
+def threaded(f):
+    """Decorator to run the process in an extra thread."""
+
+    def wrapper(*args, **kwargs):
+        return _thread.start_new(f, args, kwargs)
+
+    return wrapper
