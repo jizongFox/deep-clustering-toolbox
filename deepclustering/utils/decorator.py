@@ -4,7 +4,7 @@ import inspect
 import sys
 import time
 from functools import wraps
-
+from torch.multiprocessing import Process
 from typing_inspect import is_union_type
 
 from .general import one_hot
@@ -116,7 +116,20 @@ def convert_params(f):
 def threaded(f):
     """Decorator to run the process in an extra thread."""
 
+    @wraps(f)
     def wrapper(*args, **kwargs):
         return _thread.start_new(f, args, kwargs)
+
+    return wrapper
+
+
+def processed(f):
+    """Decorator to run the process in an extra process."""
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        func = Process(target=f, args=args, kwargs=kwargs)
+        func.start()
+        return func
 
     return wrapper

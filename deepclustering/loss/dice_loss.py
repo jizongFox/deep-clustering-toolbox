@@ -35,6 +35,8 @@ class MetaDice(nn.Module):
         assert pred.shape == target.shape, f"`pred` and `target` should have the same shape, " \
             f"given `pred`:{pred.shape}, `target`:{target.shape}."
         assert not target.requires_grad
+        assert simplex(pred), f"pred should be simplex, given {pred}."
+        assert one_hot(target), f"target should be onehot, given {target}."
         pred, target = pred.float(), target.float()
 
         B, C, *hw = pred.shape
