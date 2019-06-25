@@ -7,6 +7,7 @@ from typing import List
 
 import torch
 import yaml
+from apex import amp
 from torch.utils.data import DataLoader
 
 from .. import ModelMode, PROJECT_PATH
@@ -43,6 +44,8 @@ class _Trainer(ABC):
         self._start_epoch = 0  # whether 0 or loaded from the checkpoint.
         self.device = torch.device(device)
 
+
+
         if config:
             self.config = dcopy(config)
             self.config.pop('Config', None)  # delete the Config attribute
@@ -63,6 +66,12 @@ class _Trainer(ABC):
                                     map_location=torch.device('cpu'))
             self.load_checkpoint(state_dict)
         self.model.to(self.device)
+
+        # consider the apex model
+        self.model.torchnet, self.model.optimizer = amp.initialize(
+            self.model.torchnet, self.model.optimizer,
+            opt_level='O2',
+        )
 
     @abstractmethod
     def __init_meters__(self) -> List[str]:

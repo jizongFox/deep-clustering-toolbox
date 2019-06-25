@@ -3,14 +3,17 @@ from abc import ABC
 from typing import *
 
 import torch
-from deepclustering import ModelMode
-from deepclustering.arch import get_arch, PlaceholderNet
 from torch import Tensor
 from torch import nn
 from torch.nn import NLLLoss
 from torch.nn import functional as F
 from torch.optim import lr_scheduler
+from apex import amp, optimizers
+from apex.fp16_utils import *
+from apex.multi_tensor_apply import multi_tensor_applier
 
+from deepclustering import ModelMode
+from deepclustering.arch import get_arch, PlaceholderNet
 # from torch import optim
 from .. import optim
 
@@ -21,7 +24,7 @@ class Model(ABC):
             self,
             arch_dict: Dict[str, Any] = None,
             optim_dict: Dict[str, Any] = None,
-            scheduler_dict: Dict[str, Any] = None
+            scheduler_dict: Dict[str, Any] = None,
     ) -> None:
         super().__init__()
         self.arch_dict = arch_dict

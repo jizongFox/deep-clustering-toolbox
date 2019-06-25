@@ -1,6 +1,8 @@
 """
 This is the trainer for IIC multiple-header Clustering
 """
+from apex import amp
+
 __all__ = ['IICMultiHeadTrainer']
 
 from collections import OrderedDict
@@ -154,7 +156,9 @@ class IICMultiHeadTrainer(_Trainer):
                     assert tf1_images.shape == tf2_images.shape
                     batch_loss = self._trainer_specific_loss(tf1_images, tf2_images, head_name)
                     self.model.zero_grad()
-                    batch_loss.backward()
+                    with amp.scale_loss(batch_loss, self.model.optimizer) as scaled_loss:
+                        scaled_loss.backward()
+                    # batch_loss.backward()
                     self.model.step()
                     report_dict = self._training_report_dict
                     train_loader_.set_postfix(report_dict)

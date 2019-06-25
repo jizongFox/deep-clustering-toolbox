@@ -57,7 +57,7 @@ train_loader_A, train_loader_B, val_loader = get_dataloader(merged_config)
 model = Model(
     arch_dict=merged_config['Arch'],
     optim_dict=merged_config['Optim'],
-    scheduler_dict=merged_config['Scheduler']
+    scheduler_dict=merged_config['Scheduler'],
 )
 
 trainer = IICMultiHeadTrainer(
