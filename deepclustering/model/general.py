@@ -8,11 +8,29 @@ from torch import nn
 from torch.nn import NLLLoss
 from torch.nn import functional as F
 from torch.optim import lr_scheduler
-from apex import amp, optimizers
 
 from deepclustering import ModelMode
 from deepclustering.arch import get_arch, PlaceholderNet
 from .. import optim
+
+
+class NormalGradientBackwardStep(object):
+    """effectuate the
+    model.zero() at the initialization
+    and model.step at the exit
+    """
+
+    def __init__(self, loss: Tensor, model):
+        print('use normal')
+        self.model = model
+        self.loss = loss
+        self.model.zero_grad()
+
+    def __enter__(self):
+        return self.loss
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.model.step()
 
 
 class Model(ABC):
@@ -29,7 +47,7 @@ class Model(ABC):
         self.scheduler_dict = scheduler_dict
         self.torchnet, self.optimizer, self.scheduler = self._setup()
         self.to(device=torch.device('cpu'))
-        self.is_apex = False
+        self.is_apex: bool = False
 
     def _setup(self) -> Tuple[nn.Module, optim.SGD, torch.optim.lr_scheduler.LambdaLR]:
         if self.arch_dict is not None:
@@ -173,18 +191,3 @@ class Model(ABC):
             f"================== Scheduler =============\n" \
             f"{self.scheduler.__repr__()}\n" \
             f"================== Model End ============="
-
-    def to_apex(self, opt_level='O2', **kwargs):
-        # consider the apex model
-        try:
-            self.to(torch.device('cuda'))
-            self.torchnet, self.optimizer = amp.initialize(
-                self.torchnet, self.optimizer,
-                opt_level=opt_level,
-                loss_scale=1.0,
-                **kwargs
-            )
-            self.to(torch.device('cpu'))
-            self.is_apex = True
-        except Exception as e:
-            warnings.warn(f'to_apex fails with eror message: {e}', RuntimeWarning)

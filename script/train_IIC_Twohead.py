@@ -59,7 +59,7 @@ model = Model(
     optim_dict=merged_config['Optim'],
     scheduler_dict=merged_config['Scheduler'],
 )
-model.to_apex(opt_level='O0')
+# model = to_Apex(model, opt_level='O0')
 
 trainer = IICMultiHeadTrainer(
     model=model,

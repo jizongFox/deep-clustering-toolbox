@@ -10,23 +10,6 @@ from .general import one_hot
 from torch import Tensor
 
 
-class GradientBackwardStep(object):
-    """effectuate the
-    model.zero() at the initialization
-    and model.step at the exit
-    """
-    def __init__(self, loss: Tensor, model):
-        self.model = model
-        self.loss = loss
-        self.model.zero_grad()
-
-    def __enter__(self):
-        return self.loss
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.model.step()
-
-
 @contextlib.contextmanager
 def _disable_tracking_bn_stats(model):
     def switch_attr(m):

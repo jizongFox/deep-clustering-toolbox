@@ -17,9 +17,8 @@ from .. import ModelMode
 from ..augment.pil_augment import SobelProcess
 from ..loss.IID_losses import IIDLoss
 from ..meters import AverageValueMeter, MeterInterface
-from ..model import Model
+from ..model import Model, GradientBackwardStep
 from ..utils import tqdm_, simplex, tqdm, dict_filter
-from ..utils.decorator import GradientBackwardStep
 from ..utils.classification.assignment_mapping import flat_acc, hungarian_match
 
 matplotlib.use('agg')
@@ -158,8 +157,7 @@ class IICMultiHeadTrainer(_Trainer):
                     batch_loss = self._trainer_specific_loss(tf1_images, tf2_images, head_name)
                     with GradientBackwardStep(batch_loss, self.model) as loss:
                         loss.backward()
-                    # with amp.scale_loss(batch_loss, self.model.optimizer) as scaled_loss:
-                    #     scaled_loss.backward()
+                    print(f'grad norm:{self.model.torchnet.parameters().__next__().grad.norm()}')
                     report_dict = self._training_report_dict
                     train_loader_.set_postfix(report_dict)
 
