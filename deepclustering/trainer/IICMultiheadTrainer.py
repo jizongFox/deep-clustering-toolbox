@@ -19,6 +19,7 @@ from ..loss.IID_losses import IIDLoss
 from ..meters import AverageValueMeter, MeterInterface
 from ..model import Model
 from ..utils import tqdm_, simplex, tqdm, dict_filter
+from ..utils.decorator import GradientBackwardStep
 from ..utils.classification.assignment_mapping import flat_acc, hungarian_match
 
 matplotlib.use('agg')
@@ -155,11 +156,10 @@ class IICMultiHeadTrainer(_Trainer):
                         tf2_images = self.sobel(tf2_images)
                     assert tf1_images.shape == tf2_images.shape
                     batch_loss = self._trainer_specific_loss(tf1_images, tf2_images, head_name)
-                    self.model.zero_grad()
-                    with amp.scale_loss(batch_loss, self.model.optimizer) as scaled_loss:
-                        scaled_loss.backward()
-                    # batch_loss.backward()
-                    self.model.step()
+                    with GradientBackwardStep(batch_loss, self.model) as loss:
+                        loss.backward()
+                    # with amp.scale_loss(batch_loss, self.model.optimizer) as scaled_loss:
+                    #     scaled_loss.backward()
                     report_dict = self._training_report_dict
                     train_loader_.set_postfix(report_dict)
 

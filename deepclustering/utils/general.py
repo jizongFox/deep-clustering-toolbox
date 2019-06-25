@@ -111,7 +111,7 @@ def simplex(t: Tensor, axis=1) -> bool:
     '''
     _sum = t.sum(axis).type(torch.float32)
     _ones = torch.ones_like(_sum, dtype=torch.float32)
-    return torch.allclose(_sum, _ones, atol=1e-1, rtol=1e-1)
+    return torch.allclose(_sum, _ones)
 
 
 def one_hot(t: Tensor, axis=1) -> bool:
