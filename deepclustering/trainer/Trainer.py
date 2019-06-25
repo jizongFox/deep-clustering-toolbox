@@ -126,7 +126,8 @@ class _Trainer(ABC):
         :param kwargs:
         :return:
         """
-        raise NotImplementedError(f'inference method must be override by subclasses')
+        raise NotImplementedError(f'inference method must be override by subclasses,'
+                                  f' set checkpoint_identifier = `last.pth` must be done before class initialization.')
 
     @property
     def state_dict(self):
