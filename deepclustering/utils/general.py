@@ -214,7 +214,7 @@ def flatten_dict(d, parent_key='', sep='_'):
 
 # merge hierarchically two dictionaries
 # todo: improve this function
-def dict_merge(dct: dict, merge_dct: dict, re=True):
+def dict_merge(dct: Dict[str, Any], merge_dct: Dict[str, Any], re=True):
     """
     Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
@@ -234,11 +234,7 @@ def dict_merge(dct: dict, merge_dct: dict, re=True):
                 and isinstance(merge_dct[k], collections.Mapping)):
             dict_merge(dct[k], merge_dct[k])
         else:
-            try:
-                dct[k] = type(dct[k])(eval(merge_dct[k])) if type(dct[k]) in (bool, list) else type(dct[k])(
-                    merge_dct[k])
-            except:
-                dct[k] = merge_dct[k]
+            dct[k] = merge_dct[k]
     if re:
         return dcopy(dct)
 

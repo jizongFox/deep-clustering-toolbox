@@ -1,0 +1,31 @@
+Arch:
+  name: clusternet5g
+  input_size: 32
+  num_channel: 1
+  output_k: 10
+  num_sub_heads: 5
+
+Optim:
+  name: Adam
+  lr: 0.0005
+
+Scheduler:
+  name: MultiStepLR
+  milestones: [10,20,30,40,50,60,70,80,90]
+  gamma: 0.7
+
+DataSet:
+  num_dataset: 3
+
+
+DataLoader:
+  batch_size: 100
+  shuffle: true
+  num_workers: 4
+
+
+Trainer:
+  max_epoch: 100
+  save_dir: runs/test
+  device: cuda
+

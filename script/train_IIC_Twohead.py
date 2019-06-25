@@ -47,9 +47,9 @@ def get_dataloader(config: dict):
     return train_loader_A, train_loader_B, val_loader
 
 
-DEFAULT_CONFIG = '../config/IICClusterMultiHead_CIFAR.yaml'
+DEFAULT_CONFIG = '../config/IICClusterMultiHead_MNIST.yaml'
 
-merged_config = ConfigManger(DEFAULT_CONFIG_PATH=DEFAULT_CONFIG, verbose=True, integrality_check=True).merged_config
+merged_config = ConfigManger(DEFAULT_CONFIG_PATH=DEFAULT_CONFIG, verbose=True, integrality_check=True).config
 
 train_loader_A, train_loader_B, val_loader = get_dataloader(merged_config)
 
