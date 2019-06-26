@@ -1,8 +1,10 @@
-from .general import Model, NormalGradientBackwardStep
+from torch import Tensor
+
 from .convert2apex import AMPGradientBackwardStep, to_Apex
+from .general import Model, NormalGradientBackwardStep
 
 
-def ZeroGradientBackwardStep(loss, model: Model):
+def ZeroGradientBackwardStep(loss: Tensor, model: Model):
     """
     This context manager takes loss and model as the input.
     if the model is wrapped by the AMP package, the official AMP

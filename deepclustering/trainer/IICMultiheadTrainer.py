@@ -42,7 +42,7 @@ class IICMultiHeadTrainer(_Trainer):
         super().__init__(model, None, val_loader, max_epoch, save_dir, checkpoint_path, device, config)  # type: ignore
         self.train_loader_A = train_loader_A
         self.train_loader_B = train_loader_B
-        assert self.train_loader is None
+        assert self.train_loader is None, self.train_loader  # discard the original self.train_loader
         self.head_control_params: OrderedDict = OrderedDict(head_control_params)
         self.criterion = IIDLoss()
         self.criterion.to(self.device)
@@ -56,13 +56,17 @@ class IICMultiHeadTrainer(_Trainer):
             'train_head_A': AverageValueMeter(),
             'train_head_B': AverageValueMeter(),
             'val_average_acc': AverageValueMeter(),
-            'val_best_acc': AverageValueMeter()
+            'val_best_acc': AverageValueMeter(),
+            'val_worst_acc': AverageValueMeter()
         }
         self.METERINTERFACE = MeterInterface(METER_CONFIG)
-        return ['train_head_A_mean',
-                'train_head_B_mean',
-                'val_average_acc_mean',
-                'val_best_acc_mean']
+        return [
+            'train_head_A_mean',
+            'train_head_B_mean',
+            'val_average_acc_mean',
+            'val_best_acc_mean',
+            'val_worst_acc_mean'
+        ]
 
     @property
     def _training_report_dict(self):
@@ -73,8 +77,11 @@ class IICMultiHeadTrainer(_Trainer):
 
     @property
     def _eval_report_dict(self):
-        report_dict = {'average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
-                       'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean']}
+        report_dict = {
+            'average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
+            'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean'],
+            'worst_acc': self.METERINTERFACE.worst_acc.summary()['mean']
+        }
         report_dict = dict_filter(report_dict, lambda k, v: v != 0.0)
         return report_dict
 
@@ -145,7 +152,6 @@ class IICMultiHeadTrainer(_Trainer):
                 # time_before = time.time()
                 for batch, image_labels in enumerate(train_loader_):
                     images, *_ = list(zip(*image_labels))
-                    # print(f"used time for data load:{time.time() - time_before}")
                     tf1_images = torch.cat(tuple([images[0] for _ in range(images.__len__() - 1)]), dim=0).to(
                         self.device)
                     tf2_images = torch.cat(tuple(images[1:]), dim=0).to(self.device)

@@ -1,9 +1,17 @@
+from typing import Tuple
+
 from deepclustering.manager import ConfigManger
 from deepclustering.model import Model, to_Apex
 from deepclustering.trainer.IICMultiheadTrainer import IICMultiHeadTrainer
+from torch.utils.data import DataLoader
 
 
-def get_dataloader(config: dict):
+def get_dataloader(config: dict) -> Tuple[DataLoader, DataLoader, DataLoader]:
+    """
+    get dataloader for IIC project
+    :param config:
+    :return:
+    """
     if config.get('Config', DEFAULT_CONFIG).split('_')[-1].lower() == 'cifar.yaml':
         from deepclustering.dataset import default_cifar10_img_transform as img_transforms, \
             Cifar10ClusteringDatasetInterface as DatasetInterface

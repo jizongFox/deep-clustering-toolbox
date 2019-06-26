@@ -70,10 +70,10 @@ class MNISTSemiSupervisedDatasetInterface(SemiDatasetInterface):
 default_mnist_img_transform = {
     "tf1":
         transforms.Compose([
-            pil_augment.RandomChoice(transforms=
-                                     [pil_augment.RandomCrop(size=(20, 20), padding=None),
-                                      pil_augment.CenterCrop(size=(20, 20))
-                                      ]),
+            pil_augment.RandomChoice(transforms=[
+                pil_augment.RandomCrop(size=(20, 20), padding=None),
+                pil_augment.CenterCrop(size=(20, 20))
+            ]),
             pil_augment.Resize(size=24, interpolation=PIL.Image.BILINEAR),
             transforms.ToTensor()
         ]),

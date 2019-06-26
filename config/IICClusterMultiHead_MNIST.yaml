@@ -29,38 +29,3 @@ Trainer:
     B: 2
     A: 1
   use_sobel: false
-
-
-#Transform:
-#  tf1:
-#    randomcrop:
-#      size: [20, 20]
-#    resize:
-#      size: [32, 32]
-#    img2tensor:
-#      include_rgb: false
-#      include_grey: true
-#  tf2:
-#    randomcrop:
-#      size: [20, 20]
-#    resize:
-#      size: [32, 32]
-#    RandomHorizontalFlip:
-#      p: 0.5
-#    ColorJitter:
-#      brightness: [0.6, 1.4]
-#      contrast: [0.6, 1.4]
-#      saturation: [0.6, 1.4]
-#      hue: [-0.125, 0.125]
-#    img2tensor:
-#      include_rgb: false
-#      include_grey: true
-#  tf3:
-#    centercrop:
-#      size: [20, 20]
-#    resize:
-#      size: [32, 32]
-#    img2tensor:
-#      include_rgb: false
-#      include_grey: true
-

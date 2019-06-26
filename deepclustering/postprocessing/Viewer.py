@@ -1,5 +1,6 @@
 import argparse
 import re
+from pathlib import Path
 from typing import *
 
 import matplotlib.pyplot as plt
@@ -7,7 +8,6 @@ import numpy as np
 import torch
 import yaml
 from PIL import Image
-from pathlib2 import Path
 
 Tensor = Union[np.ndarray, torch.Tensor]
 
