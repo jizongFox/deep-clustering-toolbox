@@ -54,7 +54,8 @@ class ShapesDataset(Dataset):
         # self.target_transform: Callable = target_transform
         self.squential_transform = SequentialWrapper(
             img_transform=transform,
-            target_transform=target_transform
+            target_transform=target_transform,
+            if_is_target=[False, True, True]
         )
 
         self.add_class("shapes", 1, "square")
@@ -206,7 +207,7 @@ class ShapesDataset(Dataset):
         instance_mask = utils.ToLabel()(instance_mask).to(torch.uint8)
 
         img, global_mask, instance_mask = self.squential_transform(
-            [img, global_mask, instance_mask], [False, True, True]
+            img, global_mask, instance_mask
         )
 
         return img.float(), global_mask.long(), instance_mask.long()
@@ -264,9 +265,9 @@ class Cls_ShapesDataset(ShapesDataset):
 
     def __getitem__(self, index):
         img, global_mask, instance_mask = super().__getitem__(index)
-        if len(global_mask.unique()) == 2:
-            warnings.warn(f'Only background and one type of foreground should be presented, \
-            given {len(global_mask.unique())} type.')
+        # if len(global_mask.unique()) == 2:
+        #     warnings.warn(f'Only background and one type of foreground should be presented, \
+        #     given {len(global_mask.unique())} type.')
         return img, sorted(global_mask.unique())[1].long() - 1  # remove the background class
 
 

@@ -8,7 +8,7 @@ from typing import Callable, List, Union
 import numpy as np
 from PIL import Image
 
-from ..utils import identical
+from .pil_augment import Identity
 
 
 class FixRandomSeed(object):
@@ -37,13 +37,12 @@ class SequentialWrapper(object):
     def __init__(self, img_transform: Callable = None, target_transform: Callable = None,
                  if_is_target: List[bool] = []) -> None:
         super().__init__()
-        self.img_transform = img_transform if img_transform is not None else identical
-        self.target_transform = target_transform if target_transform is not None else identical
+        self.img_transform = img_transform if img_transform is not None else Identity()
+        self.target_transform = target_transform if target_transform is not None else Identity()
         self.if_is_target = if_is_target
 
     def __call__(self, *imgs, random_seed=None) -> List[Union[Image.Image, torch.Tensor, np.ndarray]]:
         # assert cases
-        imgs = imgs[0]  # imgs: Tuple[List]
         assert len(imgs) == len(self.if_is_target), f"len(imgs) should match len(if_is_target), " \
             f"given {len(imgs)} and {len(self.if_is_target)}."
         # assert cases ends
@@ -55,6 +54,10 @@ class SequentialWrapper(object):
                 _img = self._transform(if_target)(img)
             _imgs.append(_img)
         return _imgs
+
+    def __repr__(self):
+        return f"img_transform:{self.img_transform}\n" \
+            f"target_transform:{self.target_transform}."
 
     def _transform(self, is_target: bool) -> Callable:
         assert isinstance(is_target, bool)

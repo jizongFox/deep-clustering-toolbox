@@ -17,3 +17,4 @@ script/runs/
 /archives/
 **/.mypy_cache/
 
+**/*.pyc

@@ -8,14 +8,28 @@ from torch import nn
 from torch.nn import NLLLoss
 from torch.nn import functional as F
 from torch.optim import lr_scheduler
-from apex import amp, optimizers
-from apex.fp16_utils import *
-from apex.multi_tensor_apply import multi_tensor_applier
 
 from deepclustering import ModelMode
 from deepclustering.arch import get_arch, PlaceholderNet
-# from torch import optim
 from .. import optim
+
+
+class NormalGradientBackwardStep(object):
+    """effectuate the
+    model.zero() at the initialization
+    and model.step at the exit
+    """
+
+    def __init__(self, loss: Tensor, model):
+        self.model = model
+        self.loss = loss
+        self.model.zero_grad()
+
+    def __enter__(self):
+        return self.loss
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.model.step()
 
 
 class Model(ABC):
@@ -32,6 +46,7 @@ class Model(ABC):
         self.scheduler_dict = scheduler_dict
         self.torchnet, self.optimizer, self.scheduler = self._setup()
         self.to(device=torch.device('cpu'))
+        self.is_apex: bool = False
 
     def _setup(self) -> Tuple[nn.Module, optim.SGD, torch.optim.lr_scheduler.LambdaLR]:
         if self.arch_dict is not None:

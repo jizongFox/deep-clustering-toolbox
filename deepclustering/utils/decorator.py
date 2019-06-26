@@ -6,8 +6,8 @@ import time
 from functools import wraps
 from torch.multiprocessing import Process
 from typing_inspect import is_union_type
-
 from .general import one_hot
+from torch import Tensor
 
 
 @contextlib.contextmanager

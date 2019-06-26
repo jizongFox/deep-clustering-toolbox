@@ -26,8 +26,8 @@ Trainer:
   save_dir: multihead_mnist
   device: cuda
   head_control_params:
-    A: 1
     B: 2
+    A: 1
   use_sobel: false
 
 

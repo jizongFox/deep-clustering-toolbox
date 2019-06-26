@@ -1,5 +1,5 @@
 from deepclustering.manager import ConfigManger
-from deepclustering.model import Model
+from deepclustering.model import Model, to_Apex
 from deepclustering.trainer.IICMultiheadTrainer import IICMultiHeadTrainer
 
 
@@ -59,6 +59,7 @@ model = Model(
     optim_dict=merged_config['Optim'],
     scheduler_dict=merged_config['Scheduler'],
 )
+model = to_Apex(model, opt_level=None, verbosity=1)
 
 trainer = IICMultiHeadTrainer(
     model=model,

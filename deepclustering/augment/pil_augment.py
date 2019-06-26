@@ -24,6 +24,14 @@ _pil_interpolation_to_str = {
 }
 
 
+class Identity(object):
+    def __call__(self, m: Any) -> Any:
+        return m
+
+    def __repr__(self):
+        return 'Identify'
+
+
 class Img2Tensor(object):
     r""" Grey/ color image to tensor with control of include_rgb, include_grey
     """
