@@ -5,7 +5,7 @@ This is the trainer for IIC multiple-header Clustering
 __all__ = ['IICMultiHeadTrainer']
 
 from collections import OrderedDict
-from typing import List
+from typing import List, Union
 
 import matplotlib
 import torch
@@ -18,6 +18,7 @@ from ..loss.IID_losses import IIDLoss
 from ..meters import AverageValueMeter, MeterInterface
 from ..model import Model, ZeroGradientBackwardStep
 from ..utils import tqdm_, simplex, tqdm, dict_filter
+from ..utils.decorator import Timer
 from ..utils.classification.assignment_mapping import flat_acc, hungarian_match
 
 matplotlib.use('agg')
@@ -51,7 +52,7 @@ class IICMultiHeadTrainer(_Trainer):
             self.sobel = SobelProcess(include_origin=False)
             self.sobel.to(self.device)
 
-    def __init_meters__(self) -> List[str]:
+    def __init_meters__(self) -> List[Union[str, List[str]]]:
         METER_CONFIG = {
             'train_head_A': AverageValueMeter(),
             'train_head_B': AverageValueMeter(),
@@ -63,9 +64,9 @@ class IICMultiHeadTrainer(_Trainer):
         return [
             'train_head_A_mean',
             'train_head_B_mean',
-            'val_average_acc_mean',
-            'val_best_acc_mean',
-            'val_worst_acc_mean'
+            ['val_average_acc_mean',
+             'val_best_acc_mean',
+             'val_worst_acc_mean']
         ]
 
     @property
@@ -80,7 +81,7 @@ class IICMultiHeadTrainer(_Trainer):
         report_dict = {
             'average_acc': self.METERINTERFACE.val_average_acc.summary()['mean'],
             'best_acc': self.METERINTERFACE.val_best_acc.summary()['mean'],
-            'worst_acc': self.METERINTERFACE.worst_acc.summary()['mean']
+            'worst_acc': self.METERINTERFACE.val_worst_acc.summary()['mean']
         }
         report_dict = dict_filter(report_dict, lambda k, v: v != 0.0)
         return report_dict
@@ -105,8 +106,11 @@ class IICMultiHeadTrainer(_Trainer):
             for k, v in self.METERINTERFACE.aggregated_meter_dict.items():
                 v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
             self.METERINTERFACE.summary().to_csv(self.save_dir / f'wholeMeter.csv')
+
             self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict(), global_step=epoch)
-            self.drawer.call_draw()
+            with Timer() as timer:
+                self.drawer.draw(self.METERINTERFACE.summary())
+            print(timer.cost)
             self.save_checkpoint(self.state_dict, epoch, current_score)
 
     def _train_loop(
@@ -221,6 +225,7 @@ class IICMultiHeadTrainer(_Trainer):
             self.METERINTERFACE.val_average_acc.add(_acc)
         # record best acc
         self.METERINTERFACE.val_best_acc.add(max(subhead_accs))
+        self.METERINTERFACE.val_worst_acc.add(min(subhead_accs))
         report_dict = self._eval_report_dict
 
         report_dict_str = ', '.join([f'{k}:{v:.3f}' for k, v in report_dict.items()])

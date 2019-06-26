@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
 from math import isnan
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import torch
 import yaml
@@ -13,7 +13,7 @@ from .. import ModelMode, PROJECT_PATH
 from ..meters import MeterInterface
 from ..model import Model
 from ..utils import flatten_dict, _warnings, dict_filter
-from ..writer import SummaryWriter, DrawCSV
+from ..writer import SummaryWriter, DrawCSV2
 
 
 class _Trainer(ABC):
@@ -36,7 +36,6 @@ class _Trainer(ABC):
         self.val_loader = val_loader
         self.save_dir: Path = Path(self.RUN_PATH) / save_dir
         self.save_dir.mkdir(exist_ok=True, parents=True)
-        (self.save_dir / 'meters').mkdir(exist_ok=True, parents=True)
         self.checkpoint = checkpoint_path
         self.max_epoch = int(max_epoch)
         self.best_score: float = -1
@@ -52,11 +51,11 @@ class _Trainer(ABC):
         self.writer = SummaryWriter(str(self.save_dir))
         # todo: try to override the DrawCSV
         _columns_to_draw = self.__init_meters__()
-        self.drawer = DrawCSV(columns_to_draw=_columns_to_draw,
-                              save_dir=str(self.save_dir),
-                              save_name='plot.png',
-                              csv_name=self.wholemeter_filename
-                              )
+        self.drawer = DrawCSV2(columns_to_draw=_columns_to_draw,
+                               save_dir=str(self.save_dir),
+                               save_name='plot.png',
+                               csv_name=self.wholemeter_filename
+                               )
         if self.checkpoint:
             assert Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir(), Path(
                 self.checkpoint)
@@ -66,7 +65,7 @@ class _Trainer(ABC):
         self.model.to(self.device)
 
     @abstractmethod
-    def __init_meters__(self) -> List[str]:
+    def __init_meters__(self) -> List[Union[str, List[str]]]:
         METER_CONFIG = {}
         self.METERINTERFACE = MeterInterface(METER_CONFIG)
         return ["draw_columns_list"]
@@ -96,11 +95,10 @@ class _Trainer(ABC):
             self.METERINTERFACE.step()
             self.model.schedulerStep()
             # save meters and checkpoints
-            for k, v in self.METERINTERFACE.aggregated_meter_dict.items():
-                v.summary().to_csv(self.save_dir / f'meters/{k}.csv')
-            self.METERINTERFACE.summary().to_csv(self.save_dir / self.wholemeter_filename)
-            self.writer.add_scalars('Scalars', self.METERINTERFACE.summary().iloc[-1].to_dict(), global_step=epoch)
-            self.drawer.call_draw()
+            SUMMARY = self.METERINTERFACE.summary()
+            SUMMARY.to_csv(self.save_dir / self.wholemeter_filename)
+            self.writer.add_scalars('Scalars', SUMMARY.iloc[-1].to_dict(), global_step=epoch)
+            self.drawer.draw(SUMMARY)
             self.save_checkpoint(self.state_dict, epoch, current_score)
 
     def to(self, device):

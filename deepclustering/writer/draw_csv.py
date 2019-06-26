@@ -4,7 +4,7 @@ import subprocess
 import warnings
 from pathlib import Path
 from pprint import pprint
-from typing import List
+from typing import List, Union
 
 import matplotlib
 import numpy as np
@@ -13,12 +13,14 @@ import pandas as pd
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from deepclustering import PROJECT_PATH
+from ..utils.decorator import threaded
 
 
 class DrawCSV(object):
     """
     directly override the columns_to_draw would be fine
     """
+
     def __init__(
             self,
             columns_to_draw=None,
@@ -28,6 +30,10 @@ class DrawCSV(object):
             figsize=[10, 15]
     ) -> None:
         super().__init__()
+        warnings.warn(
+            "Use DrawCSV2 drawer that accepts str or List[str], and threaded computing.",
+            DeprecationWarning
+        )
         if columns_to_draw is not None and not isinstance(columns_to_draw, list):
             columns_to_draw = [columns_to_draw]
         self.columns_to_draw: List[str] = columns_to_draw
@@ -71,6 +77,56 @@ class DrawCSV(object):
                 _ax.set_title(f"{k} with max:{dataframe[k].max():.3f}, min:{dataframe[k].min():.3f}")
             plt.savefig(str(self.save_dir) + f'/{self.save_name}')
         plt.close(fig)
+
+
+class DrawCSV2(object):
+    def __init__(
+            self,
+            columns_to_draw=None,
+            save_dir=None,
+            save_name='plot.png',
+            csv_name='wholeMeter.csv',
+            figsize=[10, 15]
+    ) -> None:
+        super().__init__()
+        if columns_to_draw is not None and not isinstance(columns_to_draw, list):
+            columns_to_draw = [columns_to_draw]
+        self.columns_to_draw: List[Union[str, List[str]]] = columns_to_draw
+        self.save_name = save_name
+        self.save_dir = save_dir
+        self.figsize = tuple(figsize)
+        self.csv_name = csv_name
+
+    @threaded
+    def draw(self, dataframe):
+        fig, axs = plt.subplots(nrows=self.columns_to_draw.__len__(), sharex=True, figsize=self.figsize)
+        if not isinstance(axs, np.ndarray):
+            axs = np.array([axs])
+        for i, (_ax, k) in enumerate(zip(axs, self.columns_to_draw)):
+            if isinstance(k, str):
+                self._draw_single(_ax, dataframe, k)
+            else:
+                self._draw_mulitple(_ax, dataframe, k)
+
+        plt.savefig(str(self.save_dir) + f'/{self.save_name}')
+        plt.close(fig)
+        import time
+        time.sleep(3)
+
+    def _draw_single(self, ax, data_frame: pd.DataFrame, column_name: str):
+        ax.plot(data_frame[column_name], label=column_name)
+        ax.legend()
+        ax.grid()
+        ax.set_title(f"{column_name} with max:{data_frame[column_name].max():.3f}, "
+                     f"min:{data_frame[column_name].min():.3f}")
+
+    def _draw_mulitple(self, ax, data_frame: pd.DataFrame, column_names: List[str]):
+        for k in column_names:
+            ax.plot(data_frame[k], label=k)
+        ax.legend()
+        ax.grid()
+        title = lambda k: f"{k} with max:{data_frame[k].max():.3f}, min:{data_frame[k].min():.3f}"
+        ax.set_title('\n'.join([title(k) for k in column_names]))
 
 
 def arg_parser() -> argparse.Namespace:

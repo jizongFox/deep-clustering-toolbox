@@ -1,3 +1,4 @@
+# in this file, no dependency on the other module.
 import collections
 import os
 import random
@@ -5,7 +6,7 @@ from copy import deepcopy as dcopy
 from functools import partial
 from math import isnan
 from multiprocessing import Pool
-from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Dict, Any
+from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Dict, Any, Union
 
 import numpy as np
 import torch
@@ -245,7 +246,7 @@ def dict_filter(dictionary: Dict[str, np.ndarray], filter_func: Callable = lambd
 
 
 # make a flatten dictionary to be printablely nice.
-def nice_dict(input_dict: dict) -> str:
+def nice_dict(input_dict: Dict[str, Union[int, float]]) -> str:
     """
     this function is to return a nice string to dictionary displace propose.
     :param input_dict: dictionary

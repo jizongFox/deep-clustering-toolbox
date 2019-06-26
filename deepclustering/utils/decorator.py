@@ -1,13 +1,11 @@
 import _thread
 import contextlib
-import inspect
 import sys
 import time
 from functools import wraps
+
 from torch.multiprocessing import Process
 from typing_inspect import is_union_type
-from .general import one_hot
-from torch import Tensor
 
 
 @contextlib.contextmanager
@@ -73,34 +71,6 @@ def accepts(func):
         return func(*args, **kwargs)
 
     return check_accepts
-
-
-@export
-def onehot(name):
-    assert isinstance(name, (str, list))
-
-    def check_onehot(f):
-        f_sig = inspect.signature(f)
-        if isinstance(name, str):
-            assert name in f_sig.parameters.keys()
-        else:
-            assert set(f_sig.parameters.keys()).issuperset(
-                set(name)), f'{name} should be included in {list(f_sig.parameters.keys())}'
-
-        def new_f(*args, **kwds):
-            for (a, t) in zip(args, f_sig.parameters.keys()):
-                if t == name or t in name:
-                    assert one_hot(a, 1), f'{t}={a} onehot check failed'
-
-            for k, v in kwds.items():
-                if k == name or k in name:
-                    assert one_hot(v, 1), f'{k}={v} onehot check failed'
-            return f(*args, **kwds)
-
-        new_f.__name__ = f.__name__
-        return new_f
-
-    return check_onehot
 
 
 def convert_params(f):

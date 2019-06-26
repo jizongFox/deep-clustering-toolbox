@@ -270,7 +270,10 @@ class Multi_Slice_Viewer(object):
 
 if __name__ == '__main__':
     '''
-    python admm_research/postprocessing/Viewer.py --img_source=admm_research/dataset/ACDC-2D-All/val/img --gt_folders admm_research/dataset/ACDC-2D-All/val/gt archives/LV_prior/Livia/fs/iter1000/best/ archives/LV_prior/Livia/gc_size/iter1000/best/ archives/LV_prior/Livia/size/iter1000/best/ --group_pattern='patient\d+_\d+' --crop 70
+    python admm_research/postprocessing/Viewer.py --img_source=admm_research/dataset/ACDC-2D-All/val/img \
+    --gt_folders admm_research/dataset/ACDC-2D-All/val/gt \
+    archives/LV_prior/Livia/fs/iter1000/best/ archives/LV_prior/Livia/gc_size/iter1000/best/ \
+    archives/LV_prior/Livia/size/iter1000/best/ --group_pattern='patient\d+_\d+' --crop 70
 
     '''
     args = get_parser()
