@@ -7,7 +7,6 @@ from typing import List
 
 import torch
 import yaml
-from apex import amp
 from torch.utils.data import DataLoader
 
 from .. import ModelMode, PROJECT_PATH
@@ -58,9 +57,10 @@ class _Trainer(ABC):
                               save_name='plot.png',
                               csv_name=self.wholemeter_filename
                               )
-        if checkpoint_path:
-            assert Path(checkpoint_path).exists() and Path(checkpoint_path).is_dir(), Path(checkpoint_path)
-            state_dict = torch.load(str(Path(checkpoint_path) / self.checkpoint_identifier),
+        if self.checkpoint_path:
+            assert Path(self.checkpoint_path).exists() and Path(self.checkpoint_path).is_dir(), Path(
+                self.checkpoint_path)
+            state_dict = torch.load(str(Path(self.checkpoint_path) / self.checkpoint_identifier),
                                     map_location=torch.device('cpu'))
             self.load_checkpoint(state_dict)
         self.model.to(self.device)
@@ -127,8 +127,13 @@ class _Trainer(ABC):
         :param kwargs:
         :return:
         """
-        raise NotImplementedError(f'inference method must be override by subclasses,'
-                                  f' set checkpoint_identifier = `last.pth` must be done before class initialization.')
+        assert Path(self.checkpoint_path).exists() and Path(self.checkpoint_path).is_dir(), Path(
+            self.checkpoint_path)
+        state_dict = torch.load(str(Path(self.checkpoint_path) / 'best.pth'),
+                                map_location=torch.device('cpu'))
+        self.load_checkpoint(state_dict)
+        self.model.to(self.device)
+        # to be added
 
     @property
     def state_dict(self):

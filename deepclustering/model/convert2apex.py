@@ -4,9 +4,10 @@ import torch
 from torch import Tensor
 from apex import amp
 from .general import Model
+import contextlib
 
 
-def to_Apex(model: Model, opt_level=None, **kwargs) -> Model:
+def to_Apex(model: Model, opt_level=None, verbosity=0, **kwargs) -> Model:
     # consider the apex model
     if opt_level is None:
         # no action is taken.
@@ -18,7 +19,7 @@ def to_Apex(model: Model, opt_level=None, **kwargs) -> Model:
         model.torchnet, model.optimizer = amp.initialize(
             model.torchnet, model.optimizer,
             opt_level=opt_level,
-            # loss_scale="1280.0",
+            verbosity=verbosity,
             **kwargs
         )
         model.to(orig_device)
@@ -31,6 +32,9 @@ def to_Apex(model: Model, opt_level=None, **kwargs) -> Model:
         return model
 
 
+@contextlib.contextmanager
 def AMPGradientBackwardStep(loss: Tensor, model: Model):
     model.zero_grad()
-    return amp.scale_loss(loss, model.optimizer)
+    with amp.scale_loss(loss, model.optimizer) as scaled_loss:
+        yield scaled_loss
+    model.step()

@@ -21,7 +21,6 @@ class NormalGradientBackwardStep(object):
     """
 
     def __init__(self, loss: Tensor, model):
-        print('use normal')
         self.model = model
         self.loss = loss
         self.model.zero_grad()
