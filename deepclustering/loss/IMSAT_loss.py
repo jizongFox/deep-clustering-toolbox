@@ -18,7 +18,7 @@ class MultualInformaton_IMSAT(nn.Module):
      MI(X,Y) = H(Y) - H(Y|X) = entropy(average(p_y)) - average(entropy(p_y))
     """
 
-    def __init__(self, mu=4.0, eps=1e-8, separate_return: bool = False):
+    def __init__(self, mu=4.0, eps=1e-8, separate_return: bool = True):
         """
         :param mu: balance term between entropy(average(p_y)) and average(entropy(p_y))
         :param eps: small value for calculation stability
@@ -54,15 +54,15 @@ class Perturbation_Loss(nn.Module):
         super().__init__()
         self.distance_func = distance_func
 
-    def forward(self, pred_logit: Tensor, pre_logit_t: Tensor):
+    def forward(self, pred_logit_t: Tensor, pred_logit: Tensor):
         """
         :param pred_logit: pred_logit for original image
-        :param pre_logit_t: pred_logit for transfomred image
+        :param pred_logit_t: pred_logit for transfomred image
         :return:
         """
         assert not simplex(pred_logit, 1)
-        assert not simplex(pre_logit_t, 1)
+        assert not simplex(pred_logit_t, 1)
         pred: Tensor = F.softmax(pred_logit, 1)
-        pred_t: Tensor = F.softmax(pre_logit_t, 1)
+        pred_t: Tensor = F.softmax(pred_logit_t, 1)
         loss: Tensor = self.distance_func(pred_t, pred)
         return loss

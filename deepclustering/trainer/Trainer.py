@@ -7,6 +7,7 @@ from typing import List, Union
 
 import torch
 import yaml
+from torch import Tensor
 from torch.utils.data import DataLoader
 
 from .. import ModelMode, PROJECT_PATH
@@ -109,7 +110,7 @@ class _Trainer(ABC):
         # warning control
         _warnings(args, kwargs)
 
-    def _trainer_specific_loss(self, *args, **kwargs):
+    def _trainer_specific_loss(self, *args, **kwargs) -> Tensor:
         # warning control
         _warnings(args, kwargs)
 
@@ -125,9 +126,9 @@ class _Trainer(ABC):
         :param kwargs:
         :return:
         """
-        assert Path(self.checkpoint_path).exists() and Path(self.checkpoint_path).is_dir(), Path(
-            self.checkpoint_path)
-        state_dict = torch.load(str(Path(self.checkpoint_path) / 'best.pth'),
+        assert Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir(), Path(
+            self.checkpoint)
+        state_dict = torch.load(str(Path(self.checkpoint) / 'best.pth'),
                                 map_location=torch.device('cpu'))
         self.load_checkpoint(state_dict)
         self.model.to(self.device)
@@ -177,14 +178,14 @@ class _Trainer(ABC):
         if save_best:
             torch.save(state_dict, str(self.save_dir / 'best.pth'))
 
-    def clean_up(self):
+    def clean_up(self, wait_time=3):
         """
         Do not touch
         :return:
         """
         import shutil
         import time
-        time.sleep(10)  # to prevent that the call_draw function is not ended.
+        time.sleep(wait_time)  # to prevent that the call_draw function is not ended.
         Path(self.ARCHIVE_PATH).mkdir(exist_ok=True, parents=True)
         sub_dir = self.save_dir.relative_to(Path(self.RUN_PATH))
         save_dir = Path(self.ARCHIVE_PATH) / str(sub_dir)

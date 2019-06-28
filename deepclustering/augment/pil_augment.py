@@ -1,5 +1,5 @@
 __all__ = ["Compose", "Img2Tensor", "PILCutout", "RandomCrop", "RandomHorizontalFlip", "Resize", "CenterCrop",
-           "ToTensor", "ToLabel"]
+           "ToTensor", "ToLabel", "SobelProcess"]
 import collections
 import numbers
 import random

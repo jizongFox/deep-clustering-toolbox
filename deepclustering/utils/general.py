@@ -19,6 +19,15 @@ B = TypeVar("B")
 T = TypeVar("T", Tensor, np.ndarray)
 
 
+class Identical:
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__()
+
+    def __call__(self, m):
+        return m
+
+
 def identical(x: Any) -> Any:
     """
     identical function
@@ -241,7 +250,7 @@ def dict_merge(dct: Dict[str, Any], merge_dct: Dict[str, Any], re=True):
 
 
 # filter a flat dictionary with a lambda function
-def dict_filter(dictionary: Dict[str, np.ndarray], filter_func: Callable = lambda k, v: (v != 0 or not isnan(v))):
+def dict_filter(dictionary: Dict[str, np.ndarray], filter_func: Callable = lambda k, v: (v != 0 and not isnan(v))):
     return {k: v for k, v in dictionary.items() if filter_func(k, v)}
 
 
