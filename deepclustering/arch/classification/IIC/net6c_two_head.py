@@ -26,8 +26,10 @@ class ClusterNet6cTwoHeadHead(nn.Module):
             features_sp_size = 3
         elif input_size == 64:
             features_sp_size = 8
+        elif input_size == 32:
+            features_sp_size = 4
         else:
-            raise ValueError(f'`input_size` should be in {24, 64}, given {input_size}.')
+            raise ValueError(f'`input_size` should be in {24, 32, 64}, given {input_size}.')
         if not semisup:
             self.num_sub_heads = num_sub_heads
             self.heads = nn.ModuleList([nn.Sequential(
