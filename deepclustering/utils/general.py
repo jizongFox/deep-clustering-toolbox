@@ -4,8 +4,10 @@ import os
 import random
 from copy import deepcopy as dcopy
 from functools import partial
+from functools import reduce
 from math import isnan
 from multiprocessing import Pool
+from operator import and_
 from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Dict, Any, Union
 
 import numpy as np
@@ -68,30 +70,30 @@ def set_benchmark(seed):
 # tqdm
 class tqdm_(tqdm):
     def __init__(
-        self,
-        iterable=None,
-        desc=None,
-        total=None,
-        leave=False,
-        file=None,
-        ncols=15,
-        mininterval=0.1,
-        maxinterval=10.0,
-        miniters=None,
-        ascii=None,
-        disable=False,
-        unit="it",
-        unit_scale=False,
-        dynamic_ncols=False,
-        smoothing=0.3,
-        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [" "{rate_fmt}{postfix}]",
-        initial=0,
-        position=None,
-        postfix=None,
-        unit_divisor=1000,
-        write_bytes=None,
-        gui=False,
-        **kwargs,
+            self,
+            iterable=None,
+            desc=None,
+            total=None,
+            leave=False,
+            file=None,
+            ncols=15,
+            mininterval=0.1,
+            maxinterval=10.0,
+            miniters=None,
+            ascii=None,
+            disable=False,
+            unit="it",
+            unit_scale=False,
+            dynamic_ncols=False,
+            smoothing=0.3,
+            bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [" "{rate_fmt}{postfix}]",
+            initial=0,
+            position=None,
+            postfix=None,
+            unit_divisor=1000,
+            write_bytes=None,
+            gui=False,
+            **kwargs,
     ):
         super().__init__(
             iterable,
@@ -250,6 +252,17 @@ def id_(x):
     return x
 
 
+def assert_list(func: Callable[[A], bool], Iters: Iterable) -> bool:
+    """
+    List comprehensive assert for a function and a list of iterables.
+    >>> assert assert_list(simplex, [torch.randn(2,10)]*10)
+    :param func: assert function
+    :param Iters:
+    :return:
+    """
+    return reduce(and_, [func(x) for x in Iters])
+
+
 # dictionary helper functions
 def flatten_dict(d, parent_key="", sep="_"):
     items = []
@@ -281,9 +294,9 @@ def dict_merge(dct: Dict[str, Any], merge_dct: Dict[str, Any], re=True):
             return
     for k, v in merge_dct.items():
         if (
-            k in dct
-            and isinstance(dct[k], dict)
-            and isinstance(merge_dct[k], collections.Mapping)
+                k in dct
+                and isinstance(dct[k], dict)
+                and isinstance(merge_dct[k], collections.Mapping)
         ):
             dict_merge(dct[k], merge_dct[k])
         else:
@@ -294,8 +307,8 @@ def dict_merge(dct: Dict[str, Any], merge_dct: Dict[str, Any], re=True):
 
 # filter a flat dictionary with a lambda function
 def dict_filter(
-    dictionary: Dict[str, np.ndarray],
-    filter_func: Callable = lambda k, v: (v != 0 and not isnan(v)),
+        dictionary: Dict[str, np.ndarray],
+        filter_func: Callable = lambda k, v: (v != 0 and not isnan(v)),
 ):
     return {k: v for k, v in dictionary.items() if filter_func(k, v)}
 
@@ -341,7 +354,7 @@ def extract_from_big_dict(big_dict, keys) -> dict:
 
 # meta function for interface
 def _register(
-    name: str, callable: Callable, alias=None, CALLABLE_DICT: dict = {}
+        name: str, callable: Callable, alias=None, CALLABLE_DICT: dict = {}
 ) -> None:
     """ Private method to register the architecture to the ARCH_CALLABLES
         :param name: A str
