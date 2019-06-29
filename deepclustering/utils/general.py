@@ -20,7 +20,6 @@ T = TypeVar("T", Tensor, np.ndarray)
 
 
 class Identical:
-
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
 
@@ -54,7 +53,7 @@ def fix_all_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
@@ -68,27 +67,68 @@ def set_benchmark(seed):
 
 # tqdm
 class tqdm_(tqdm):
-
-    def __init__(self, iterable=None, desc=None, total=None, leave=False, file=None, ncols=15, mininterval=0.1,
-                 maxinterval=10.0, miniters=None, ascii=None, disable=False, unit='it', unit_scale=False,
-                 dynamic_ncols=False, smoothing=0.3,
-                 bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [' '{rate_fmt}{postfix}]', initial=0, position=None,
-                 postfix=None,
-                 unit_divisor=1000, write_bytes=None, gui=False, **kwargs):
-        super().__init__(iterable, desc, total, leave, file, ncols, mininterval, maxinterval, miniters, ascii, disable,
-                         unit, unit_scale, dynamic_ncols, smoothing, bar_format, initial, position, postfix,
-                         unit_divisor, write_bytes, gui, **kwargs)
+    def __init__(
+        self,
+        iterable=None,
+        desc=None,
+        total=None,
+        leave=False,
+        file=None,
+        ncols=15,
+        mininterval=0.1,
+        maxinterval=10.0,
+        miniters=None,
+        ascii=None,
+        disable=False,
+        unit="it",
+        unit_scale=False,
+        dynamic_ncols=False,
+        smoothing=0.3,
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [" "{rate_fmt}{postfix}]",
+        initial=0,
+        position=None,
+        postfix=None,
+        unit_divisor=1000,
+        write_bytes=None,
+        gui=False,
+        **kwargs,
+    ):
+        super().__init__(
+            iterable,
+            desc,
+            total,
+            leave,
+            file,
+            ncols,
+            mininterval,
+            maxinterval,
+            miniters,
+            ascii,
+            disable,
+            unit,
+            unit_scale,
+            dynamic_ncols,
+            smoothing,
+            bar_format,
+            initial,
+            position,
+            postfix,
+            unit_divisor,
+            write_bytes,
+            gui,
+            **kwargs,
+        )
 
 
 # Assert utils
 def uniq(a: Tensor) -> Set:
-    '''
+    """
     return unique element of Tensor
     Use python Optimized mode to skip assert statement.
     :rtype set
     :param a: input tensor
     :return: Set(a_npized)
-    '''
+    """
     return set(torch.unique(a.cpu()).numpy())
 
 
@@ -113,25 +153,25 @@ def eq(a: Tensor, b: Tensor) -> bool:
 
 
 def simplex(t: Tensor, axis=1) -> bool:
-    '''
+    """
     check if the matrix is the probability distribution
     :param t:
     :param axis:
     :return:
-    '''
+    """
     _sum = t.sum(axis).type(torch.float32)
     _ones = torch.ones_like(_sum, dtype=torch.float32)
     return torch.allclose(_sum, _ones, rtol=1e-4, atol=1e-4)
 
 
 def one_hot(t: Tensor, axis=1) -> bool:
-    '''
+    """
     check if the Tensor is one hot.
     The tensor shape can be float or int or others.
     :param t:
     :param axis: default = 1
     :return: bool
-    '''
+    """
     return simplex(t, axis) and sset(t, [0, 1])
 
 
@@ -211,7 +251,7 @@ def id_(x):
 
 
 # dictionary helper functions
-def flatten_dict(d, parent_key='', sep='_'):
+def flatten_dict(d, parent_key="", sep="_"):
     items = []
     for k, v in d.items():
         new_key = parent_key + sep + k if parent_key else k
@@ -240,8 +280,11 @@ def dict_merge(dct: Dict[str, Any], merge_dct: Dict[str, Any], re=True):
         else:
             return
     for k, v in merge_dct.items():
-        if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.Mapping)):
+        if (
+            k in dct
+            and isinstance(dct[k], dict)
+            and isinstance(merge_dct[k], collections.Mapping)
+        ):
             dict_merge(dct[k], merge_dct[k])
         else:
             dct[k] = merge_dct[k]
@@ -250,7 +293,10 @@ def dict_merge(dct: Dict[str, Any], merge_dct: Dict[str, Any], re=True):
 
 
 # filter a flat dictionary with a lambda function
-def dict_filter(dictionary: Dict[str, np.ndarray], filter_func: Callable = lambda k, v: (v != 0 and not isnan(v))):
+def dict_filter(
+    dictionary: Dict[str, np.ndarray],
+    filter_func: Callable = lambda k, v: (v != 0 and not isnan(v)),
+):
     return {k: v for k, v in dictionary.items() if filter_func(k, v)}
 
 
@@ -261,15 +307,17 @@ def nice_dict(input_dict: Dict[str, Union[int, float]]) -> str:
     :param input_dict: dictionary
     :return: string
     """
-    assert isinstance(input_dict, dict), f"{input_dict} should be a dict, given {type(input_dict)}."
+    assert isinstance(
+        input_dict, dict
+    ), f"{input_dict} should be a dict, given {type(input_dict)}."
     is_flat_dict = True
     for k, v in input_dict.items():
         if isinstance(v, dict):
             is_flat_dict = False
             break
-    flat_dict = input_dict if is_flat_dict else flatten_dict(input_dict, sep='')
-    string_list = [f'{k}:{v:.3f}' for k, v in flat_dict.items()]
-    return ', '.join(string_list)
+    flat_dict = input_dict if is_flat_dict else flatten_dict(input_dict, sep="")
+    string_list = [f"{k}:{v:.3f}" for k, v in flat_dict.items()]
+    return ", ".join(string_list)
 
 
 dict_flatten = flatten_dict
@@ -284,23 +332,33 @@ def extract_from_big_dict(big_dict, keys) -> dict:
         :param keys: A list of keys
     """
     #   TODO a bug has been found
-    return {key: big_dict.get(key) for key in keys if big_dict.get(key, 'not_found') != 'not_found'}
+    return {
+        key: big_dict.get(key)
+        for key in keys
+        if big_dict.get(key, "not_found") != "not_found"
+    }
 
 
 # meta function for interface
-def _register(name: str, callable: Callable, alias=None, CALLABLE_DICT: dict = {}) -> None:
+def _register(
+    name: str, callable: Callable, alias=None, CALLABLE_DICT: dict = {}
+) -> None:
     """ Private method to register the architecture to the ARCH_CALLABLES
         :param name: A str
         :param callable: The callable that return the nn.Module
         :param alias: None, or a list of string, or str
     """
     if name in CALLABLE_DICT:
-        raise ValueError('{} already exists!'.format(name.lower()))
+        raise ValueError("{} already exists!".format(name.lower()))
     CALLABLE_DICT[name.lower()] = callable
     if alias:
         if isinstance(alias, str):
             alias = [alias]
         for other_arch in alias:
             if other_arch.lower() in CALLABLE_DICT:
-                raise ValueError('alias {} for {} already exists!'.format(other_arch.lower(), name.lower()))
+                raise ValueError(
+                    "alias {} for {} already exists!".format(
+                        other_arch.lower(), name.lower()
+                    )
+                )
             CALLABLE_DICT[other_arch.lower()] = callable

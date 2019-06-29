@@ -27,28 +27,42 @@ class SVHN(VisionDataset):
             downloaded again.
 
     """
+
     url = ""
     filename = ""
     file_md5 = ""
 
     split_list = {
-        'train': ["http://ufldl.stanford.edu/housenumbers/train_32x32.mat",
-                  "train_32x32.mat", "e26dedcc434d2e4c54c9b2d4a06d8373"],
-        'test': ["http://ufldl.stanford.edu/housenumbers/test_32x32.mat",
-                 "test_32x32.mat", "eb5a983be6a315427106f1b164d9cef3"],
-        'extra': ["http://ufldl.stanford.edu/housenumbers/extra_32x32.mat",
-                  "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"]}
+        "train": [
+            "http://ufldl.stanford.edu/housenumbers/train_32x32.mat",
+            "train_32x32.mat",
+            "e26dedcc434d2e4c54c9b2d4a06d8373",
+        ],
+        "test": [
+            "http://ufldl.stanford.edu/housenumbers/test_32x32.mat",
+            "test_32x32.mat",
+            "eb5a983be6a315427106f1b164d9cef3",
+        ],
+        "extra": [
+            "http://ufldl.stanford.edu/housenumbers/extra_32x32.mat",
+            "extra_32x32.mat",
+            "a93ce644f1a588dc4d68dda5feec44a7",
+        ],
+    }
 
-    def __init__(self, root, split='train',
-                 transform=None, target_transform=None, download=False):
+    def __init__(
+        self, root, split="train", transform=None, target_transform=None, download=False
+    ):
         super(SVHN, self).__init__(root)
         self.transform = transform
         self.target_transform = target_transform
         self.split = split  # training set or test set or extra set
 
         if self.split not in self.split_list:
-            raise ValueError('Wrong split entered! Please use split="train" '
-                             'or split="extra" or split="test"')
+            raise ValueError(
+                'Wrong split entered! Please use split="train" '
+                'or split="extra" or split="test"'
+            )
 
         self.url = self.split_list[split][0]
         self.filename = self.split_list[split][1]
@@ -58,8 +72,10 @@ class SVHN(VisionDataset):
             self.download()
 
         if not self._check_integrity():
-            raise RuntimeError('Dataset not found or corrupted.' +
-                               ' You can use download=True to download it')
+            raise RuntimeError(
+                "Dataset not found or corrupted."
+                + " You can use download=True to download it"
+            )
 
         # import here rather than at top of file because this is
         # an optional dependency for torchvision
@@ -68,12 +84,12 @@ class SVHN(VisionDataset):
         # reading(loading) mat file as array
         loaded_mat = sio.loadmat(os.path.join(self.root, self.filename))
 
-        self.data = loaded_mat['X']
+        self.data = loaded_mat["X"]
         # loading from the .mat file gives an np array of type np.uint8
         # converting to np.int64, so that we have a LongTensor after
         # the conversion from the numpy array
         # the squeeze is needed to obtain a 1D tensor
-        self.labels = loaded_mat['y'].astype(np.int64).squeeze()
+        self.labels = loaded_mat["y"].astype(np.int64).squeeze()
 
         # the svhn dataset assigns the class label "10" to the digit 0
         # this makes it inconsistent with several loss functions

@@ -29,9 +29,9 @@ class ClusterNet5gTrunk(ResNetTrunk):
 
         in_channels = num_channel
         self.inplanes = 64
-        self.conv1 = nn.Conv2d(in_channels, 64, kernel_size=3, stride=1,
-                               padding=1,
-                               bias=False)
+        self.conv1 = nn.Conv2d(
+            in_channels, 64, kernel_size=3, stride=1, padding=1, bias=False
+        )
         self.bn1 = nn.BatchNorm2d(64, track_running_stats=self.batchnorm_track)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2, padding=1)
@@ -68,7 +68,9 @@ class ClusterNet5gTrunk(ResNetTrunk):
 
 
 class ClusterNet5gHead(nn.Module):
-    def __init__(self, output_k: int, num_sub_heads: int, batchnorm_track: bool = True) -> None:
+    def __init__(
+        self, output_k: int, num_sub_heads: int, batchnorm_track: bool = True
+    ) -> None:
         r"""
         :param output_k: number of clustering
         :param num_sub_heads: number of sub heads to form an ensemble-like prediction
@@ -77,9 +79,14 @@ class ClusterNet5gHead(nn.Module):
         super(ClusterNet5gHead, self).__init__()
         self.batchnorm_track = batchnorm_track
         self.num_sub_heads = num_sub_heads
-        self.heads = nn.ModuleList([nn.Sequential(
-            nn.Linear(512 * BasicBlock.expansion, output_k),
-            nn.Softmax(dim=1)) for _ in range(self.num_sub_heads)])
+        self.heads = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(512 * BasicBlock.expansion, output_k), nn.Softmax(dim=1)
+                )
+                for _ in range(self.num_sub_heads)
+            ]
+        )
 
     def forward(self, x, kmeans_use_features=False):
         r"""
@@ -102,8 +109,13 @@ class ClusterNet5g(ResNet):
         Clustering model based on ResNet with ResNetTrunk and ResNetHead
     """
 
-    def __init__(self, num_channel: int = 3, output_k: int = 10, num_sub_heads: int = 5,
-                 batchnorm_track: bool = True):
+    def __init__(
+        self,
+        num_channel: int = 3,
+        output_k: int = 10,
+        num_sub_heads: int = 5,
+        batchnorm_track: bool = True,
+    ):
         r"""
         :param input_size: image size of the raw image, only support 96, 64, 32
         :param num_channel: image channel
@@ -115,15 +127,24 @@ class ClusterNet5g(ResNet):
 
         self.batchnorm_track = batchnorm_track
 
-        self.trunk = ClusterNet5gTrunk(num_channel=num_channel,
-                                       batchnorm_track=self.batchnorm_track)
-        self.head = ClusterNet5gHead(output_k=output_k, num_sub_heads=num_sub_heads,
-                                     batchnorm_track=self.batchnorm_track)
+        self.trunk = ClusterNet5gTrunk(
+            num_channel=num_channel, batchnorm_track=self.batchnorm_track
+        )
+        self.head = ClusterNet5gHead(
+            output_k=output_k,
+            num_sub_heads=num_sub_heads,
+            batchnorm_track=self.batchnorm_track,
+        )
 
         self._initialize_weights()
 
-    def forward(self, x, kmeans_use_features=False, trunk_features=False,
-                penultimate_features=False):
+    def forward(
+        self,
+        x,
+        kmeans_use_features=False,
+        trunk_features=False,
+        penultimate_features=False,
+    ):
         x = self.trunk(x, penultimate_features=penultimate_features)
 
         if trunk_features:  # for semisup
@@ -133,4 +154,4 @@ class ClusterNet5g(ResNet):
         return x
 
 
-ClusterNet5g_Param = {'num_channel': 3, 'output_k': 10, 'num_sub_heads': 5}
+ClusterNet5g_Param = {"num_channel": 3, "output_k": 10, "num_sub_heads": 5}

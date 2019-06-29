@@ -1,6 +1,6 @@
 import torch
 
-__all__ = ['FixRandomSeed', 'SequentialWrapper']
+__all__ = ["FixRandomSeed", "SequentialWrapper"]
 
 import random
 from typing import Callable, List, Union
@@ -12,7 +12,6 @@ from .pil_augment import Identity
 
 
 class FixRandomSeed(object):
-
     def __init__(self, random_seed: int = 0):
         self.random_seed = random_seed
         self.randombackup = random.getstate()
@@ -34,19 +33,31 @@ class SequentialWrapper(object):
     The randomness is garanted by the same random seed
     """
 
-    def __init__(self, img_transform: Callable = None, target_transform: Callable = None,
-                 if_is_target: List[bool] = []) -> None:
+    def __init__(
+        self,
+        img_transform: Callable = None,
+        target_transform: Callable = None,
+        if_is_target: List[bool] = [],
+    ) -> None:
         super().__init__()
         self.img_transform = img_transform if img_transform is not None else Identity()
-        self.target_transform = target_transform if target_transform is not None else Identity()
+        self.target_transform = (
+            target_transform if target_transform is not None else Identity()
+        )
         self.if_is_target = if_is_target
 
-    def __call__(self, *imgs, random_seed=None) -> List[Union[Image.Image, torch.Tensor, np.ndarray]]:
+    def __call__(
+        self, *imgs, random_seed=None
+    ) -> List[Union[Image.Image, torch.Tensor, np.ndarray]]:
         # assert cases
-        assert len(imgs) == len(self.if_is_target), f"len(imgs) should match len(if_is_target), " \
+        assert len(imgs) == len(self.if_is_target), (
+            f"len(imgs) should match len(if_is_target), "
             f"given {len(imgs)} and {len(self.if_is_target)}."
+        )
         # assert cases ends
-        random_seed: int = int(random.randint(0, 1e8)) if random_seed is None else int(random_seed)  # type ignore
+        random_seed: int = int(random.randint(0, 1e8)) if random_seed is None else int(
+            random_seed
+        )  # type ignore
 
         _imgs: List[Image.Image] = []
         for img, if_target in zip(imgs, self.if_is_target):
@@ -56,8 +67,10 @@ class SequentialWrapper(object):
         return _imgs
 
     def __repr__(self):
-        return f"img_transform:{self.img_transform}\n" \
+        return (
+            f"img_transform:{self.img_transform}\n"
             f"target_transform:{self.target_transform}."
+        )
 
     def _transform(self, is_target: bool) -> Callable:
         assert isinstance(is_target, bool)

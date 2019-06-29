@@ -1,18 +1,23 @@
 import torch
-from deepclustering.meters import HaussdorffDistance, BatchDiceMeter, SliceDiceMeter, MeterInterface
+from deepclustering.meters import (
+    HaussdorffDistance,
+    BatchDiceMeter,
+    SliceDiceMeter,
+    MeterInterface,
+)
 from deepclustering.utils import logit2one_hot, class2one_hot
 from unittest import TestCase
 
 
 class TestHaussdorffDistance(TestCase):
-
     def setUp(self) -> None:
         super().setUp()
         C = 3
         meter_config = {
             "hd_meter": HaussdorffDistance(C=C),
             "s_dice": SliceDiceMeter(C=C, report_axises=[1, 2]),
-            'b_dice': BatchDiceMeter(C=C, report_axises=[1, 2])}
+            "b_dice": BatchDiceMeter(C=C, report_axises=[1, 2]),
+        }
         self.meter = MeterInterface(meter_config)
 
     def test_batch_case(self):

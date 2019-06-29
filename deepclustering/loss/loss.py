@@ -19,16 +19,16 @@ class CrossEntropyLoss2d(nn.Module):
         self.weight = weight
         self.ignore_index = ignore_index
         if weight is not None:
-            weight: torch.Tensor = \
-                weight if isinstance(weight, torch.Tensor) else \
-                    torch.Tensor(weight)
+            weight: torch.Tensor = weight if isinstance(
+                weight, torch.Tensor
+            ) else torch.Tensor(weight)
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
+            warnings.filterwarnings("ignore")
             self.loss = nn.NLLLoss(
                 weight,
                 reduce=reduce,
                 size_average=size_average,
-                ignore_index=ignore_index
+                ignore_index=ignore_index,
             )
 
     def forward(self, outputs, targets):
@@ -36,7 +36,6 @@ class CrossEntropyLoss2d(nn.Module):
 
 
 class PartialCrossEntropyLoss2d(nn.Module):
-
     def __init__(self, reduce=True, size_average=True):
         super(PartialCrossEntropyLoss2d, self).__init__()
         weight = torch.Tensor([0, 1])
@@ -53,8 +52,10 @@ class MSE_2D(nn.Module):
 
     def forward(self, input, target):
         assert input.shape == target.shape
-        warnings.warn('This function is only implemneted for '
-                      'binary class and have impact on class=1')
+        warnings.warn(
+            "This function is only implemneted for "
+            "binary class and have impact on class=1"
+        )
         prob = F.softmax(input, dim=1)[:, 1].squeeze()
         target = target.squeeze()
         assert prob.shape == target.shape
@@ -68,9 +69,9 @@ class Entropy(nn.Module):
 
     def __init__(self, reduce=True, eps=1e-16):
         super().__init__()
-        r'''
+        r"""
         the definition of Entropy is - \sum p(xi) log (p(xi))
-        '''
+        """
         self.eps = eps
         self.reduce = reduce
 
@@ -89,9 +90,9 @@ class Entropy(nn.Module):
 class Entropy_2D(nn.Module):
     def __init__(self):
         super().__init__()
-        r'''
+        r"""
         the definition of Entropy is - \sum p(xi) log (p(xi))
-        '''
+        """
 
     def forward(self, input: torch.Tensor):
         assert input.shape.__len__() == 4
@@ -104,12 +105,12 @@ class Entropy_2D(nn.Module):
 
 
 class KL_div(nn.Module):
-    r'''
+    r"""
     KL(p,q)= -\sum p(x) * log(q(x)/p(x))
     where p, q are distributions
     p is usually the fixed one like one hot coding
     p is the target and q is the distribution to get approached.
-    '''
+    """
 
     def __init__(self, reduce=True, eps=1e-16):
         super().__init__()
@@ -123,7 +124,7 @@ class KL_div(nn.Module):
         assert simplex(prob)
         assert simplex(target)
         b, c, *_ = target.shape
-        kl = (- target * torch.log((prob + self.eps) / (target + self.eps))).sum(1)
+        kl = (-target * torch.log((prob + self.eps) / (target + self.eps))).sum(1)
         if self.reduce:
             return kl.sum() / float(b)
         return kl
@@ -140,11 +141,11 @@ class KL_Divergence_2D(nn.Module):
         self.eps = eps
 
     def forward(self, p_prob: torch.Tensor, y_prob: torch.Tensor):
-        '''
+        """
         :param p_probs:
         :param y_prob: the Y_logit is like that for cross-entropy
         :return: 2D map?
-        '''
+        """
         assert not y_prob.requires_grad
         assert p_prob.requires_grad
         assert simplex(p_prob, 1)
@@ -162,7 +163,6 @@ class KL_Divergence_2D(nn.Module):
 
 
 class KL_Divergence_2D_Logit(nn.Module):
-
     def __init__(self, reduce=False, eps=1e-10):
         super().__init__()
         self.reduce = reduce

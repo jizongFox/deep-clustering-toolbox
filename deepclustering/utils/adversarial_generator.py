@@ -9,13 +9,14 @@ from ..utils.decorator import _disable_tracking_bn_stats
 
 
 class FSGMGenerator(object):
-
     def __init__(self, net: nn.Module, eplision: float = 0.05) -> None:
         super().__init__()
         self.net = net
         self.eplision = eplision
 
-    def __call__(self, img: Tensor, gt: Tensor, criterion: nn.Module) -> Tuple[Tensor, Tensor, Tensor]:
+    def __call__(
+        self, img: Tensor, gt: Tensor, criterion: nn.Module
+    ) -> Tuple[Tensor, Tensor, Tensor]:
         assert img.shape.__len__() == 4
         assert img.shape[0] >= gt.shape[0]
         img.requires_grad = True
@@ -24,7 +25,7 @@ class FSGMGenerator(object):
         self.net.zero_grad()
         pred = self.net(img)
         if img.shape[0] > gt.shape[0]:
-            gt = torch.cat((gt, pred.max(1)[1][gt.shape[0]:].unsqueeze(1)), dim=0)
+            gt = torch.cat((gt, pred.max(1)[1][gt.shape[0] :].unsqueeze(1)), dim=0)
         loss = criterion(pred, gt.squeeze(1))
         loss.backward()
         adv_img, noise = self.adversarial_fgsm(img, img.grad, epsilon=self.eplision)
@@ -34,7 +35,9 @@ class FSGMGenerator(object):
 
     @staticmethod
     # adversarial generation
-    def adversarial_fgsm(image: Tensor, data_grad: Tensor, epsilon: float = 0.01) -> Tuple[Tensor, Tensor]:
+    def adversarial_fgsm(
+        image: Tensor, data_grad: Tensor, epsilon: float = 0.01
+    ) -> Tuple[Tensor, Tensor]:
         """
         FGSM for generating adversarial sample
         :param image: original clean image
@@ -70,17 +73,23 @@ class VATGenerator(object):
     def _l2_normalize(d: Tensor) -> Tensor:
         d_reshaped = d.view(d.shape[0], -1, *(1 for _ in range(d.dim() - 2)))
         d /= torch.norm(d_reshaped, dim=1, keepdim=True)
-        assert torch.allclose(d.view(d.shape[0], -1).norm(dim=1), torch.ones(d.shape[0]).to(d.device), rtol=1e-3)
+        assert torch.allclose(
+            d.view(d.shape[0], -1).norm(dim=1),
+            torch.ones(d.shape[0]).to(d.device),
+            rtol=1e-3,
+        )
         return d
 
     @staticmethod
     def kl_div_with_logit(q_logit: Tensor, p_logit: Tensor):
-        '''
+        """
         :param q_logit:it is like the y in the ce loss
         :param p_logit: it is the logit to be proched to q_logit
         :return:
-        '''
-        assert not q_logit.requires_grad, f"q_logit should be no differentiable, like y."
+        """
+        assert (
+            not q_logit.requires_grad
+        ), f"q_logit should be no differentiable, like y."
         assert p_logit.requires_grad
         q = F.softmax(q_logit, dim=1)
         logq = F.log_softmax(q_logit, dim=1)
@@ -90,7 +99,7 @@ class VATGenerator(object):
         qlogp = (q * logp).sum(dim=1)
         return qlogq - qlogp
 
-    def __call__(self, img: Tensor, loss_name='kl') -> Tuple[Tensor, Tensor]:
+    def __call__(self, img: Tensor, loss_name="kl") -> Tuple[Tensor, Tensor]:
         with torch.no_grad():
             pred = self.net(img)
         # prepare random unit tensor

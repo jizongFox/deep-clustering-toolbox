@@ -11,7 +11,6 @@ from ..utils.general import simplex
 
 
 class IIDLoss(nn.Module):
-    
     def __init__(self, lamb: float = 1.0, eps: float = sys.float_info.epsilon):
         """
         :param lamb:
@@ -34,7 +33,9 @@ class IIDLoss(nn.Module):
         p_i_j = compute_joint(x_out, x_tf_out)
         assert p_i_j.size() == (k, k)
 
-        p_i = p_i_j.sum(dim=1).view(k, 1).expand(k, k)  # p_i should be the mean of the x_out
+        p_i = (
+            p_i_j.sum(dim=1).view(k, 1).expand(k, k)
+        )  # p_i should be the mean of the x_out
         p_j = p_i_j.sum(dim=0).view(1, k).expand(k, k)  # but should be same, symmetric
 
         # p_i = x_out.mean(0).view(k, 1).expand(k, k)
@@ -45,9 +46,11 @@ class IIDLoss(nn.Module):
         p_j[p_j < self.eps] = self.eps
         p_i[p_i < self.eps] = self.eps
 
-        loss = - p_i_j * (torch.log(p_i_j) - self.lamb * torch.log(p_j) - self.lamb * torch.log(p_i))
+        loss = -p_i_j * (
+            torch.log(p_i_j) - self.lamb * torch.log(p_j) - self.lamb * torch.log(p_i)
+        )
         loss = loss.sum()
-        loss_no_lamb = - p_i_j * (torch.log(p_i_j) - torch.log(p_j) - torch.log(p_i))
+        loss_no_lamb = -p_i_j * (torch.log(p_i_j) - torch.log(p_j) - torch.log(p_i))
         loss_no_lamb = loss_no_lamb.sum()
         return loss, loss_no_lamb
 
@@ -68,7 +71,7 @@ def compute_joint(x_out: Tensor, x_tf_out: Tensor) -> Tensor:
 
     p_i_j = x_out.unsqueeze(2) * x_tf_out.unsqueeze(1)  # bn, k, k
     p_i_j = p_i_j.sum(dim=0)  # k, k aggregated over one batch
-    p_i_j = (p_i_j + p_i_j.t()) / 2.  # symmetric
+    p_i_j = (p_i_j + p_i_j.t()) / 2.0  # symmetric
     p_i_j /= p_i_j.sum()  # normalise
 
     return p_i_j

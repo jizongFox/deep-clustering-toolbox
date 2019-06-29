@@ -18,7 +18,7 @@ def ZeroGradientBackwardStep(loss: Tensor, model: Model):
     :param loss: Tensor loss to call backward()
     :param model: self-defined Model wrapper
     """
-    if hasattr(model, 'is_apex'):
+    if hasattr(model, "is_apex"):
         if model.is_apex:
             return AMPGradientBackwardStep(loss, model)
     return NormalGradientBackwardStep(loss, model)

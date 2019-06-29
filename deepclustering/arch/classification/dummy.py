@@ -2,7 +2,6 @@ from torch import nn
 
 
 class PlaceholderNet(nn.Module):
-
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv2d(128, 256, 3)
@@ -31,16 +30,15 @@ class Dummy(nn.Module):
             nn.MaxPool2d(stride=2, kernel_size=3),
             nn.Conv2d(50, 10, 3, 1, 1),
             nn.BatchNorm2d(10),
-            nn.AdaptiveAvgPool2d((1, 1))
+            nn.AdaptiveAvgPool2d((1, 1)),
         )
 
         self.num_sub_heads = num_sub_heads
         self.classifiers = nn.ModuleList()
         for i in range(num_sub_heads):
-            self.classifiers.append(nn.Sequential(
-                nn.Linear(10, output_k),
-                nn.Softmax(1)
-            ))
+            self.classifiers.append(
+                nn.Sequential(nn.Linear(10, output_k), nn.Softmax(1))
+            )
 
     def forward(self, input):
         feature = self.feature(input)
@@ -53,4 +51,4 @@ class Dummy(nn.Module):
         return preds
 
 
-Dummy_Param = {'num_channel': 3, 'output_k': 10, 'num_sub_heads': 5}
+Dummy_Param = {"num_channel": 3, "output_k": 10, "num_sub_heads": 5}

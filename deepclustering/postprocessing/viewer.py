@@ -10,7 +10,6 @@ Tensor = Union[np.ndarray, torch.Tensor]
 
 
 class Crop:
-
     def __init__(self, size=0) -> None:
         super().__init__()
         self.size = size
@@ -18,7 +17,9 @@ class Crop:
     def __call__(self, slices: Tensor) -> Tensor:
         H, W, *_ = slices.shape
 
-        return slices[self.size // 2:H - self.size // 2, self.size // 2:W - self.size // 2]
+        return slices[
+            self.size // 2 : H - self.size // 2, self.size // 2 : W - self.size // 2
+        ]
 
 
 class Identical:
@@ -27,7 +28,6 @@ class Identical:
 
 
 class PLTViewer(object):
-
     def __init__(self, *keys) -> None:
         try:
             self.remove_keymap_conflicts(set(keys))
@@ -37,7 +37,7 @@ class PLTViewer(object):
     @staticmethod
     def remove_keymap_conflicts(new_keys_set):
         for prop in plt.rcParams:
-            if prop.startswith('keymap.'):
+            if prop.startswith("keymap."):
                 keys = plt.rcParams[prop]
                 remove_list = set(keys) & new_keys_set
                 for key in remove_list:
@@ -45,12 +45,20 @@ class PLTViewer(object):
 
 
 class multi_slice_viewer(PLTViewer):
-
-    def __init__(self, img_cmap=None, mask_cmp=None, crop=None, is_contour=True,
-                 alpha=0.5, up_key='j', down_key='k') -> None:
+    def __init__(
+        self,
+        img_cmap=None,
+        mask_cmp=None,
+        crop=None,
+        is_contour=True,
+        alpha=0.5,
+        up_key="j",
+        down_key="k",
+    ) -> None:
         try:
             import matplotlib
-            matplotlib.use('qt5agg')
+
+            matplotlib.use("qt5agg")
         except Exception as e:
             print(e)
 
@@ -65,36 +73,52 @@ class multi_slice_viewer(PLTViewer):
 
     def __call__(self, img_volume: Tensor, *gt_volumes: Tensor):
         img_volume = img_volume.squeeze()
-        assert len(img_volume.shape) in (3, 4), f"Only accept 3 or 4 dimensional data, given {len(img_volume.shape)}"
+        assert len(img_volume.shape) in (
+            3,
+            4,
+        ), f"Only accept 3 or 4 dimensional data, given {len(img_volume.shape)}"
 
         if len(gt_volumes) > 0:
             B, H, W = img_volume.shape[0:3]
             _B, *_, _H, _W = gt_volumes[0].shape
-            assert B == _B and H == _H and W == _W, f"img.shape: {img_volume.shape} and gt_shape: {gt_volumes.shape}"
+            assert (
+                B == _B and H == _H and W == _W
+            ), f"img.shape: {img_volume.shape} and gt_shape: {gt_volumes.shape}"
         fig, axs = plt.subplots(1, max(len(gt_volumes), 1))
         if not isinstance(axs, np.ndarray):
             axs = np.array([axs])
-        fig.canvas.mpl_connect('key_press_event', self.process_key)
-        fig.canvas.mpl_connect('scroll_event', self.process_mouse_wheel)
+        fig.canvas.mpl_connect("key_press_event", self.process_key)
+        fig.canvas.mpl_connect("scroll_event", self.process_mouse_wheel)
 
-        for i, (ax, volume) in enumerate(zip(axs, repeat(None) if len(gt_volumes) == 0 else list(gt_volumes))):
+        for i, (ax, volume) in enumerate(
+            zip(axs, repeat(None) if len(gt_volumes) == 0 else list(gt_volumes))
+        ):
             ax.gt_volume = volume
             ax.img_volume = img_volume
             ax.index = img_volume.shape[0] // 2
             ax.imshow(self.crop_func(ax.img_volume[ax.index]), cmap=self.img_cmap)
             if volume is not None:
-                ax.con = ax.contour(self.crop_func(ax.gt_volume[ax.index]), cmap=self.mask_cmap) if self.is_contour else \
-                    ax.contourf(self.crop_func(ax.gt_volume[ax.index]), cmap=self.mask_cmap, alpha=self.alpha)
-            ax.set_title(f'plane = {ax.index}')
-            ax.axis('off')
+                ax.con = (
+                    ax.contour(
+                        self.crop_func(ax.gt_volume[ax.index]), cmap=self.mask_cmap
+                    )
+                    if self.is_contour
+                    else ax.contourf(
+                        self.crop_func(ax.gt_volume[ax.index]),
+                        cmap=self.mask_cmap,
+                        alpha=self.alpha,
+                    )
+                )
+            ax.set_title(f"plane = {ax.index}")
+            ax.axis("off")
         plt.show()
 
     def process_mouse_wheel(self, event):
         fig = event.canvas.figure
         for i, ax in enumerate(fig.axes):
-            if event.button == 'up':
+            if event.button == "up":
                 self.previous_slice(ax)
-            elif event.button == 'down':
+            elif event.button == "down":
                 self.next_slice(ax)
         fig.canvas.draw()
 
@@ -116,45 +140,64 @@ class multi_slice_viewer(PLTViewer):
         ax.index = (ax.index - 1) if (ax.index - 1) >= 0 else 0  # wrap around using %
         ax.images[0].set_array(self.crop_func(img_volume[ax.index]))
         if ax.gt_volume is not None:
-            ax.con = ax.contour(self.crop_func(ax.gt_volume[ax.index]), cmap=self.mask_cmap) if self.is_contour else \
-                ax.contourf(self.crop_func(ax.gt_volume[ax.index]), cmap=self.mask_cmap, alpha=self.alpha)
-        ax.set_title(f'plane = {ax.index}')
+            ax.con = (
+                ax.contour(self.crop_func(ax.gt_volume[ax.index]), cmap=self.mask_cmap)
+                if self.is_contour
+                else ax.contourf(
+                    self.crop_func(ax.gt_volume[ax.index]),
+                    cmap=self.mask_cmap,
+                    alpha=self.alpha,
+                )
+            )
+        ax.set_title(f"plane = {ax.index}")
 
     def next_slice(self, ax):
         img_volume = ax.img_volume
         if ax.gt_volume is not None:
             for con in ax.con.collections:
                 con.remove()
-        ax.index = (ax.index + 1) if (ax.index + 1) < img_volume.shape[0] else img_volume.shape[0] - 1
+        ax.index = (
+            (ax.index + 1)
+            if (ax.index + 1) < img_volume.shape[0]
+            else img_volume.shape[0] - 1
+        )
         ax.images[0].set_array(self.crop_func(img_volume[ax.index]))
         if ax.gt_volume is not None:
-            ax.con = ax.contour(self.crop_func(ax.gt_volume[ax.index]), cmap=self.mask_cmap) if self.is_contour else \
-                ax.contourf(self.crop_func(ax.gt_volume[ax.index]), cmap=self.mask_cmap, alpha=self.alpha)
-        ax.set_title(f'plane = {ax.index}')
+            ax.con = (
+                ax.contour(self.crop_func(ax.gt_volume[ax.index]), cmap=self.mask_cmap)
+                if self.is_contour
+                else ax.contourf(
+                    self.crop_func(ax.gt_volume[ax.index]),
+                    cmap=self.mask_cmap,
+                    alpha=self.alpha,
+                )
+            )
+        ax.set_title(f"plane = {ax.index}")
 
 
 def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor) -> None:
     try:
         import matplotlib
-        matplotlib.use('qt5agg')
+
+        matplotlib.use("qt5agg")
     except Exception as e:
         print(e)
 
     def process_mouse_wheel(event):
         fig = event.canvas.figure
         for i, ax in enumerate(fig.axes):
-            if event.button == 'up':
+            if event.button == "up":
                 previous_slice(ax)
-            elif event.button == 'down':
+            elif event.button == "down":
                 next_slice(ax)
         fig.canvas.draw()
 
     def process_key(event):
         fig = event.canvas.figure
         ax = fig.axes[0]
-        if event.key == 'j':
+        if event.key == "j":
             previous_slice(ax)
-        elif event.key == 'k':
+        elif event.key == "k":
             next_slice(ax)
         fig.canvas.draw()
 
@@ -167,46 +210,57 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor) -> None:
         ax.images[0].set_array(img_volume[ax.index])
         if ax.gt_volume is not None:
             ax.con = ax.contour(ax.gt_volume[ax.index])
-        ax.set_title(f'plane = {ax.index}')
+        ax.set_title(f"plane = {ax.index}")
 
     def next_slice(ax):
         img_volume = ax.img_volume
         if ax.gt_volume is not None:
             for con in ax.con.collections:
                 con.remove()
-        ax.index = (ax.index + 1) if (ax.index + 1) < img_volume.shape[0] else img_volume.shape[0] - 1
+        ax.index = (
+            (ax.index + 1)
+            if (ax.index + 1) < img_volume.shape[0]
+            else img_volume.shape[0] - 1
+        )
         ax.images[0].set_array(img_volume[ax.index])
         if ax.gt_volume is not None:
             ax.con = ax.contour(ax.gt_volume[ax.index])
-        ax.set_title(f'plane = {ax.index}')
+        ax.set_title(f"plane = {ax.index}")
 
     img_volume = img_volume.squeeze()
-    assert len(img_volume.shape) in (3, 4), f"Only accept 3 or 4 dimensional data, given {len(img_volume.shape)}"
+    assert len(img_volume.shape) in (
+        3,
+        4,
+    ), f"Only accept 3 or 4 dimensional data, given {len(img_volume.shape)}"
 
     if len(gt_volumes) > 0:
         B, H, W = img_volume.shape[0:3]
         _B, *_, _H, _W = gt_volumes[0].shape
-        assert B == _B and H == _H and W == _W, f"img.shape: {img_volume.shape} and gt_shape: {gt_volumes.shape}"
+        assert (
+            B == _B and H == _H and W == _W
+        ), f"img.shape: {img_volume.shape} and gt_shape: {gt_volumes.shape}"
     fig, axs = plt.subplots(1, max(len(gt_volumes), 1))
     if not isinstance(axs, np.ndarray):
         axs = np.array([axs])
 
-    for i, (ax, volume) in enumerate(zip(axs, repeat(None) if len(gt_volumes) == 0 else list(gt_volumes))):
+    for i, (ax, volume) in enumerate(
+        zip(axs, repeat(None) if len(gt_volumes) == 0 else list(gt_volumes))
+    ):
         ax.gt_volume = volume
         ax.img_volume = img_volume
         ax.index = img_volume.shape[0] // 2
-        ax.imshow(ax.img_volume[ax.index], cmap='gray')
+        ax.imshow(ax.img_volume[ax.index], cmap="gray")
         if volume is not None:
             ax.con = ax.contour(ax.gt_volume[ax.index])
-        ax.set_title(f'plane = {ax.index}')
-        ax.axis('off')
+        ax.set_title(f"plane = {ax.index}")
+        ax.axis("off")
 
-    fig.canvas.mpl_connect('key_press_event', process_key)
-    fig.canvas.mpl_connect('scroll_event', process_mouse_wheel)
+    fig.canvas.mpl_connect("key_press_event", process_key)
+    fig.canvas.mpl_connect("scroll_event", process_mouse_wheel)
     plt.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     img = torch.randn(10, 32, 32)
     gt = torch.randint(0, 2, (10, 32, 32))
     # multi_slice_viewer(is_contour=False)(img, gt)

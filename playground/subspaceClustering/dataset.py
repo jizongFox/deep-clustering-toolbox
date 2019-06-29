@@ -23,11 +23,8 @@ class TensorDataset(Dataset):
 
 
 def create_gaussian_norm_dataset(
-        num_cluster: int,
-        num_exp: int,
-        num_feature: int,
-        var: float,
-        shuffle=True) -> np.ndarray:
+    num_cluster: int, num_exp: int, num_feature: int, var: float, shuffle=True
+) -> np.ndarray:
     """
     :param num_cluster:  Number of clusters
     :param num_exp: Number of examples per cluster
@@ -36,7 +33,9 @@ def create_gaussian_norm_dataset(
     :return: numpy dataset
     """
     dataset = np.zeros((num_cluster * num_exp, num_feature))
-    centers: np.ndarray = np.random.randn(num_cluster, num_feature)  # :shape  num_cluster * num_feature
+    centers: np.ndarray = np.random.randn(
+        num_cluster, num_feature
+    )  # :shape  num_cluster * num_feature
     batch_num = 0
     for c in centers:
         for _ in range(num_exp):

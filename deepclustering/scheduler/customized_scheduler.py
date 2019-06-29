@@ -23,7 +23,9 @@ class Scheduler(object):
         It contains an entry for every variable in self.__dict__ which
         is not the optimizer.
         """
-        return {key: value for key, value in self.__dict__.items() if key != 'optimizer'}
+        return {
+            key: value for key, value in self.__dict__.items() if key != "optimizer"
+        }
 
     def load_state_dict(self, state_dict):
         """Loads the schedulers state.
@@ -40,7 +42,6 @@ class Scheduler(object):
 
 
 class RampScheduler(Scheduler):
-
     def __init__(self, begin_epoch, max_epoch, max_value, ramp_mult):
         super().__init__()
         self.begin_epoch = int(begin_epoch)
@@ -54,19 +55,22 @@ class RampScheduler(Scheduler):
 
     @property
     def value(self):
-        return self.get_lr(self.epoch, self.begin_epoch, self.max_epoch, self.max_value, self.mult)
+        return self.get_lr(
+            self.epoch, self.begin_epoch, self.max_epoch, self.max_value, self.mult
+        )
 
     @staticmethod
     def get_lr(epoch, begin_epoch, max_epochs, max_val, mult):
         if epoch < begin_epoch:
-            return 0.
+            return 0.0
         elif epoch >= max_epochs:
             return max_val
-        return max_val * np.exp(mult * (1. - float(epoch - begin_epoch) / (max_epochs - begin_epoch)) ** 2)
+        return max_val * np.exp(
+            mult * (1.0 - float(epoch - begin_epoch) / (max_epochs - begin_epoch)) ** 2
+        )
 
 
 class ConstantScheduler(Scheduler):
-
     def __init__(self, begin_epoch, max_value=1.0):
         super().__init__()
         self.begin_epoch = int(begin_epoch)
@@ -89,7 +93,6 @@ class ConstantScheduler(Scheduler):
 
 
 class RampDownScheduler(Scheduler):
-
     def __init__(self, max_epoch, max_value, ramp_mult, min_val, cutoff):
         super().__init__()
         self.max_epoch = int(max_epoch)
@@ -104,7 +107,14 @@ class RampDownScheduler(Scheduler):
 
     @property
     def value(self):
-        return self.ramp_down(self.epoch, self.max_epoch, self.max_value, self.mult, self.min_val, self.cutoff)
+        return self.ramp_down(
+            self.epoch,
+            self.max_epoch,
+            self.max_value,
+            self.mult,
+            self.min_val,
+            self.cutoff,
+        )
 
     @staticmethod
     def ramp_down(epoch, max_epochs, max_val, mult, min_val, cutoff):
@@ -113,4 +123,8 @@ class RampDownScheduler(Scheduler):
             return max_val
         elif epoch >= cutoff:
             return min_val
-        return max_val - max_val * np.exp(mult * (1. - float(epoch) / (cutoff)) ** 2) +min_val
+        return (
+            max_val
+            - max_val * np.exp(mult * (1.0 - float(epoch) / (cutoff)) ** 2)
+            + min_val
+        )

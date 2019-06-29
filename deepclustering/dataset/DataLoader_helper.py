@@ -69,7 +69,9 @@ class background:
 
     def __call__(self, gen):
         def bg_generator(*args, **kwargs):
-            return BackgroundGenerator(gen(*args, **kwargs), max_prefetch=self.max_prefetch)
+            return BackgroundGenerator(
+                gen(*args, **kwargs), max_prefetch=self.max_prefetch
+            )
 
         return bg_generator
 
@@ -98,5 +100,5 @@ class DataIter(object):
         if self.cache is not None:
             return self.cache
         else:
-            warnings.warn('No cache found, iterator forward')
+            warnings.warn("No cache found, iterator forward")
             return self.__next__()

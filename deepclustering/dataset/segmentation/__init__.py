@@ -1,1 +1,4 @@
-from .medicalSegmentationDataset import MedicalImageSegmentationDataset, MedicalImageSegmentationDatasetWithMetaInfo
+from .medicalSegmentationDataset import (
+    MedicalImageSegmentationDataset,
+    MedicalImageSegmentationDatasetWithMetaInfo,
+)

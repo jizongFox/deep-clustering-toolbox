@@ -9,7 +9,7 @@ from deepclustering.augment import TransformInterface
 
 __doc__ = "this file tests functions in augment model"
 
-URL = 'https://cdn1.medicalnewstoday.com/content/images/articles/322/322868/golden-retriever-puppy.jpg'
+URL = "https://cdn1.medicalnewstoday.com/content/images/articles/322/322868/golden-retriever-puppy.jpg"
 
 
 class TestInterface(TestCase):
@@ -22,9 +22,9 @@ class TestInterface(TestCase):
 
     def test_config1(self):
         config = {
-            'randomcrop': {'size': (20, 20)},
-            'resize': {'size': (32, 32)},
-            'Img2Tensor': {'include_rgb': False, 'include_grey': True}
+            "randomcrop": {"size": (20, 20)},
+            "resize": {"size": (32, 32)},
+            "Img2Tensor": {"include_rgb": False, "include_grey": True},
         }
         transform = TransformInterface(config)
         output = transform(self.color_img)
@@ -36,10 +36,9 @@ class TestInterface(TestCase):
 
     def test_config2(self):
         config = {
-
-            'PILCutout': {'min_box': 100, 'max_box': 200},
-            'resize': {'size': (321, 321)},
-            'Img2Tensor': {'include_rgb': True, 'include_grey': False}
+            "PILCutout": {"min_box": 100, "max_box": 200},
+            "resize": {"size": (321, 321)},
+            "Img2Tensor": {"include_rgb": True, "include_grey": False},
         }
         transform = TransformInterface(config)
         output = transform(self.color_img)

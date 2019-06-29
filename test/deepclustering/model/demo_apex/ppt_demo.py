@@ -1,5 +1,6 @@
 import torch
 from tqdm import tqdm
+
 # N, D_in, D_out = 64, 1024, 512
 # x = torch.randn(N, D_in, device="cuda")
 # y = torch.randn(N, D_out, device="cuda")
@@ -30,4 +31,4 @@ for t in max_epoch:
     with amp.scale_loss(loss, optimizer) as scaled_loss:
         scaled_loss.backward()
     optimizer.step()
-    max_epoch.set_postfix({'loss': loss.item()})
+    max_epoch.set_postfix({"loss": loss.item()})

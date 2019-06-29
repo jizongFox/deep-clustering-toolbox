@@ -10,7 +10,7 @@ def step_impl(context):
     pass
 
 
-@when('we implement {number:d} tests')
+@when("we implement {number:d} tests")
 def step_impl(context, number):  # -- NOTE: number is converted into integer
     assert number > 1 or number == 0
     context.tests_count = number

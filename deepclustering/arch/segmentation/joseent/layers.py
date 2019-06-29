@@ -3,31 +3,64 @@
 import torch.nn as nn
 
 
-def convBatch(nin, nout, kernel_size=3, stride=1, padding=1, bias=False, layer=nn.Conv2d, dilation=1):
+def convBatch(
+    nin,
+    nout,
+    kernel_size=3,
+    stride=1,
+    padding=1,
+    bias=False,
+    layer=nn.Conv2d,
+    dilation=1,
+):
     return nn.Sequential(
-        layer(nin, nout, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias, dilation=dilation),
+        layer(
+            nin,
+            nout,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            bias=bias,
+            dilation=dilation,
+        ),
         nn.BatchNorm2d(nout),
-        nn.PReLU()
+        nn.PReLU(),
     )
 
 
 def downSampleConv(nin, nout, kernel_size=3, stride=2, padding=1, bias=False):
     return nn.Sequential(
-        convBatch(nin, nout, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+        convBatch(
+            nin,
+            nout,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            bias=bias,
+        )
     )
 
 
 def upSampleConv(nin, nout, kernel_size=3, upscale=2, padding=1, bias=False):
     return nn.Sequential(
         nn.Upsample(scale_factor=upscale),
-        convBatch(nin, nout, kernel_size=kernel_size, stride=1, padding=padding, bias=bias),
+        convBatch(
+            nin, nout, kernel_size=kernel_size, stride=1, padding=padding, bias=bias
+        ),
         convBatch(nout, nout, kernel_size=3, stride=1, padding=1, bias=bias),
     )
 
 
 def conv_block(in_dim, out_dim, act_fn, kernel_size=3, stride=1, padding=1, dilation=1):
     model = nn.Sequential(
-        nn.Conv2d(in_dim, out_dim, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation),
+        nn.Conv2d(
+            in_dim,
+            out_dim,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+        ),
         nn.BatchNorm2d(out_dim),
         act_fn,
     )
@@ -36,9 +69,7 @@ def conv_block(in_dim, out_dim, act_fn, kernel_size=3, stride=1, padding=1, dila
 
 def conv_block_1(in_dim, out_dim):
     model = nn.Sequential(
-        nn.Conv2d(in_dim, out_dim, kernel_size=1),
-        nn.BatchNorm2d(out_dim),
-        nn.PReLU(),
+        nn.Conv2d(in_dim, out_dim, kernel_size=1), nn.BatchNorm2d(out_dim), nn.PReLU()
     )
     return model
 
@@ -72,8 +103,19 @@ def conv_block_3(in_dim, out_dim, act_fn):
     return model
 
 
-def conv(nin, nout, kernel_size=3, stride=1, padding=1, bias=False, layer=nn.Conv2d,
-         BN=False, ws=False, activ=nn.LeakyReLU(0.2), gainWS=2):
+def conv(
+    nin,
+    nout,
+    kernel_size=3,
+    stride=1,
+    padding=1,
+    bias=False,
+    layer=nn.Conv2d,
+    BN=False,
+    ws=False,
+    activ=nn.LeakyReLU(0.2),
+    gainWS=2,
+):
     convlayer = layer(nin, nout, kernel_size, stride=stride, padding=padding, bias=bias)
     layers = []
     if BN:
@@ -92,7 +134,9 @@ def conv(nin, nout, kernel_size=3, stride=1, padding=1, bias=False, layer=nn.Con
 # TODO: Change order of block: BN + Activation + Conv
 def conv_decod_block(in_dim, out_dim, act_fn):
     model = nn.Sequential(
-        nn.ConvTranspose2d(in_dim, out_dim, kernel_size=3, stride=2, padding=1, output_padding=1),
+        nn.ConvTranspose2d(
+            in_dim, out_dim, kernel_size=3, stride=2, padding=1, output_padding=1
+        ),
         nn.BatchNorm2d(out_dim),
         act_fn,
     )

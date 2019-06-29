@@ -54,7 +54,9 @@ class _DiceMeter(Metric):
         super().__init__()
         assert report_axises is None or isinstance(report_axises, list)
         self.diceCall = call_function
-        self.report_axis = report_axises if report_axises is not None else list(range(C))
+        self.report_axis = (
+            report_axises if report_axises is not None else list(range(C))
+        )
         self.diceLog = []
         self.C = C
 
@@ -72,7 +74,9 @@ class _DiceMeter(Metric):
         assert pred_logit.shape.__len__() == 4, f"pred_logit shape:{pred_logit.shape}"
         assert gt.shape.__len__() in (3, 4)
         if gt.shape.__len__() == 4:
-            assert gt.shape[1] == 1, f"gt shape must be 1 in the 2nd axis, given {gt.shape[1]}."
+            assert (
+                gt.shape[1] == 1
+            ), f"gt shape must be 1 in the 2nd axis, given {gt.shape[1]}."
         dice_value = self.diceCall(*toOneHot(pred_logit, gt))
         if dice_value.shape.__len__() == 1:
             dice_value = dice_value.unsqueeze(0)
@@ -83,7 +87,11 @@ class _DiceMeter(Metric):
         log = self.log
         means = log.mean(0)
         stds = log.std(0)
-        report_means = log.mean(1) if self.report_axis == 'all' else log[:, self.report_axis].mean(1)
+        report_means = (
+            log.mean(1)
+            if self.report_axis == "all"
+            else log[:, self.report_axis].mean(1)
+        )
         report_std = report_means.std()
         report_mean = report_means.mean()
         return (report_mean, report_std), (means, stds)
@@ -101,11 +109,11 @@ class _DiceMeter(Metric):
 
     def detailed_summary(self) -> dict:
         _, (means, _) = self.value()
-        return {f'DSC{i}': means[i].item() for i in range(len(means))}
+        return {f"DSC{i}": means[i].item() for i in range(len(means))}
 
     def summary(self) -> dict:
         _, (means, _) = self.value()
-        return {f'DSC{i}': means[i].item() for i in self.report_axis}
+        return {f"DSC{i}": means[i].item() for i in self.report_axis}
 
 
 class SliceDiceMeter(_DiceMeter):
@@ -113,7 +121,7 @@ class SliceDiceMeter(_DiceMeter):
     used for 2d dice for sliced input.
     """
 
-    def __init__(self, C=4, report_axises=None, ) -> None:
+    def __init__(self, C=4, report_axises=None) -> None:
         super().__init__(call_function=dice_coef, report_axises=report_axises, C=C)
 
 
@@ -122,5 +130,5 @@ class BatchDiceMeter(_DiceMeter):
     used for 3d dice for structure input.
     """
 
-    def __init__(self, C=4, report_axises=None, ) -> None:
+    def __init__(self, C=4, report_axises=None) -> None:
         super().__init__(call_function=dice_batch, report_axises=report_axises, C=C)

@@ -1,4 +1,10 @@
-__all__ = ['weights_init', 'get_arch', 'ARCH_CALLABLES', 'PlaceholderNet', '_register_arch']
+__all__ = [
+    "weights_init",
+    "get_arch",
+    "ARCH_CALLABLES",
+    "PlaceholderNet",
+    "_register_arch",
+]
 
 from functools import partial
 from typing import *
@@ -18,31 +24,31 @@ _register_arch = partial(_register, CALLABLE_DICT=ARCH_CALLABLES)
 _register_param = partial(_register_arch, CALLABLE_DICT=ARCH_PARAM_DICT)
 
 # Adding architecture (new architecture goes here...)
-_register_arch('clusternet5g', ClusterNet5g)
-_register_arch('clusternet5gtwohead', ClusterNet5gTwoHead)
-_register_arch('clusternet5gmultihead', ClusterNet5gMultiHead)
-_register_arch('clusternet6c', ClusterNet6c)
-_register_arch('clusternet6cTwoHead', ClusterNet6cTwoHead)
-_register_arch('clusternetimsat', IMSATNet)
-_register_arch('dummy', Dummy)
-_register_arch('vatnet', VATNetwork)
-_register_arch('enet', Enet)
-_register_arch('unet', UNet)
-_register_arch('unet_bn', UNet_bn)
-_register_arch('cnet', CorstemNet)
+_register_arch("clusternet5g", ClusterNet5g)
+_register_arch("clusternet5gtwohead", ClusterNet5gTwoHead)
+_register_arch("clusternet5gmultihead", ClusterNet5gMultiHead)
+_register_arch("clusternet6c", ClusterNet6c)
+_register_arch("clusternet6cTwoHead", ClusterNet6cTwoHead)
+_register_arch("clusternetimsat", IMSATNet)
+_register_arch("dummy", Dummy)
+_register_arch("vatnet", VATNetwork)
+_register_arch("enet", Enet)
+_register_arch("unet", UNet)
+_register_arch("unet_bn", UNet_bn)
+_register_arch("cnet", CorstemNet)
 # Adding default keys here to enable automatic testing
-_register_param('clusternet5g', ClusterNet5g_Param)
-_register_param('clusternet5gtwohead', ClusterNet5gTwoHead_Param)
-_register_param('clusternet5gmultihead', ClusterNet5gMultiHead_Param)
-_register_param('clusternet6c', ClusterNet6c_Param)
-_register_param('clusternet6cTwoHead', ClusterNet6cTwoHead_Param)
-_register_param('clusternetimsat', IMSATNet_Param)
-_register_param('dummy', Dummy_Param)
-_register_param('vatnet', VatNet_Param)
-_register_param('enet', Enet_Param)
-_register_param('unet', Unet_Param)
-_register_param('unet_bn', Unetbn_Param)
-_register_param('cnet', CorstemNet_Param)
+_register_param("clusternet5g", ClusterNet5g_Param)
+_register_param("clusternet5gtwohead", ClusterNet5gTwoHead_Param)
+_register_param("clusternet5gmultihead", ClusterNet5gMultiHead_Param)
+_register_param("clusternet6c", ClusterNet6c_Param)
+_register_param("clusternet6cTwoHead", ClusterNet6cTwoHead_Param)
+_register_param("clusternetimsat", IMSATNet_Param)
+_register_param("dummy", Dummy_Param)
+_register_param("vatnet", VatNet_Param)
+_register_param("enet", Enet_Param)
+_register_param("unet", Unet_Param)
+_register_param("unet_bn", Unetbn_Param)
+_register_param("cnet", CorstemNet_Param)
 """
 Public interface
 """
@@ -59,7 +65,7 @@ def weights_init(m):
 def get_arch(arch: str, kwargs) -> nn.Module:
     """ Get the architecture. Return a torch.nn.Module """
     arch_callable = ARCH_CALLABLES.get(arch.lower())
-    kwargs.pop('arch', None)
+    kwargs.pop("arch", None)
     assert arch_callable, "Architecture {} is not found!".format(arch)
     net = arch_callable(**kwargs)
     # try:

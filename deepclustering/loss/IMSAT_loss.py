@@ -24,7 +24,7 @@ class MultualInformaton_IMSAT(nn.Module):
         :param eps: small value for calculation stability
         """
         super().__init__()
-        assert mu > 0, f'mu should be positive, given {mu}.'
+        assert mu > 0, f"mu should be positive, given {mu}."
         self.mu = mu
         self.eps = eps
         self.separate_return = separate_return
@@ -41,7 +41,10 @@ class MultualInformaton_IMSAT(nn.Module):
         marginal_entropy = Entropy(self.eps)(p_average)
         conditional_entropy = Entropy(self.eps)(probs).mean()
         if self.separate_return:
-            return self.mu * marginal_entropy - conditional_entropy, (marginal_entropy, conditional_entropy)
+            return (
+                self.mu * marginal_entropy - conditional_entropy,
+                (marginal_entropy, conditional_entropy),
+            )
         return self.mu * marginal_entropy - conditional_entropy, (0, 0)
 
 

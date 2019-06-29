@@ -8,7 +8,7 @@ from .deeplabv3plus import *
 from .msc import *
 from .resnet import *
 
-__all__ = ['DeepLabV3', 'DeepLabV3Plus', 'DeepLabV2', 'init_weights']
+__all__ = ["DeepLabV3", "DeepLabV3Plus", "DeepLabV2", "init_weights"]
 
 
 def init_weights(model):

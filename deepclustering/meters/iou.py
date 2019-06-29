@@ -25,7 +25,9 @@ class IoU(Metric):
 
     def __init__(self, num_classes, normalized=False, ignore_index=255):
         super().__init__()
-        self.conf_metric = ConfusionMatrix(num_classes, ignore_index=ignore_index, normalized=normalized)
+        self.conf_metric = ConfusionMatrix(
+            num_classes, ignore_index=ignore_index, normalized=normalized
+        )
 
         if ignore_index is None:
             self.ignore_index = None
@@ -53,12 +55,15 @@ class IoU(Metric):
 
         """
         # Dimensions check
-        assert predicted.size(0) == target.size(0), \
-            'number of targets and predicted outputs do not match'
-        assert predicted.dim() == 3 or predicted.dim() == 4, \
-            "predictions must be of dimension (N, H, W) or (N, K, H, W)"
-        assert target.dim() == 3 or target.dim() == 4, \
-            "targets must be of dimension (N, H, W) or (N, K, H, W)"
+        assert predicted.size(0) == target.size(
+            0
+        ), "number of targets and predicted outputs do not match"
+        assert (
+            predicted.dim() == 3 or predicted.dim() == 4
+        ), "predictions must be of dimension (N, H, W) or (N, K, H, W)"
+        assert (
+            target.dim() == 3 or target.dim() == 4
+        ), "targets must be of dimension (N, H, W) or (N, K, H, W)"
 
         # If the tensor is in categorical format convert it to integer format
         if predicted.dim() == 4:

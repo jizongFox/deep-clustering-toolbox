@@ -4,7 +4,7 @@ from .metric import Metric
 
 
 class AverageValueMeter(Metric):
-    def __init__(self, name='Average Meter'):
+    def __init__(self, name="Average Meter"):
         super(AverageValueMeter, self).__init__()
         self.reset()
         self.val = 0
@@ -44,8 +44,8 @@ class AverageValueMeter(Metric):
 
     def summary(self) -> dict:
         # this function returns a dict and tends to aggregate the historical results.
-        return {'mean': self.value()[0]}
+        return {"mean": self.value()[0]}
 
     def detailed_summary(self) -> dict:
         # this function returns a dict and tends to aggregate the historical results.
-        return {'mean': self.value()[0], 'val': self.value()[1]}
+        return {"mean": self.value()[0], "val": self.value()[1]}

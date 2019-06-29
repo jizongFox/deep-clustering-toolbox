@@ -35,11 +35,11 @@ class Compose(object):
         return img
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + '('
+        format_string = self.__class__.__name__ + "("
         for t in self.transforms:
-            format_string += '\n'
-            format_string += '    {0}'.format(t)
-        format_string += '\n)'
+            format_string += "\n"
+            format_string += "    {0}".format(t)
+        format_string += "\n)"
         return format_string
 
 
@@ -48,7 +48,9 @@ class TensorCutout(object):
     This function remove a box by randomly choose one part within image Tensor
     """
 
-    def __init__(self, min_box: int, max_box: int, pad_value: Union[int, float] = 0) -> None:
+    def __init__(
+        self, min_box: int, max_box: int, pad_value: Union[int, float] = 0
+    ) -> None:
         r"""
         :param min_box: minimal box size
         :param max_box: maxinmal box size
@@ -61,19 +63,23 @@ class TensorCutout(object):
     def __call__(self, img_tensor: T) -> T:
         assert isinstance(img_tensor, _Tensor)
         b, c, h, w = img_tensor.shape
-        r_img_tensor = img_tensor.copy() if isinstance(img_tensor, np.ndarray) else img_tensor.clone()
+        r_img_tensor = (
+            img_tensor.copy()
+            if isinstance(img_tensor, np.ndarray)
+            else img_tensor.clone()
+        )
         # find left, upper, right, lower
         box_sz = np.random.randint(self.min_box, self.max_box + 1)
-        half_box_sz = int(np.floor(box_sz / 2.))
+        half_box_sz = int(np.floor(box_sz / 2.0))
         x_c = np.random.randint(half_box_sz, w - half_box_sz)
         y_c = np.random.randint(half_box_sz, h - half_box_sz)
         box = (
             x_c - half_box_sz,
             y_c - half_box_sz,
             x_c + half_box_sz,
-            y_c + half_box_sz
+            y_c + half_box_sz,
         )
-        r_img_tensor[:, :, box[1]:box[3], box[0]:box[2]] = 0
+        r_img_tensor[:, :, box[1] : box[3], box[0] : box[2]] = 0
         return r_img_tensor
 
 
@@ -113,11 +119,16 @@ class RandomCrop(object):
 
     """
 
-    def __init__(self, size: Union[int, Tuple[int, int], List[int]],
-                 padding: Union[int, Tuple[int, int], Tuple[int, int, int, int], List[int]] = None,
-                 pad_if_needed: bool = False,
-                 fill: Union[int, float] = 0,
-                 padding_mode: str = 'constant'):
+    def __init__(
+        self,
+        size: Union[int, Tuple[int, int], List[int]],
+        padding: Union[
+            int, Tuple[int, int], Tuple[int, int, int, int], List[int]
+        ] = None,
+        pad_if_needed: bool = False,
+        fill: Union[int, float] = 0,
+        padding_mode: str = "constant",
+    ):
         if isinstance(size, numbers.Number):
             self.size: Tuple[int, int] = (int(size), int(size))
         else:
@@ -168,45 +179,57 @@ class RandomCrop(object):
             assert isinstance(padding, tuple) and padding.__len__() == 4
 
             if isinstance(r_img, np.ndarray):
-                r_img = np.pad(r_img, pad_width=((0, 0), (0, 0), padding, padding),
-                               constant_values=self.fill, mode=self.padding_mode)
+                r_img = np.pad(
+                    r_img,
+                    pad_width=((0, 0), (0, 0), padding, padding),
+                    constant_values=self.fill,
+                    mode=self.padding_mode,
+                )
             else:
                 r_img = F.pad(r_img, padding)
 
         # pad the width if needed
         if self.pad_if_needed and r_img.shape[2] < self.size[0]:
-            r_img = np.pad(r_img,
-                           pad_width=(
-                               (0, 0),
-                               (0, 0),
-                               (
-                                   int((self.size[0] - r_img.shape[2]) / 2) + 1,
-                                   int((self.size[0] - r_img.shape[2]) / 2) + 1,
-                               ),
-                               (0, 0)
-                           ),
-                           constant_values=self.fill, mode=self.padding_mode)
+            r_img = np.pad(
+                r_img,
+                pad_width=(
+                    (0, 0),
+                    (0, 0),
+                    (
+                        int((self.size[0] - r_img.shape[2]) / 2) + 1,
+                        int((self.size[0] - r_img.shape[2]) / 2) + 1,
+                    ),
+                    (0, 0),
+                ),
+                constant_values=self.fill,
+                mode=self.padding_mode,
+            )
             # pad the height if needed
         if self.pad_if_needed and r_img.shape[3] < self.size[1]:
-            r_img = np.pad(r_img,
-                           pad_width=(
-                               (0, 0),
-                               (0, 0),
-                               (0, 0),
-                               (
-                                   int((self.size[1] - r_img.shape[3]) / 2) + 1,
-                                   int((self.size[1] - r_img.shape[3]) / 2) + 1
-                               )
-                           ),
-                           constant_values=self.fill, mode=self.padding_mode)
+            r_img = np.pad(
+                r_img,
+                pad_width=(
+                    (0, 0),
+                    (0, 0),
+                    (0, 0),
+                    (
+                        int((self.size[1] - r_img.shape[3]) / 2) + 1,
+                        int((self.size[1] - r_img.shape[3]) / 2) + 1,
+                    ),
+                ),
+                constant_values=self.fill,
+                mode=self.padding_mode,
+            )
 
         # todo: set padding as default when the size is larger than the current size.
         i, j, h, w = self.get_params(r_img, self.size)
 
-        return r_img[:, :, int(j):int(j + w), int(i):int(i + h)]
+        return r_img[:, :, int(j) : int(j + w), int(i) : int(i + h)]
 
     def __repr__(self) -> str:
-        return self.__class__.__name__ + '(size={0}, padding={1})'.format(self.size, self.padding)
+        return self.__class__.__name__ + "(size={0}, padding={1})".format(
+            self.size, self.padding
+        )
 
 
 class Resize(object):
@@ -238,9 +261,17 @@ class Resize(object):
         # todo speed up the resize.
         assert isinstance(img, _Tensor)
         b, c, h, w = img.shape
-        torch_img = torch.Tensor(img.copy()).float() if isinstance(img, np.ndarray) else img.clone()
-        torch_img = F.upsample(torch_img, size=(self.size[0], self.size[1]), mode=self.interpolation,
-                               align_corners=True)
+        torch_img = (
+            torch.Tensor(img.copy()).float()
+            if isinstance(img, np.ndarray)
+            else img.clone()
+        )
+        torch_img = F.upsample(
+            torch_img,
+            size=(self.size[0], self.size[1]),
+            mode=self.interpolation,
+            align_corners=True,
+        )
         if isinstance(img, np.ndarray):
             return torch_img.detach().numpy()
         return torch_img
@@ -267,8 +298,8 @@ class CenterCrop(object):
             output_size = (int(output_size), int(output_size))
         _, _, h, w = img.shape
         th, tw = output_size
-        i = int(round((h - th) / 2.))
-        j = int(round((w - tw) / 2.))
+        i = int(round((h - th) / 2.0))
+        j = int(round((w - tw) / 2.0))
         return i, j, th, tw
 
     def __call__(self, img: T) -> T:
@@ -280,14 +311,16 @@ class CenterCrop(object):
         """
         assert isinstance(img, _Tensor)
         b, c, h, w = img.shape
-        assert h >= self.size[0] and w >= self.size[1], f"Image size {h} and {w}, given {self.size}."
+        assert (
+            h >= self.size[0] and w >= self.size[1]
+        ), f"Image size {h} and {w}, given {self.size}."
         r_img = img.copy() if isinstance(img, np.ndarray) else img.clone()
         i, j, th, tw = self.get_parameter(r_img, self.size)
 
-        return r_img[:, :, i:i + th, j:j + tw]
+        return r_img[:, :, i : i + th, j : j + tw]
 
     def __repr__(self) -> str:
-        return self.__class__.__name__ + '(size={0})'.format(self.size)
+        return self.__class__.__name__ + "(size={0})".format(self.size)
 
 
 class RandomHorizontalFlip(object):
@@ -315,7 +348,7 @@ class RandomHorizontalFlip(object):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + '(p={})'.format(self.p)
+        return self.__class__.__name__ + "(p={})".format(self.p)
 
 
 class RandomVerticalFlip(object):
@@ -342,4 +375,4 @@ class RandomVerticalFlip(object):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + '(p={})'.format(self.p)
+        return self.__class__.__name__ + "(p={})".format(self.p)

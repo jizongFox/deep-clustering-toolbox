@@ -19,10 +19,10 @@ class _Method(object):
         """
         # warning control
         if len(args) > 0:
-            warnings.warn(f'Received unassigned args with args: {args}.')
+            warnings.warn(f"Received unassigned args with args: {args}.")
         if len(kwargs) > 0:
             kwarg_str = ", ".join([f"{k}:{v}" for k, v in kwargs.items()])
-            warnings.warn(f'Received unassigned kwargs: \n{kwarg_str}')
+            warnings.warn(f"Received unassigned kwargs: \n{kwarg_str}")
         # warning control ends
         self.model = model
 
@@ -37,10 +37,10 @@ class _Method(object):
         """
         # warning control
         if len(args) > 0:
-            warnings.warn(f'Received unassigned args with args: {args}.')
+            warnings.warn(f"Received unassigned args with args: {args}.")
         if len(kwargs) > 0:
             kwarg_str = ", ".join([f"{k}:{v}" for k, v in kwargs.items()])
-            warnings.warn(f'Received unassigned kwargs: \n{kwarg_str}')
+            warnings.warn(f"Received unassigned kwargs: \n{kwarg_str}")
         # warning control ends
 
     @abstractmethod
@@ -53,10 +53,10 @@ class _Method(object):
         """
         # warning control
         if len(args) > 0:
-            warnings.warn(f'Received unassigned args with args: {args}.')
+            warnings.warn(f"Received unassigned args with args: {args}.")
         if len(kwargs) > 0:
             kwarg_str = ", ".join([f"{k}:{v}" for k, v in kwargs.items()])
-            warnings.warn(f'Received unassigned kwargs: \n{kwarg_str}')
+            warnings.warn(f"Received unassigned kwargs: \n{kwarg_str}")
         # warning control ends
 
     @property

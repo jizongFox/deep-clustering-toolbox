@@ -13,7 +13,6 @@ from deepclustering.model import Model, to_Apex, ZeroGradientBackwardStep
 
 
 class Net(nn.Module):
-
     def __init__(self):
         super().__init__()
         self.fc1 = nn.Linear(784, 1000)
@@ -33,13 +32,16 @@ optimizer = optim.Adam(net.parameters(), lr=1e-5)
 model = Model()
 model.torchnet = net
 model.optimizer = optimizer
-model = to_Apex(model, opt_level='O2')
+model = to_Apex(model, opt_level="O2")
 
-model.to('cuda')
+model.to("cuda")
 criterion = nn.CrossEntropyLoss()
 
-trainloader = DataLoader(MNIST(root='./', download=True, train=True, transform=ToTensor()), batch_size=32,
-                         num_workers=4)
+trainloader = DataLoader(
+    MNIST(root="./", download=True, train=True, transform=ToTensor()),
+    batch_size=32,
+    num_workers=4,
+)
 for epoch in range(20):
     meter = ConfusionMatrix(10)
     trainloader_ = tqdm_(trainloader)

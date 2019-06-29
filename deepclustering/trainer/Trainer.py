@@ -22,14 +22,24 @@ class _Trainer(ABC):
     Abstract class for a general trainer, which has _train_loop, _eval_loop,load_state, state_dict, and save_checkpoint
     functions. All other trainers are the subclasses of this class.
     """
-    RUN_PATH = str(Path(PROJECT_PATH) / 'runs')
-    ARCHIVE_PATH = str(Path(PROJECT_PATH) / 'archives')
-    wholemeter_filename = "wholeMeter.csv"
-    checkpoint_identifier = 'last.pth'
 
-    def __init__(self, model: Model, train_loader: DataLoader, val_loader: DataLoader, max_epoch: int = 100,
-                 save_dir: str = 'base', checkpoint_path: str = None, device='cpu', config: dict = None,
-                 **kwargs) -> None:
+    RUN_PATH = str(Path(PROJECT_PATH) / "runs")
+    ARCHIVE_PATH = str(Path(PROJECT_PATH) / "archives")
+    wholemeter_filename = "wholeMeter.csv"
+    checkpoint_identifier = "last.pth"
+
+    def __init__(
+        self,
+        model: Model,
+        train_loader: DataLoader,
+        val_loader: DataLoader,
+        max_epoch: int = 100,
+        save_dir: str = "base",
+        checkpoint_path: str = None,
+        device="cpu",
+        config: dict = None,
+        **kwargs
+    ) -> None:
         super().__init__()
         _warnings((), kwargs)
         self.model = model
@@ -45,23 +55,27 @@ class _Trainer(ABC):
 
         if config:
             self.config = dcopy(config)
-            self.config.pop('Config', None)  # delete the Config attribute
-            with open(self.save_dir / 'config.yaml', 'w') as outfile:  # type: ignore
+            self.config.pop("Config", None)  # delete the Config attribute
+            with open(self.save_dir / "config.yaml", "w") as outfile:  # type: ignore
                 yaml.dump(self.config, outfile, default_flow_style=False)
 
         self.writer = SummaryWriter(str(self.save_dir))
         # todo: try to override the DrawCSV
         _columns_to_draw = self.__init_meters__()
-        self.drawer = DrawCSV2(columns_to_draw=_columns_to_draw,
-                               save_dir=str(self.save_dir),
-                               save_name='plot.png',
-                               csv_name=self.wholemeter_filename
-                               )
+        self.drawer = DrawCSV2(
+            columns_to_draw=_columns_to_draw,
+            save_dir=str(self.save_dir),
+            save_name="plot.png",
+            csv_name=self.wholemeter_filename,
+        )
         if self.checkpoint:
-            assert Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir(), Path(
-                self.checkpoint)
-            state_dict = torch.load(str(Path(self.checkpoint) / self.checkpoint_identifier),
-                                    map_location=torch.device('cpu'))
+            assert (
+                Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir()
+            ), Path(self.checkpoint)
+            state_dict = torch.load(
+                str(Path(self.checkpoint) / self.checkpoint_identifier),
+                map_location=torch.device("cpu"),
+            )
             self.load_checkpoint(state_dict)
         self.model.to(self.device)
 
@@ -87,10 +101,7 @@ class _Trainer(ABC):
 
     def start_training(self):
         for epoch in range(self._start_epoch, self.max_epoch):
-            self._train_loop(
-                train_loader=self.train_loader,
-                epoch=epoch,
-            )
+            self._train_loop(train_loader=self.train_loader, epoch=epoch)
             with torch.no_grad():
                 current_score = self._eval_loop(self.val_loader, epoch)
             self.METERINTERFACE.step()
@@ -98,7 +109,9 @@ class _Trainer(ABC):
             # save meters and checkpoints
             SUMMARY = self.METERINTERFACE.summary()
             SUMMARY.to_csv(self.save_dir / self.wholemeter_filename)
-            self.writer.add_scalars('Scalars', SUMMARY.iloc[-1].to_dict(), global_step=epoch)
+            self.writer.add_scalars(
+                "Scalars", SUMMARY.iloc[-1].to_dict(), global_step=epoch
+            )
             self.drawer.draw(SUMMARY)
             self.save_checkpoint(self.state_dict, epoch, current_score)
 
@@ -106,7 +119,9 @@ class _Trainer(ABC):
         self.model.to(device=device)
 
     @abstractmethod
-    def _train_loop(self, train_loader=None, epoch: int = 0, mode=ModelMode.TRAIN, *args, **kwargs):
+    def _train_loop(
+        self, train_loader=None, epoch: int = 0, mode=ModelMode.TRAIN, *args, **kwargs
+    ):
         # warning control
         _warnings(args, kwargs)
 
@@ -115,7 +130,14 @@ class _Trainer(ABC):
         _warnings(args, kwargs)
 
     @abstractmethod
-    def _eval_loop(self, val_loader: DataLoader = None, epoch: int = 0, mode=ModelMode.EVAL, *args, **kwargs) -> float:
+    def _eval_loop(
+        self,
+        val_loader: DataLoader = None,
+        epoch: int = 0,
+        mode=ModelMode.EVAL,
+        *args,
+        **kwargs
+    ) -> float:
         # warning control
         _warnings(args, kwargs)
 
@@ -127,9 +149,11 @@ class _Trainer(ABC):
         :return:
         """
         assert Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir(), Path(
-            self.checkpoint)
-        state_dict = torch.load(str(Path(self.checkpoint) / 'best.pth'),
-                                map_location=torch.device('cpu'))
+            self.checkpoint
+        )
+        state_dict = torch.load(
+            str(Path(self.checkpoint) / "best.pth"), map_location=torch.device("cpu")
+        )
         self.load_checkpoint(state_dict)
         self.model.to(self.device)
         # to be added
@@ -140,8 +164,10 @@ class _Trainer(ABC):
         return trainer's state dict, can be extended by subclasses
         :return:
         """
-        state_dictionary = {'model_state_dict': self.model.state_dict,
-                            'meter_state_dict': self.METERINTERFACE.state_dict}
+        state_dictionary = {
+            "model_state_dict": self.model.state_dict,
+            "meter_state_dict": self.METERINTERFACE.state_dict,
+        }
         return state_dictionary
 
     def load_checkpoint(self, state_dict):
@@ -151,14 +177,14 @@ class _Trainer(ABC):
         :param state_dict:
         :return:
         """
-        self.model.load_state_dict(state_dict['model_state_dict'])
+        self.model.load_state_dict(state_dict["model_state_dict"])
         try:
-            self.METERINTERFACE.load_state_dict(state_dict['meter_state_dict'])
+            self.METERINTERFACE.load_state_dict(state_dict["meter_state_dict"])
         except KeyError:
-            warnings.warn('Meter checkpoint does not match.')
+            warnings.warn("Meter checkpoint does not match.")
 
-        self.best_score = state_dict['best_score']
-        self._start_epoch = state_dict['epoch'] + 1
+        self.best_score = state_dict["best_score"]
+        self._start_epoch = state_dict["epoch"] + 1
 
     def save_checkpoint(self, state_dict, current_epoch, best_score):
         """
@@ -171,12 +197,12 @@ class _Trainer(ABC):
         save_best: bool = True if float(best_score) > float(self.best_score) else False
         if save_best:
             self.best_score = float(best_score)
-        state_dict['epoch'] = current_epoch
-        state_dict['best_score'] = float(self.best_score)
+        state_dict["epoch"] = current_epoch
+        state_dict["best_score"] = float(self.best_score)
 
-        torch.save(state_dict, str(self.save_dir / 'last.pth'))
+        torch.save(state_dict, str(self.save_dir / "last.pth"))
         if save_best:
-            torch.save(state_dict, str(self.save_dir / 'best.pth'))
+            torch.save(state_dict, str(self.save_dir / "best.pth"))
 
     def clean_up(self, wait_time=3):
         """
@@ -185,6 +211,7 @@ class _Trainer(ABC):
         """
         import shutil
         import time
+
         time.sleep(wait_time)  # to prevent that the call_draw function is not ended.
         Path(self.ARCHIVE_PATH).mkdir(exist_ok=True, parents=True)
         sub_dir = self.save_dir.relative_to(Path(self.RUN_PATH))

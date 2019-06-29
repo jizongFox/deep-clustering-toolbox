@@ -4,8 +4,13 @@ from unittest import TestCase
 import torch
 from tqdm import tqdm
 
-from deepclustering.dataset import default_cifar10_img_transform, Cifar10ClusteringDatasetInterface, BackgroundGenerator
+from deepclustering.dataset import (
+    default_cifar10_img_transform,
+    Cifar10ClusteringDatasetInterface,
+    BackgroundGenerator,
+)
 import time
+
 
 class TestCifar(TestCase):
     def setUp(self) -> None:
@@ -19,7 +24,8 @@ class TestCifar(TestCase):
     def test_concatdataloader(self):
         for _ in range(5):
             dataloader = self._build_concat_dataloader(
-                random.sample(self.transform_list.items(), 1)[0][1])
+                random.sample(self.transform_list.items(), 1)[0][1]
+            )
             dataiter = iter(dataloader)
             for i in range(4):
                 batch = dataiter.__next__()
@@ -30,37 +36,41 @@ class TestCifar(TestCase):
 
     def test_combinedataloader(self):
         combineLoader = self.cifarGenerator.ParallelDataLoader(
-            self.transform_list['tf1'],
-            self.transform_list['tf2'],
-            self.transform_list['tf3']
+            self.transform_list["tf1"],
+            self.transform_list["tf2"],
+            self.transform_list["tf3"],
         )
         combineIter = iter(combineLoader)
         for _ in range(5):
             batch_1, batch_2, batch_3 = combineIter.__next__()
-            assert torch.allclose(batch_1[1], batch_2[1]) and torch.allclose(batch_1[1], batch_3[1])
+            assert torch.allclose(batch_1[1], batch_2[1]) and torch.allclose(
+                batch_1[1], batch_3[1]
+            )
 
     def test_conventional_speed(self):
         combineLoader = self.cifarGenerator.ParallelDataLoader(
-            self.transform_list['tf1'],
-            self.transform_list['tf2'],
-            self.transform_list['tf2'],
-            self.transform_list['tf2'],
-            self.transform_list['tf2'],
-            self.transform_list['tf2'],
-            self.transform_list['tf3']
+            self.transform_list["tf1"],
+            self.transform_list["tf2"],
+            self.transform_list["tf2"],
+            self.transform_list["tf2"],
+            self.transform_list["tf2"],
+            self.transform_list["tf2"],
+            self.transform_list["tf3"],
         )
         for i, data in enumerate(tqdm(combineLoader)):
             time.sleep(0.1)
 
     def test_threading_speed(self):
         combineLoader = self.cifarGenerator.ParallelDataLoader(
-            self.transform_list['tf1'],
-            self.transform_list['tf2'],
-            self.transform_list['tf2'],
-            self.transform_list['tf2'],
-            self.transform_list['tf2'],
-            self.transform_list['tf2'],
-            self.transform_list['tf3']
+            self.transform_list["tf1"],
+            self.transform_list["tf2"],
+            self.transform_list["tf2"],
+            self.transform_list["tf2"],
+            self.transform_list["tf2"],
+            self.transform_list["tf2"],
+            self.transform_list["tf3"],
         )
-        for i, data in enumerate(tqdm(BackgroundGenerator(combineLoader, max_prefetch=20))):
+        for i, data in enumerate(
+            tqdm(BackgroundGenerator(combineLoader, max_prefetch=20))
+        ):
             time.sleep(0.1)

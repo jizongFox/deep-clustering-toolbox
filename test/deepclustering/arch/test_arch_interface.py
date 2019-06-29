@@ -8,11 +8,12 @@ from torch import nn
 
 
 class Test_arch_interface(TestCase):
-
     def setUp(self) -> None:
         super().setUp()
         self.find_archs = {k: v for k, v in arch.__dict__.items() if type(v) == type}
-        self.archs = {k: v for k, v in self.find_archs.items() if issubclass(v, nn.Module)}
+        self.archs = {
+            k: v for k, v in self.find_archs.items() if issubclass(v, nn.Module)
+        }
         self.image = torch.randn(1, 3, 64, 64)
 
     #
@@ -47,9 +48,9 @@ class Test_arch_interface(TestCase):
     def test_interface(self):
         net_keys = ARCH_CALLABLES.keys()
         for k in net_keys:
-            print(f'Building network {k}...')
+            print(f"Building network {k}...")
             net = get_arch(k, ARCH_PARAM_DICT[k])
-            if k == 'clusternetimsat':
+            if k == "clusternetimsat":
                 with self.assertRaises(RuntimeError):
                     pred = net(self.image)
             else:
