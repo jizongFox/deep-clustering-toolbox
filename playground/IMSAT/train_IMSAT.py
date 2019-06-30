@@ -1,5 +1,3 @@
-import warnings
-
 from torchvision.transforms import Compose, RandomCrop, ToTensor
 
 from deepclustering.manager import ConfigManger
@@ -7,8 +5,6 @@ from deepclustering.model import Model
 from deepclustering.utils import fix_all_seed
 from playground.IMSAT.IMSATTrainer import IMSATTrainer
 from playground.IMSAT.mnist_helper import MNISTClusteringDatasetInterface
-
-warnings.filterwarnings("ignore")
 
 fix_all_seed(2)
 

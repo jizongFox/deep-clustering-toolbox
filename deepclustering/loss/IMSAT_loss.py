@@ -51,21 +51,20 @@ class MultualInformaton_IMSAT(nn.Module):
 class Perturbation_Loss(nn.Module):
     """
     calculate the loss between original images and transformed images
+    Input should be the simplex
     """
 
     def __init__(self, distance_func: nn.Module = KL_div(reduce=True)):
         super().__init__()
         self.distance_func = distance_func
 
-    def forward(self, pred_logit_t: Tensor, pred_logit: Tensor):
+    def forward(self, tf2_pred: Tensor, tf1_pred: Tensor):
         """
         :param pred_logit: pred_logit for original image
         :param pred_logit_t: pred_logit for transfomred image
         :return:
         """
-        assert not simplex(pred_logit, 1)
-        assert not simplex(pred_logit_t, 1)
-        pred: Tensor = F.softmax(pred_logit, 1)
-        pred_t: Tensor = F.softmax(pred_logit_t, 1)
-        loss: Tensor = self.distance_func(pred_t, pred)
+        assert simplex(tf1_pred, 1)
+        assert simplex(tf2_pred, 1)
+        loss: Tensor = self.distance_func(tf2_pred, tf1_pred)
         return loss

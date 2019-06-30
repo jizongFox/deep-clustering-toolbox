@@ -1,5 +1,8 @@
 Arch:
   name: clusternetimsat
+  output_k_A: 50
+  output_k_B: 10
+  num_sub_heads: 5
 Optim:
   name: Adam
   lr: 0.002
@@ -18,3 +21,4 @@ Trainer:
   max_epoch: 1000
   save_dir: imsat
   device: cuda
+

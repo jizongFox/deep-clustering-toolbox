@@ -3,14 +3,25 @@ This file contains the network for IMSAT paper: https://arxiv.org/pdf/1702.08720
 The code is taken from https://github.com/MOhammedJAbi/Imsat/blob/master/Imsat.py
 """
 import math
+from typing import List
 
 import torch
 from torch import nn
 from torch.nn import functional as F
 
+from ....utils import _warnings
+
 
 class IMSATNet(nn.Module):
-    def __init__(self):
+    def __init__(
+            self,
+            output_k_A=50,
+            output_k_B=10,
+            num_sub_heads=5,
+            *args,
+            **kwargs
+    ):
+        _warnings(args, kwargs)
         super(IMSATNet, self).__init__()
         self.fc1 = nn.Linear(28 * 28, 1200)
         torch.nn.init.normal_(self.fc1.weight, std=0.1 * math.sqrt(2 / (28 * 28)))
@@ -18,15 +29,14 @@ class IMSATNet(nn.Module):
         self.fc2 = nn.Linear(1200, 1200)
         torch.nn.init.normal_(self.fc2.weight, std=0.1 * math.sqrt(2 / 1200))
         self.fc2.bias.data.fill_(0)
-        self.fc3 = nn.Linear(1200, 10)
-        torch.nn.init.normal_(self.fc3.weight, std=0.0001 * math.sqrt(2 / 1200))
-        self.fc3.bias.data.fill_(0)
         self.bn1 = nn.BatchNorm1d(1200, eps=2e-5)
         self.bn1_F = nn.BatchNorm1d(1200, eps=2e-5, affine=False)
         self.bn2 = nn.BatchNorm1d(1200, eps=2e-5)
         self.bn2_F = nn.BatchNorm1d(1200, eps=2e-5, affine=False)
+        self.head_A = IMSATHeader(output_k=output_k_A, num_sub_heads=num_sub_heads)
+        self.head_B = IMSATHeader(output_k=output_k_B, num_sub_heads=num_sub_heads)
 
-    def forward(self, x, update_batch_stats=True):
+    def forward(self, x, head='B', *args, **kwargs) -> List[torch.Tensor]:
         """
         output gives the logit value
         :param x:
@@ -35,24 +45,45 @@ class IMSATNet(nn.Module):
         """
         if x.shape.__len__() == 4:
             x = x.view(x.size(0), -1)
-        if not update_batch_stats:
-            x = self.fc1(x)
-            x = self.bn1_F(x) * self.bn1.weight + self.bn1.bias
-            x = F.relu(x)
-            x = self.fc2(x)
-            x = self.bn2_F(x) * self.bn2.weight + self.bn2.bias
-            x = F.relu(x)
-            x = self.fc3(x)
-            return x
-        else:
-            x = self.fc1(x)
-            x = self.bn1(x)
-            x = F.relu(x)
-            x = self.fc2(x)
-            x = self.bn2(x)
-            x = F.relu(x)
-            x = self.fc3(x)
-            return x
+
+        x = self.fc1(x)
+        x = self.bn1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        x = self.bn2(x)
+        x = F.relu(x)
+        if head == "B":
+            x = self.head_B(x)
+        elif head == "A":
+            x = self.head_A(x)
+        return x
 
 
-IMSATNet_Param = {}
+class IMSATHeader(nn.Module):
+
+    def __init__(self, output_k=10,
+                 num_sub_heads=5, ):
+        super().__init__()
+        self.output_k = output_k
+        self.num_sub_heads = num_sub_heads
+
+        self.heads = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(1200, self.output_k),
+                nn.Softmax(dim=1)
+            )
+            for _ in range(self.num_sub_heads)
+        ])
+
+    def forward(self, input):
+        results = []
+        for i in range(self.num_sub_heads):
+            results.append(self.heads[i](input))
+        return results
+
+
+IMSATNet_Param = {
+    'output_k_A': 50,
+    'output_k_B': 10,
+    'num_sub_heads': 5
+}
