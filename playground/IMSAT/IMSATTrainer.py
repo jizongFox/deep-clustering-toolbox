@@ -12,13 +12,14 @@ from deepclustering.model import Model
 
 matplotlib.use("tkagg")
 
-from .Trainer import _Trainer
-from .. import ModelMode
-from ..loss.IMSAT_loss import Perturbation_Loss, MultualInformaton_IMSAT
-from ..meters import AverageValueMeter, MeterInterface
-from ..utils import tqdm_, simplex
-from ..utils.VAT import VATLoss
-from ..utils.classification.assignment_mapping import hungarian_match, flat_acc
+from deepclustering.trainer.Trainer import _Trainer
+from deepclustering import ModelMode
+from deepclustering.loss.IMSAT_loss import Perturbation_Loss, MultualInformaton_IMSAT
+from deepclustering.meters import AverageValueMeter, MeterInterface
+from deepclustering.utils import tqdm_, simplex
+from deepclustering.utils.VAT import VATLoss
+from deepclustering.utils.classification.assignment_mapping import hungarian_match, flat_acc
+from deepclustering import PROJECT_PATH
 
 
 class IMSATTrainer(_Trainer):
@@ -27,15 +28,15 @@ class IMSATTrainer(_Trainer):
     """
 
     def __init__(
-        self,
-        model: Model,
-        train_loader: DataLoader,
-        val_loader: DataLoader,
-        max_epoch: int = 1,
-        save_dir: str = "./runs/IMSAT",
-        checkpoint_path: str = None,
-        device="cpu",
-        config: dict = None,
+            self,
+            model: Model,
+            train_loader: DataLoader,
+            val_loader: DataLoader,
+            max_epoch: int = 1,
+            save_dir: str = "./runs/IMSAT",
+            checkpoint_path: str = None,
+            device="cpu",
+            config: dict = None,
     ) -> None:
         super().__init__(
             model,
@@ -50,7 +51,7 @@ class IMSATTrainer(_Trainer):
         self.SAT_criterion = Perturbation_Loss()
         self.MI_criterion = MultualInformaton_IMSAT()
         nearest_dict = np.loadtxt(
-            Path(__file__).parents[1] / "dataset/classification/10th_neighbor.txt"
+            Path(PROJECT_PATH) / "playground/IMSAT/10th_neighbor.txt"
         )
         self.nearest_dict = torch.from_numpy(nearest_dict).float().to(self.device)
 
@@ -77,7 +78,7 @@ class IMSATTrainer(_Trainer):
         return report_dict
 
     def _train_loop(
-        self, train_loader, epoch, mode: ModelMode = ModelMode.TRAIN, **kwargs
+            self, train_loader=None, epoch=0, mode: ModelMode = ModelMode.TRAIN, **kwargs
     ):
         self.model.set_mode(mode)
         assert (
@@ -101,13 +102,13 @@ class IMSATTrainer(_Trainer):
             tf1_pred_logit = self.model.torchnet(tf1_images)
             tf2_pred_logit = self.model.torchnet(tf2_images)
             assert (
-                not simplex(tf1_pred_logit)
-                and tf1_pred_logit.shape == tf2_pred_logit.shape
+                    not simplex(tf1_pred_logit)
+                    and tf1_pred_logit.shape == tf2_pred_logit.shape
             )
             VAT_generator = VATLoss(eps=self.nearest_dict[index])
             vat_loss, adv_tf1_images, _ = VAT_generator(self.model.torchnet, tf1_images)
 
-            sat_loss = self.SAT_criterion(tf1_pred_logit.detach(), tf2_pred_logit)
+            sat_loss = self.SAT_criterion(tf2_pred_logit, tf1_pred_logit.detach())
 
             ml_loss, *_ = self.MI_criterion(tf1_pred_logit)
             # sat_loss = torch.Tensor([0]).cuda()
@@ -123,11 +124,11 @@ class IMSATTrainer(_Trainer):
             train_loader_.set_postfix(report_dict)
 
     def _eval_loop(
-        self,
-        val_loader: DataLoader,
-        epoch: int,
-        mode: ModelMode = ModelMode.EVAL,
-        **kwargs,
+            self,
+            val_loader: DataLoader = None,
+            epoch: int = 0,
+            mode: ModelMode = ModelMode.EVAL,
+            **kwargs,
     ) -> float:
         self.model.set_mode(mode)
         assert (

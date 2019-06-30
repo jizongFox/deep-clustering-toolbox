@@ -43,17 +43,6 @@ class ClusterDatasetInterface(object):
         :param num_workers: default 1
         """
         super().__init__()
-        assert DataClass in (
-            MNIST,
-            CIFAR10,
-            STL10,
-            Seg_ShapesDataset,
-            Cls_ShapesDataset,
-            ShapesDataset,
-        ), (
-            f""
-            f"Dataset supported only by MNIST, CIFAR10 and STL-10, given{DataClass}."
-        )
         self.DataClass = DataClass
         if not isinstance(split_partitions, list):
             split_partitions = [split_partitions]
