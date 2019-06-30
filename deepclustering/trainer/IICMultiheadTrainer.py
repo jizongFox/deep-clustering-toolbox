@@ -238,8 +238,7 @@ class IICMultiHeadTrainer(_Trainer):
             bSlicer = slice(slice_done, slice_done + images.shape[0])
             for subhead in range(self.model.arch_dict["num_sub_heads"]):
                 preds[subhead][bSlicer] = _pred[subhead].max(1)[1]
-                target[bSlicer] = gt
-
+            target[bSlicer] = gt
             slice_done += gt.shape[0]
         assert slice_done == val_loader.dataset.__len__(), "Slice not completed."
         for subhead in range(self.model.arch_dict["num_sub_heads"]):
