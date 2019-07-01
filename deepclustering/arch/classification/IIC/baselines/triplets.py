@@ -35,8 +35,9 @@ class TripletsNet6cHead(nn.Module):
             features_sp_size = 8
 
         # no softmax, done in loss
-        self.head = nn.Linear(num_features * features_sp_size * features_sp_size,
-                              config.output_k)
+        self.head = nn.Linear(
+            num_features * features_sp_size * features_sp_size, config.output_k
+        )
 
     def forward(self, x, kmeans_use_features=False):
         if kmeans_use_features:

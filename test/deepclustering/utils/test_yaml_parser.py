@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from deepclustering.utils.yaml_parser import YAMLArgParser, yaml_load
 
-CONFIG_PATH = 'config.yaml'
+CONFIG_PATH = "config.yaml"
 
 
 class TestYamlParser(TestCase):

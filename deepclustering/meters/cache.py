@@ -20,7 +20,7 @@ class Cache(Metric):
         return len(self.log)
 
     def summary(self) -> dict:
-        return {'total elements': self.log.__len__()}
+        return {"total elements": self.log.__len__()}
 
     def detailed_summary(self) -> dict:
         return self.summary()

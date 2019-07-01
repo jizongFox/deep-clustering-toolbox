@@ -1,16 +1,18 @@
 import matplotlib
 from tensorboardX import SummaryWriter as _SummaryWriter
 
-matplotlib.use('agg')
+matplotlib.use("agg")
 
 
 class SummaryWriter(_SummaryWriter):
-    def __init__(self, log_dir=None, comment='', **kwargs):
-        assert log_dir is not None, f'log_dir should be provided, given {log_dir}.'
-        log_dir = str(log_dir) + '/tensorboard'
+    def __init__(self, log_dir=None, comment="", **kwargs):
+        assert log_dir is not None, f"log_dir should be provided, given {log_dir}."
+        log_dir = str(log_dir) + "/tensorboard"
         super().__init__(log_dir, comment, **kwargs)
 
-    def add_scalar_with_tag(self, tag, tag_scalar_dict, global_step=None, walltime=None):
+    def add_scalar_with_tag(
+        self, tag, tag_scalar_dict, global_step=None, walltime=None
+    ):
         """
         Add one-level dictionary {A:1,B:2} with tag
         :param tag: main tag like `train` or `val`

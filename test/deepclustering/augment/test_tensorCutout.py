@@ -7,8 +7,13 @@ import torch
 from PIL import Image
 
 plt.ion()
-URL = 'https://cdn1.medicalnewstoday.com/content/images/articles/322/322868/golden-retriever-puppy.jpg'
-from deepclustering.augment.tensor_augment import TensorCutout, RandomCrop, Resize, CenterCrop
+URL = "https://cdn1.medicalnewstoday.com/content/images/articles/322/322868/golden-retriever-puppy.jpg"
+from deepclustering.augment.tensor_augment import (
+    TensorCutout,
+    RandomCrop,
+    Resize,
+    CenterCrop,
+)
 
 
 class TestCasewithSetUp(TestCase):
@@ -27,7 +32,6 @@ class TestCasewithSetUp(TestCase):
 
 
 class TestTensorCutout(TestCasewithSetUp):
-
     def test1(self):
         transform = TensorCutout(200, 500)
 
@@ -45,12 +49,13 @@ class TestTensorCutout(TestCasewithSetUp):
 
 
 class TensorRandomCrop(TestCasewithSetUp):
-
     def test_num(self):
         cropped_size = [(100, 2000), (64, 64), (128, 256), (256, 128)]
         for c in cropped_size:
 
-            transform = RandomCrop(size=c, padding=10, padding_mode='constant', pad_if_needed=True)
+            transform = RandomCrop(
+                size=c, padding=10, padding_mode="constant", pad_if_needed=True
+            )
             for _ in range(100):
                 cropped_cimg = transform(self.cimg_np)
                 assert cropped_cimg.shape[2:] == c
@@ -58,7 +63,9 @@ class TensorRandomCrop(TestCasewithSetUp):
     def test_torch(self):
         cropped_size = [(100, 2000), (64, 64), (128, 256), (256, 128)]
         for c in cropped_size:
-            transform = RandomCrop(size=c, padding=10, padding_mode='constant', pad_if_needed=True)
+            transform = RandomCrop(
+                size=c, padding=10, padding_mode="constant", pad_if_needed=True
+            )
             for _ in range(100):
                 cropped_cimg = transform(self.timg)
                 cropped_cimgs = transform(self.timgs)
@@ -67,14 +74,13 @@ class TensorRandomCrop(TestCasewithSetUp):
 
 
 class TestResize(TestCasewithSetUp):
-
     def setUp(self) -> None:
         super().setUp()
 
     def test_resize(self):
         resize_size = [(100, 200), (100, 500), (500, 100), (1000, 2000)]
         for c in resize_size:
-            transform = Resize(size=c, interpolation='bilinear')
+            transform = Resize(size=c, interpolation="bilinear")
             r_timg = transform(self.timgs)
             assert r_timg.shape[2:] == c
             r_npimg = transform(self.cimgs_np)

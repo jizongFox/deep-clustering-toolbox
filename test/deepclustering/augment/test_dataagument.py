@@ -3,11 +3,18 @@ from unittest import TestCase
 import numpy as np
 import requests
 from PIL import Image
-from deepclustering.augment.pil_augment import Img2Tensor, PILCutout, RandomCrop, CenterCrop, RandomApply, SobelProcess
+from deepclustering.augment.pil_augment import (
+    Img2Tensor,
+    PILCutout,
+    RandomCrop,
+    CenterCrop,
+    RandomApply,
+    SobelProcess,
+)
 
 __doc__ = """this file tests functions in augment model"""
 
-URL = 'https://cdn1.medicalnewstoday.com/content/images/articles/322/322868/golden-retriever-puppy.jpg'
+URL = "https://cdn1.medicalnewstoday.com/content/images/articles/322/322868/golden-retriever-puppy.jpg"
 
 
 class TestGrey2tensor(TestCase):
@@ -55,7 +62,9 @@ class TestPILCutout(TestCase):
         self.transform = PILCutout(min_box=10, max_box=100)
         cropped_color_img = self.transform(self.color_img)
         assert cropped_color_img.size == self.color_img.size
-        assert np.array(cropped_color_img).mean() < np.array(self.color_img).mean()  # type: ignore
+        assert (
+            np.array(cropped_color_img).mean() < np.array(self.color_img).mean()
+        )  # type: ignore
 
 
 class Test_RandomCrop(TestCase):
@@ -67,7 +76,7 @@ class Test_RandomCrop(TestCase):
 
     def test_random_Crop(self):
         crop_size = (256, 512)
-        self.transform = RandomCrop(crop_size, padding_mode='symmetric')
+        self.transform = RandomCrop(crop_size, padding_mode="symmetric")
         cropped_cimg = self.transform(self.color_img)
         cropped_gimg = self.transform(self.grey_img)
         assert tuple(x for x in crop_size[::-1]) == cropped_gimg.size
@@ -92,7 +101,7 @@ class TestCenterCrop(TestCase):
     def test_center_crop2(self):
         crop_size = 256
         with self.assertRaises(TypeError):
-            self.transform = CenterCrop('ss')
+            self.transform = CenterCrop("ss")
             self.transform(self.color_img)
             self.transform(self.grey_img)
         self.transform = CenterCrop(crop_size)
@@ -110,8 +119,12 @@ class TestRandomApply(TestCase):
         assert np.array(self.grey_img).shape.__len__() == 2
 
     def testRandomApply(self):
-        transforms = [RandomCrop((512, 1024), pad_if_needed=True), PILCutout(min_box=64, max_box=256),
-                      RandomCrop((384, 768)), CenterCrop((256, 512))]
+        transforms = [
+            RandomCrop((512, 1024), pad_if_needed=True),
+            PILCutout(min_box=64, max_box=256),
+            RandomCrop((384, 768)),
+            CenterCrop((256, 512)),
+        ]
         self.transform = RandomApply(transforms)
         random_transformed_image = self.transform(self.color_img)
         assert random_transformed_image.size[0] >= 512
@@ -127,17 +140,20 @@ class Test_Sobel(TestCase):
 
     def test_sobel_cimg(self):
         from torchvision.transforms import functional as tf
+
         transform = SobelProcess(include_origin=False)
         cimg = transform(tf.to_tensor(self.color_img).unsqueeze(0))
         gimg = transform(tf.to_tensor(self.grey_img).unsqueeze(0))
         assert cimg.shape[1] == 2
         assert gimg.shape[1] == 2
         from skimage.filters import sobel
+
         gimg_ = sobel(self.grey_img)
         print(gimg_.shape)
 
     def test_sobel_cimg_2(self):
         from torchvision.transforms import functional as tf
+
         transform = SobelProcess(include_origin=True)
         cimg = transform(tf.to_tensor(self.color_img).unsqueeze(0))
         gimg = transform(tf.to_tensor(self.grey_img).unsqueeze(0))

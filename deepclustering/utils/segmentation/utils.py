@@ -63,7 +63,7 @@ def compute_iou(box, boxes, box_area, boxes_area):
     return iou
 
 
-class ToLabel():
+class ToLabel:
     def __init__(self) -> None:
         super().__init__()
 

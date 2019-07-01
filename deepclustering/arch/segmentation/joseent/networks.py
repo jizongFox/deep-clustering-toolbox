@@ -23,7 +23,9 @@ class Dummy(nn.Module):
         super().__init__()
 
         self.down = nn.Conv2d(in_dim, 10, kernel_size=2, stride=2)
-        self.up = nn.ConvTranspose2d(10, out_dim, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.up = nn.ConvTranspose2d(
+            10, out_dim, kernel_size=3, stride=2, padding=1, output_padding=1
+        )
 
     def forward(self, input: Tensor) -> Tensor:
         return self.up(self.down(input))
@@ -40,11 +42,18 @@ class BottleNeckDownSampling(nn.Module):
         # Main branch
         self.maxpool0 = nn.MaxPool2d(2, return_indices=True)
         # Secondary branch
-        self.conv0 = nn.Conv2d(in_dim, int(in_dim / projectionFactor), kernel_size=2, stride=2)
+        self.conv0 = nn.Conv2d(
+            in_dim, int(in_dim / projectionFactor), kernel_size=2, stride=2
+        )
         self.bn0 = nn.BatchNorm2d(int(in_dim / projectionFactor))
         self.PReLU0 = nn.PReLU()
 
-        self.conv1 = nn.Conv2d(int(in_dim / projectionFactor), int(in_dim / projectionFactor), kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(
+            int(in_dim / projectionFactor),
+            int(in_dim / projectionFactor),
+            kernel_size=3,
+            padding=1,
+        )
         self.bn1 = nn.BatchNorm2d(int(in_dim / projectionFactor))
         self.PReLU1 = nn.PReLU()
 
@@ -72,8 +81,13 @@ class BottleNeckDownSampling(nn.Module):
 
         # Zero padding the feature maps from the main branch
         depth_to_pad = abs(maxpool_output.shape[1] - do.shape[1])
-        padding = torch.zeros(maxpool_output.shape[0], depth_to_pad, maxpool_output.shape[2],
-                              maxpool_output.shape[3], device=maxpool_output.device).type(self.dtype)
+        padding = torch.zeros(
+            maxpool_output.shape[0],
+            depth_to_pad,
+            maxpool_output.shape[2],
+            maxpool_output.shape[3],
+            device=maxpool_output.device,
+        ).type(self.dtype)
         maxpool_output_pad = torch.cat((maxpool_output, padding), 1)
         output = maxpool_output_pad + do
 
@@ -87,15 +101,22 @@ class BottleNeckDownSampling(nn.Module):
 
 
 class BottleNeckDownSamplingDilatedConv(nn.Module):
-    def __init__(self, in_dim, projectionFactor, out_dim, dilation, dtype=torch.float32):
+    def __init__(
+        self, in_dim, projectionFactor, out_dim, dilation, dtype=torch.float32
+    ):
         super(BottleNeckDownSamplingDilatedConv, self).__init__()
         # Main branch
 
         # Secondary branch
         self.block0 = conv_block_1(in_dim, int(in_dim / projectionFactor))
 
-        self.conv1 = nn.Conv2d(int(in_dim / projectionFactor), int(in_dim / projectionFactor), kernel_size=3,
-                               padding=dilation, dilation=dilation)
+        self.conv1 = nn.Conv2d(
+            int(in_dim / projectionFactor),
+            int(in_dim / projectionFactor),
+            kernel_size=3,
+            padding=dilation,
+            dilation=dilation,
+        )
         self.bn1 = nn.BatchNorm2d(int(in_dim / projectionFactor))
         self.PReLU1 = nn.PReLU()
 
@@ -123,15 +144,22 @@ class BottleNeckDownSamplingDilatedConv(nn.Module):
 
 
 class BottleNeckDownSamplingDilatedConvLast(nn.Module):
-    def __init__(self, in_dim, projectionFactor, out_dim, dilation, dtype=torch.float32):
+    def __init__(
+        self, in_dim, projectionFactor, out_dim, dilation, dtype=torch.float32
+    ):
         super(BottleNeckDownSamplingDilatedConvLast, self).__init__()
         # Main branch
 
         # Secondary branch
         self.block0 = conv_block_1(in_dim, int(in_dim / projectionFactor))
 
-        self.conv1 = nn.Conv2d(int(in_dim / projectionFactor), int(in_dim / projectionFactor), kernel_size=3,
-                               padding=dilation, dilation=dilation)
+        self.conv1 = nn.Conv2d(
+            int(in_dim / projectionFactor),
+            int(in_dim / projectionFactor),
+            kernel_size=3,
+            padding=dilation,
+            dilation=dilation,
+        )
         self.bn1 = nn.BatchNorm2d(int(in_dim / projectionFactor))
         self.PReLU1 = nn.PReLU()
 
@@ -160,7 +188,9 @@ class BottleNeckDownSamplingDilatedConvLast(nn.Module):
 
 
 class BottleNeckNormal(nn.Module):
-    def __init__(self, in_dim, out_dim, projectionFactor, dropoutRate, dtype=torch.float32):
+    def __init__(
+        self, in_dim, out_dim, projectionFactor, dropoutRate, dtype=torch.float32
+    ):
         super(BottleNeckNormal, self).__init__()
         self.in_dim = in_dim
         self.out_dim = out_dim
@@ -168,7 +198,9 @@ class BottleNeckNormal(nn.Module):
 
         # Secondary branch
         self.block0 = conv_block_1(in_dim, int(in_dim / projectionFactor))
-        self.block1 = conv_block_3_3(int(in_dim / projectionFactor), int(in_dim / projectionFactor))
+        self.block1 = conv_block_3_3(
+            int(in_dim / projectionFactor), int(in_dim / projectionFactor)
+        )
         self.block2 = conv_block_1(int(in_dim / projectionFactor), out_dim)
 
         self.do = nn.Dropout(p=dropoutRate)
@@ -195,7 +227,9 @@ class BottleNeckNormal(nn.Module):
 
 
 class BottleNeckNormal_Asym(nn.Module):
-    def __init__(self, in_dim, out_dim, projectionFactor, dropoutRate, dtype=torch.float32):
+    def __init__(
+        self, in_dim, out_dim, projectionFactor, dropoutRate, dtype=torch.float32
+    ):
         super(BottleNeckNormal_Asym, self).__init__()
         self.in_dim = in_dim
         self.out_dim = out_dim
@@ -203,7 +237,9 @@ class BottleNeckNormal_Asym(nn.Module):
 
         # Secondary branch
         self.block0 = conv_block_1(in_dim, int(in_dim / projectionFactor))
-        self.block1 = conv_block_Asym(int(in_dim / projectionFactor), int(in_dim / projectionFactor), 5)
+        self.block1 = conv_block_Asym(
+            int(in_dim / projectionFactor), int(in_dim / projectionFactor), 5
+        )
         self.block2 = conv_block_1(int(in_dim / projectionFactor), out_dim)
 
         self.do = nn.Dropout(p=dropoutRate)
@@ -233,11 +269,18 @@ class BottleNeckUpSampling(nn.Module):
     def __init__(self, in_dim, projectionFactor, out_dim, dtype=torch.float32):
         super(BottleNeckUpSampling, self).__init__()
         # Main branch
-        self.conv0 = nn.Conv2d(in_dim, int(in_dim / projectionFactor), kernel_size=3, padding=1)
+        self.conv0 = nn.Conv2d(
+            in_dim, int(in_dim / projectionFactor), kernel_size=3, padding=1
+        )
         self.bn0 = nn.BatchNorm2d(int(in_dim / projectionFactor))
         self.PReLU0 = nn.PReLU()
 
-        self.conv1 = nn.Conv2d(int(in_dim / projectionFactor), int(in_dim / projectionFactor), kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(
+            int(in_dim / projectionFactor),
+            int(in_dim / projectionFactor),
+            kernel_size=3,
+            padding=1,
+        )
         self.bn1 = nn.BatchNorm2d(int(in_dim / projectionFactor))
         self.PReLU1 = nn.PReLU()
 
@@ -274,69 +317,112 @@ class ENet(nn.Module):
         self.maxpool0 = nn.MaxPool2d(2, return_indices=True)
 
         # First group
-        self.bottleNeck1_0 = BottleNeckDownSampling(self.n_kernels, self.projecting_factor, self.n_kernels * 4, dtype)
-        self.bottleNeck1_1 = BottleNeckNormal(self.n_kernels * 4, self.n_kernels * 4, self.projecting_factor, 0.01)
-        self.bottleNeck1_2 = BottleNeckNormal(self.n_kernels * 4, self.n_kernels * 4, self.projecting_factor, 0.01)
-        self.bottleNeck1_3 = BottleNeckNormal(self.n_kernels * 4, self.n_kernels * 4, self.projecting_factor, 0.01)
-        self.bottleNeck1_4 = BottleNeckNormal(self.n_kernels * 4, self.n_kernels * 4, self.projecting_factor, 0.01)
+        self.bottleNeck1_0 = BottleNeckDownSampling(
+            self.n_kernels, self.projecting_factor, self.n_kernels * 4, dtype
+        )
+        self.bottleNeck1_1 = BottleNeckNormal(
+            self.n_kernels * 4, self.n_kernels * 4, self.projecting_factor, 0.01
+        )
+        self.bottleNeck1_2 = BottleNeckNormal(
+            self.n_kernels * 4, self.n_kernels * 4, self.projecting_factor, 0.01
+        )
+        self.bottleNeck1_3 = BottleNeckNormal(
+            self.n_kernels * 4, self.n_kernels * 4, self.projecting_factor, 0.01
+        )
+        self.bottleNeck1_4 = BottleNeckNormal(
+            self.n_kernels * 4, self.n_kernels * 4, self.projecting_factor, 0.01
+        )
 
         # Second group
-        self.bottleNeck2_0 = BottleNeckDownSampling(self.n_kernels * 4, self.projecting_factor, self.n_kernels * 8,
-                                                    dtype)
-        self.bottleNeck2_1 = BottleNeckNormal(self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor, 0.1)
-        self.bottleNeck2_2 = BottleNeckDownSamplingDilatedConv(self.n_kernels * 8, self.projecting_factor,
-                                                               self.n_kernels * 8, 2)
-        self.bottleNeck2_3 = BottleNeckNormal_Asym(self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor,
-                                                   0.1)
-        self.bottleNeck2_4 = BottleNeckDownSamplingDilatedConv(self.n_kernels * 8, self.projecting_factor,
-                                                               self.n_kernels * 8, 4)
-        self.bottleNeck2_5 = BottleNeckNormal(self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor, 0.1)
-        self.bottleNeck2_6 = BottleNeckDownSamplingDilatedConv(self.n_kernels * 8, self.projecting_factor,
-                                                               self.n_kernels * 8, 8)
-        self.bottleNeck2_7 = BottleNeckNormal_Asym(self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor,
-                                                   0.1)
-        self.bottleNeck2_8 = BottleNeckDownSamplingDilatedConv(self.n_kernels * 8, self.projecting_factor,
-                                                               self.n_kernels * 8, 16)
+        self.bottleNeck2_0 = BottleNeckDownSampling(
+            self.n_kernels * 4, self.projecting_factor, self.n_kernels * 8, dtype
+        )
+        self.bottleNeck2_1 = BottleNeckNormal(
+            self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor, 0.1
+        )
+        self.bottleNeck2_2 = BottleNeckDownSamplingDilatedConv(
+            self.n_kernels * 8, self.projecting_factor, self.n_kernels * 8, 2
+        )
+        self.bottleNeck2_3 = BottleNeckNormal_Asym(
+            self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor, 0.1
+        )
+        self.bottleNeck2_4 = BottleNeckDownSamplingDilatedConv(
+            self.n_kernels * 8, self.projecting_factor, self.n_kernels * 8, 4
+        )
+        self.bottleNeck2_5 = BottleNeckNormal(
+            self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor, 0.1
+        )
+        self.bottleNeck2_6 = BottleNeckDownSamplingDilatedConv(
+            self.n_kernels * 8, self.projecting_factor, self.n_kernels * 8, 8
+        )
+        self.bottleNeck2_7 = BottleNeckNormal_Asym(
+            self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor, 0.1
+        )
+        self.bottleNeck2_8 = BottleNeckDownSamplingDilatedConv(
+            self.n_kernels * 8, self.projecting_factor, self.n_kernels * 8, 16
+        )
 
         # Third group
-        self.bottleNeck3_1 = BottleNeckNormal(self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor, 0.1)
-        self.bottleNeck3_2 = BottleNeckDownSamplingDilatedConv(self.n_kernels * 8, self.projecting_factor,
-                                                               self.n_kernels * 8, 2)
-        self.bottleNeck3_3 = BottleNeckNormal_Asym(self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor,
-                                                   0.1)
-        self.bottleNeck3_4 = BottleNeckDownSamplingDilatedConv(self.n_kernels * 8, self.projecting_factor,
-                                                               self.n_kernels * 8, 4)
-        self.bottleNeck3_5 = BottleNeckNormal(self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor, 0.1)
-        self.bottleNeck3_6 = BottleNeckDownSamplingDilatedConv(self.n_kernels * 8, self.projecting_factor,
-                                                               self.n_kernels * 8, 8)
-        self.bottleNeck3_7 = BottleNeckNormal_Asym(self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor,
-                                                   0.1)
-        self.bottleNeck3_8 = BottleNeckDownSamplingDilatedConvLast(self.n_kernels * 8, self.projecting_factor,
-                                                                   self.n_kernels * 4, 16)
+        self.bottleNeck3_1 = BottleNeckNormal(
+            self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor, 0.1
+        )
+        self.bottleNeck3_2 = BottleNeckDownSamplingDilatedConv(
+            self.n_kernels * 8, self.projecting_factor, self.n_kernels * 8, 2
+        )
+        self.bottleNeck3_3 = BottleNeckNormal_Asym(
+            self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor, 0.1
+        )
+        self.bottleNeck3_4 = BottleNeckDownSamplingDilatedConv(
+            self.n_kernels * 8, self.projecting_factor, self.n_kernels * 8, 4
+        )
+        self.bottleNeck3_5 = BottleNeckNormal(
+            self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor, 0.1
+        )
+        self.bottleNeck3_6 = BottleNeckDownSamplingDilatedConv(
+            self.n_kernels * 8, self.projecting_factor, self.n_kernels * 8, 8
+        )
+        self.bottleNeck3_7 = BottleNeckNormal_Asym(
+            self.n_kernels * 8, self.n_kernels * 8, self.projecting_factor, 0.1
+        )
+        self.bottleNeck3_8 = BottleNeckDownSamplingDilatedConvLast(
+            self.n_kernels * 8, self.projecting_factor, self.n_kernels * 4, 16
+        )
 
         # ### Decoding path ####
         # Unpooling 1
         self.unpool_0 = nn.MaxUnpool2d(2)
 
-        self.bottleNeck_Up_1_0 = BottleNeckUpSampling(self.n_kernels * 8, self.projecting_factor,
-                                                      self.n_kernels * 4)
+        self.bottleNeck_Up_1_0 = BottleNeckUpSampling(
+            self.n_kernels * 8, self.projecting_factor, self.n_kernels * 4
+        )
         self.PReLU_Up_1 = nn.PReLU()
 
-        self.bottleNeck_Up_1_1 = BottleNeckNormal(self.n_kernels * 4, self.n_kernels * 4, self.projecting_factor,
-                                                  0.1)
-        self.bottleNeck_Up_1_2 = BottleNeckNormal(self.n_kernels * 4, self.n_kernels, self.projecting_factor, 0.1)
+        self.bottleNeck_Up_1_1 = BottleNeckNormal(
+            self.n_kernels * 4, self.n_kernels * 4, self.projecting_factor, 0.1
+        )
+        self.bottleNeck_Up_1_2 = BottleNeckNormal(
+            self.n_kernels * 4, self.n_kernels, self.projecting_factor, 0.1
+        )
 
         # Unpooling 2
         self.unpool_1 = nn.MaxUnpool2d(2)
-        self.bottleNeck_Up_2_1 = BottleNeckUpSampling(self.n_kernels * 2, self.projecting_factor, self.n_kernels)
-        self.bottleNeck_Up_2_2 = BottleNeckNormal(self.n_kernels, self.n_kernels, self.projecting_factor, 0.1)
+        self.bottleNeck_Up_2_1 = BottleNeckUpSampling(
+            self.n_kernels * 2, self.projecting_factor, self.n_kernels
+        )
+        self.bottleNeck_Up_2_2 = BottleNeckNormal(
+            self.n_kernels, self.n_kernels, self.projecting_factor, 0.1
+        )
         self.PReLU_Up_2 = nn.PReLU()
 
         # Unpooling Last
         self.deconv3 = upSampleConv(self.n_kernels, self.n_kernels)
 
-        self.out_025 = nn.Conv2d(self.n_kernels * 8, num_classes, kernel_size=3, stride=1, padding=1)
-        self.out_05 = nn.Conv2d(self.n_kernels, num_classes, kernel_size=3, stride=1, padding=1)
+        self.out_025 = nn.Conv2d(
+            self.n_kernels * 8, num_classes, kernel_size=3, stride=1, padding=1
+        )
+        self.out_05 = nn.Conv2d(
+            self.n_kernels, num_classes, kernel_size=3, stride=1, padding=1
+        )
         self.final = nn.Conv2d(self.n_kernels, num_classes, kernel_size=1)
 
     def forward(self, input):
@@ -377,7 +463,9 @@ class ENet(nn.Module):
         unpool_0 = self.unpool_0(bn3_8, indices_2)
 
         # bn_up_1_0 = self.bottleNeck_Up_1_0(unpool_0) # Not concatenate
-        bn_up_1_0 = self.bottleNeck_Up_1_0(torch.cat((unpool_0, bn1_4), dim=1))  # concatenate
+        bn_up_1_0 = self.bottleNeck_Up_1_0(
+            torch.cat((unpool_0, bn1_4), dim=1)
+        )  # concatenate
 
         up_block_1 = self.PReLU_Up_1(unpool_0 + bn_up_1_0)
 
@@ -388,7 +476,9 @@ class ENet(nn.Module):
         unpool_1 = self.unpool_1(bn_up_1_2, indices_1)
 
         # bn_up_2_1 = self.bottleNeck_Up_2_1(unpool_1) # Not concatenate
-        bn_up_2_1 = self.bottleNeck_Up_2_1(torch.cat((unpool_1, outputInitial), dim=1))  # concatenate
+        bn_up_2_1 = self.bottleNeck_Up_2_1(
+            torch.cat((unpool_1, outputInitial), dim=1)
+        )  # concatenate
 
         bn_up_2_2 = self.bottleNeck_Up_2_2(bn_up_2_1)
 
@@ -450,13 +540,15 @@ class CorstemNet(nn.Module):
         self.deconv_4 = conv_decod_block(self.out_dim * 2, self.out_dim, act_fn_2)
         self.up_4 = Conv_residual_conv(self.out_dim, self.out_dim, act_fn_2)
 
-        self.out = nn.Conv2d(self.out_dim, self.final_out_dim, kernel_size=3, stride=1, padding=1)
+        self.out = nn.Conv2d(
+            self.out_dim, self.final_out_dim, kernel_size=3, stride=1, padding=1
+        )
 
         # Params initialization
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.weight.data.normal_(0, math.sqrt(2.0 / n))
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -493,8 +585,4 @@ class CorstemNet(nn.Module):
         return self.out(up_4)
 
 
-CorstemNet_Param = {
-    'input_nc': 1,
-    'num_classes': 2,
-    'ngf': 32
-}
+CorstemNet_Param = {"input_nc": 1, "num_classes": 2, "ngf": 32}

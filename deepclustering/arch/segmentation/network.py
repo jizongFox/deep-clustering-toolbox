@@ -5,11 +5,10 @@ import torch.nn.functional as F
 
 from torchvision import models
 
-__all__ = ['UNet', 'Unet_Param', 'UNet_bn', 'Unetbn_Param']
+__all__ = ["UNet", "Unet_Param", "UNet_bn", "Unetbn_Param"]
 
 
 class FCN8(nn.Module):
-
     def __init__(self, num_classes):
         super(FCN8, self).__init__()
 
@@ -56,7 +55,6 @@ class FCN8(nn.Module):
 
 
 class FCN16(nn.Module):
-
     def __init__(self, num_classes):
         super(FCN16, self).__init__()
 
@@ -91,7 +89,6 @@ class FCN16(nn.Module):
 
 
 class FCN32(nn.Module):
-
     def __init__(self, num_classes):
         super(FCN32, self).__init__()
 
@@ -115,7 +112,6 @@ class FCN32(nn.Module):
 
 
 class UNetEnc(nn.Module):  # 从representation到图片
-
     def __init__(self, in_channels, features, out_channels):
         super(UNetEnc, self).__init__()
 
@@ -133,7 +129,6 @@ class UNetEnc(nn.Module):  # 从representation到图片
 
 
 class UNetEnc_bn(nn.Module):  # 从representation到图片
-
     def __init__(self, in_channels, features, out_channels):
         super(UNetEnc_bn, self).__init__()
 
@@ -153,7 +148,6 @@ class UNetEnc_bn(nn.Module):  # 从representation到图片
 
 
 class UNetDec(nn.Module):  # 从图片到representation
-
     def __init__(self, in_channels, out_channels, dropout=False):
         super(UNetDec, self).__init__()
 
@@ -164,7 +158,7 @@ class UNetDec(nn.Module):  # 从图片到representation
             nn.ReLU(inplace=True),
         ]
         if dropout:
-            layers += [nn.Dropout(.5)]
+            layers += [nn.Dropout(0.5)]
         layers += [nn.MaxPool2d(2, stride=2, ceil_mode=True)]
 
         self.down = nn.Sequential(*layers)
@@ -174,7 +168,6 @@ class UNetDec(nn.Module):  # 从图片到representation
 
 
 class UNetDec_bn(nn.Module):  # 从图片到representation
-
     def __init__(self, in_channels, out_channels, dropout=False):
         super(UNetDec_bn, self).__init__()
 
@@ -186,7 +179,7 @@ class UNetDec_bn(nn.Module):  # 从图片到representation
             nn.ReLU(inplace=True),
         ]
         if dropout:
-            layers += [nn.Dropout(.5)]
+            layers += [nn.Dropout(0.5)]
         layers += [nn.MaxPool2d(2, stride=2, ceil_mode=True)]
 
         self.down = nn.Sequential(*layers)
@@ -196,7 +189,6 @@ class UNetDec_bn(nn.Module):  # 从图片到representation
 
 
 class UNet(nn.Module):
-
     def __init__(self, in_channels=1, num_classes=2):
         super(UNet, self).__init__()
 
@@ -230,23 +222,26 @@ class UNet(nn.Module):
         dec3 = self.dec3(dec2)
         dec4 = self.dec4(dec3)
         center = self.center(dec4)
-        enc4 = self.enc4(torch.cat([
-            center, F.upsample_bilinear(dec4, center.size()[2:])], 1))
-        enc3 = self.enc3(torch.cat([
-            enc4, F.upsample_bilinear(dec3, enc4.size()[2:])], 1))
-        enc2 = self.enc2(torch.cat([
-            enc3, F.upsample_bilinear(dec2, enc3.size()[2:])], 1))
-        enc1 = self.enc1(torch.cat([
-            enc2, F.upsample_bilinear(dec1, enc2.size()[2:])], 1))
+        enc4 = self.enc4(
+            torch.cat([center, F.upsample_bilinear(dec4, center.size()[2:])], 1)
+        )
+        enc3 = self.enc3(
+            torch.cat([enc4, F.upsample_bilinear(dec3, enc4.size()[2:])], 1)
+        )
+        enc2 = self.enc2(
+            torch.cat([enc3, F.upsample_bilinear(dec2, enc3.size()[2:])], 1)
+        )
+        enc1 = self.enc1(
+            torch.cat([enc2, F.upsample_bilinear(dec1, enc2.size()[2:])], 1)
+        )
 
         return F.upsample_bilinear(self.final(enc1), x.size()[2:])
 
 
-Unet_Param = {'in_channels': 1, 'num_classes': 2}
+Unet_Param = {"in_channels": 1, "num_classes": 2}
 
 
 class UNet_bn(nn.Module):
-
     def __init__(self, in_channels=1, num_classes=2):
         super(UNet_bn, self).__init__()
 
@@ -283,23 +278,26 @@ class UNet_bn(nn.Module):
         dec3 = self.dec3(dec2)
         dec4 = self.dec4(dec3)
         center = self.center(dec4)
-        enc4 = self.enc4(torch.cat([
-            center, F.upsample_bilinear(dec4, center.size()[2:])], 1))
-        enc3 = self.enc3(torch.cat([
-            enc4, F.upsample_bilinear(dec3, enc4.size()[2:])], 1))
-        enc2 = self.enc2(torch.cat([
-            enc3, F.upsample_bilinear(dec2, enc3.size()[2:])], 1))
-        enc1 = self.enc1(torch.cat([
-            enc2, F.upsample_bilinear(dec1, enc2.size()[2:])], 1))
+        enc4 = self.enc4(
+            torch.cat([center, F.upsample_bilinear(dec4, center.size()[2:])], 1)
+        )
+        enc3 = self.enc3(
+            torch.cat([enc4, F.upsample_bilinear(dec3, enc4.size()[2:])], 1)
+        )
+        enc2 = self.enc2(
+            torch.cat([enc3, F.upsample_bilinear(dec2, enc3.size()[2:])], 1)
+        )
+        enc1 = self.enc1(
+            torch.cat([enc2, F.upsample_bilinear(dec1, enc2.size()[2:])], 1)
+        )
 
         return F.upsample_bilinear(self.final(enc1), x.size()[2:])
 
 
-Unetbn_Param = {'in_channels': 1, 'num_classes': 2}
+Unetbn_Param = {"in_channels": 1, "num_classes": 2}
 
 
 class SegNetEnc(nn.Module):
-
     def __init__(self, in_channels, out_channels, num_layers):
         super(SegNetEnc, self).__init__()
 
@@ -310,10 +308,10 @@ class SegNetEnc(nn.Module):
             nn.ReLU(inplace=True),
         ]
         layers += [
-                      nn.Conv2d(in_channels // 2, in_channels // 2, 3, padding=1),
-                      nn.BatchNorm2d(in_channels // 2),
-                      nn.ReLU(inplace=True),
-                  ] * num_layers
+            nn.Conv2d(in_channels // 2, in_channels // 2, 3, padding=1),
+            nn.BatchNorm2d(in_channels // 2),
+            nn.ReLU(inplace=True),
+        ] * num_layers
         layers += [
             nn.Conv2d(in_channels // 2, out_channels, 3, padding=1),
             nn.BatchNorm2d(out_channels),
@@ -327,7 +325,6 @@ class SegNetEnc(nn.Module):
 
 # this is not the right implementation of using index of maxpooling
 class SegNet(nn.Module):
-
     def __init__(self, num_classes):
         super(SegNet, self).__init__()
 
@@ -374,16 +371,15 @@ class SegNet(nn.Module):
 
 
 class PSPDec(nn.Module):
-
     def __init__(self, in_features, out_features, downsize, upsize=60):
         super(PSPDec, self).__init__()
 
         self.features = nn.Sequential(
             nn.AvgPool2d(downsize, stride=downsize),
             nn.Conv2d(in_features, out_features, 1, bias=False),
-            nn.BatchNorm2d(out_features, momentum=.95),
+            nn.BatchNorm2d(out_features, momentum=0.95),
             nn.ReLU(inplace=True),
-            nn.UpsamplingBilinear2d(upsize)
+            nn.UpsamplingBilinear2d(upsize),
         )
 
     def forward(self, x):
@@ -391,11 +387,10 @@ class PSPDec(nn.Module):
 
 
 class PSPNet(nn.Module):
-
     def __init__(self, num_classes):
         super(PSPNet, self).__init__()
 
-        '''
+        """
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, 64, 3, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(64, momentum=.95),
@@ -408,7 +403,7 @@ class PSPNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.MaxPool2d(3, stride=2, padding=1),
         )
-        '''
+        """
 
         resnet = models.resnet101(pretrained=True)
 
@@ -432,31 +427,30 @@ class PSPNet(nn.Module):
 
         self.final = nn.Sequential(
             nn.Conv2d(2048, 512, 3, padding=1, bias=False),
-            nn.BatchNorm2d(512, momentum=.95),
+            nn.BatchNorm2d(512, momentum=0.95),
             nn.ReLU(inplace=True),
-            nn.Dropout(.1),
+            nn.Dropout(0.1),
             nn.Conv2d(512, num_classes, 1),
         )
 
     def forward(self, x):
-        print('x', x.size())
+        print("x", x.size())
         x = self.conv1(x)
-        print('conv1', x.size())
+        print("conv1", x.size())
         x = self.layer1(x)
-        print('layer1', x.size())
+        print("layer1", x.size())
         x = self.layer2(x)
-        print('layer2', x.size())
+        print("layer2", x.size())
         x = self.layer3(x)
-        print('layer3', x.size())
+        print("layer3", x.size())
         x = self.layer4(x)
-        print('layer4', x.size())
-        x = self.final(torch.cat([
-            x,
-            self.layer5a(x),
-            self.layer5b(x),
-            self.layer5c(x),
-            self.layer5d(x),
-        ], 1))
-        print('final', x.size())
+        print("layer4", x.size())
+        x = self.final(
+            torch.cat(
+                [x, self.layer5a(x), self.layer5b(x), self.layer5c(x), self.layer5d(x)],
+                1,
+            )
+        )
+        print("final", x.size())
 
         return F.upsample_bilinear(x, x.size()[2:])

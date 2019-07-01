@@ -2,6 +2,7 @@
 In this file, we adopt the original IMSAT loss here.
 """
 import torch
+from termcolor import colored
 from torch import Tensor
 from torch import nn
 from torch.nn import functional as F
@@ -24,10 +25,11 @@ class MultualInformaton_IMSAT(nn.Module):
         :param eps: small value for calculation stability
         """
         super().__init__()
-        assert mu > 0, f'mu should be positive, given {mu}.'
+        assert mu > 0, f"mu should be positive, given {mu}."
         self.mu = mu
         self.eps = eps
         self.separate_return = separate_return
+        print(colored(f"MI initialized with mu: {self.mu}.", "green"))
 
     def forward(self, pred: Tensor):
         """
@@ -41,28 +43,30 @@ class MultualInformaton_IMSAT(nn.Module):
         marginal_entropy = Entropy(self.eps)(p_average)
         conditional_entropy = Entropy(self.eps)(probs).mean()
         if self.separate_return:
-            return self.mu * marginal_entropy - conditional_entropy, (marginal_entropy, conditional_entropy)
+            return (
+                self.mu * marginal_entropy - conditional_entropy,
+                (marginal_entropy, conditional_entropy),
+            )
         return self.mu * marginal_entropy - conditional_entropy, (0, 0)
 
 
 class Perturbation_Loss(nn.Module):
     """
     calculate the loss between original images and transformed images
+    Input should be the simplex
     """
 
     def __init__(self, distance_func: nn.Module = KL_div(reduce=True)):
         super().__init__()
         self.distance_func = distance_func
 
-    def forward(self, pred_logit_t: Tensor, pred_logit: Tensor):
+    def forward(self, tf2_pred: Tensor, tf1_pred: Tensor):
         """
         :param pred_logit: pred_logit for original image
         :param pred_logit_t: pred_logit for transfomred image
         :return:
         """
-        assert not simplex(pred_logit, 1)
-        assert not simplex(pred_logit_t, 1)
-        pred: Tensor = F.softmax(pred_logit, 1)
-        pred_t: Tensor = F.softmax(pred_logit_t, 1)
-        loss: Tensor = self.distance_func(pred_t, pred)
+        assert simplex(tf1_pred, 1)
+        assert simplex(tf2_pred, 1)
+        loss: Tensor = self.distance_func(tf2_pred, tf1_pred)
         return loss

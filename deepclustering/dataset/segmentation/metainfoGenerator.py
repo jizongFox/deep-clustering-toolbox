@@ -5,8 +5,7 @@ from torch import Tensor
 from deepclustering.utils import class2one_hot
 
 
-class classSizeCalulator():
-
+class classSizeCalulator:
     def __init__(self, C: int, foldernames: List[str]) -> None:
         super().__init__()
         self.C = C
@@ -21,8 +20,7 @@ class classSizeCalulator():
         return classSize
 
 
-class getImage_GT():
-
+class getImage_GT:
     def __init__(self, foldernames: List[str]) -> None:
         super().__init__()
         self.foldernames = foldernames

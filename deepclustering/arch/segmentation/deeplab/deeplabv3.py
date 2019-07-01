@@ -49,7 +49,14 @@ class _ASPPModule(nn.Module):
 class DeepLabV3(nn.Sequential):
     """DeepLab v3"""
 
-    def __init__(self, num_classes, n_blocks=[3, 4, 23, 3], pyramids=[6, 12, 18], grids=[1, 2, 4], output_stride=8):
+    def __init__(
+        self,
+        num_classes,
+        n_blocks=[3, 4, 23, 3],
+        pyramids=[6, 12, 18],
+        grids=[1, 2, 4],
+        output_stride=8,
+    ):
         super(DeepLabV3, self).__init__()
 
         if output_stride == 8:

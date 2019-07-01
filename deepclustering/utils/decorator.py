@@ -11,7 +11,7 @@ from typing_inspect import is_union_type
 @contextlib.contextmanager
 def _disable_tracking_bn_stats(model):
     def switch_attr(m):
-        if hasattr(m, 'track_running_stats'):
+        if hasattr(m, "track_running_stats"):
             m.track_running_stats ^= True
 
     # let the track_running_stats to be inverse
@@ -45,7 +45,7 @@ class Timer(object):
 
 def export(fn):
     mod = sys.modules[fn.__module__]
-    if hasattr(mod, '__all__'):
+    if hasattr(mod, "__all__"):
         mod.__all__.append(fn.__name__)
     else:
         mod.__all__ = [fn.__name__]
@@ -61,12 +61,10 @@ def accepts(func):
 
     def check_accepts(*args, **kwargs):
         for (a, t) in zip(args, list(types.values())):
-            assert isinstance(a, t), \
-                "arg %r does not match %s" % (a, t)
+            assert isinstance(a, t), "arg %r does not match %s" % (a, t)
 
         for k, v in kwargs.items():
-            assert isinstance(v, types[k]), \
-                f'kwargs {k}:{v} does not match {types[k]}'
+            assert isinstance(v, types[k]), f"kwargs {k}:{v} does not match {types[k]}"
 
         return func(*args, **kwargs)
 

@@ -15,7 +15,9 @@ class KappaMetrics(Metric):
         super().__init__()
         self.kappa = []
 
-    def add(self, predicts: List[Tensor], target: Tensor, considered_classes: List[int]):
+    def add(
+        self, predicts: List[Tensor], target: Tensor, considered_classes: List[int]
+    ):
         for predict in predicts:
             assert predict.shape == target.shape
         predicts = [predict.detach().data.cpu().numpy().ravel() for predict in predicts]
@@ -33,18 +35,23 @@ class KappaMetrics(Metric):
         return torch.Tensor(self.kappa).mean(0)
 
     def summary(self):
-        return {f'kappa{i}': self.value()[i].item() for i in range(len(self.value()))}
+        return {f"kappa{i}": self.value()[i].item() for i in range(len(self.value()))}
 
     def detailed_summary(self):
-        return {f'kappa{i}': self.value()[i].item() for i in range(len(self.value()))}
+        return {f"kappa{i}": self.value()[i].item() for i in range(len(self.value()))}
 
 
 class Kappa2Annotator(KappaMetrics):
-
     def __init__(self) -> None:
         super().__init__()
 
-    def add(self, predict1: Tensor, predict2: Tensor, gt=Tensor, considered_classes=[1, 2, 3]):
+    def add(
+        self,
+        predict1: Tensor,
+        predict2: Tensor,
+        gt=Tensor,
+        considered_classes=[1, 2, 3],
+    ):
         assert predict1.shape == predict2.shape
         gt = gt.data.cpu().numpy().ravel()
         predict1 = predict1.detach().data.cpu().numpy().ravel()

@@ -1,4 +1,4 @@
-__all__ = ['VNet']
+__all__ = ["VNet"]
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -19,15 +19,21 @@ def ELUCons(elu, nchan):
 class ContBatchNorm3d(nn.modules.batchnorm._BatchNorm):
     def _check_input_dim(self, input):
         if input.dim() != 5:
-            raise ValueError('expected 5D input (got {}D input)'
-                             .format(input.dim()))
+            raise ValueError("expected 5D input (got {}D input)".format(input.dim()))
         super(ContBatchNorm3d, self)._check_input_dim(input)
 
     def forward(self, input):
         self._check_input_dim(input)
         return F.batch_norm(
-            input, self.running_mean, self.running_var, self.weight, self.bias,
-            True, self.momentum, self.eps)
+            input,
+            self.running_mean,
+            self.running_var,
+            self.weight,
+            self.bias,
+            True,
+            self.momentum,
+            self.eps,
+        )
 
 
 class LUConv(nn.Module):
@@ -60,9 +66,7 @@ class InputTransition(nn.Module):
         # do we want a PRELU here as well?
         out = self.bn1(self.conv1(x))
         # split input in to 16 channels
-        x16 = torch.cat(
-            (x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x), 0
-        )
+        x16 = torch.cat((x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x), 0)
         out = self.relu1(torch.add(out, x16))
         return out
 
@@ -91,7 +95,9 @@ class DownTransition(nn.Module):
 class UpTransition(nn.Module):
     def __init__(self, inChans, outChans, nConvs, elu, dropout=False):
         super(UpTransition, self).__init__()
-        self.up_conv = nn.ConvTranspose3d(inChans, outChans // 2, kernel_size=2, stride=2)
+        self.up_conv = nn.ConvTranspose3d(
+            inChans, outChans // 2, kernel_size=2, stride=2
+        )
         self.bn1 = ContBatchNorm3d(outChans // 2)
         self.do1 = passthrough
         self.do2 = nn.Dropout3d()

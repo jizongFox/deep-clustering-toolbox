@@ -9,7 +9,7 @@ from .general import Model
 try:
     from apex import amp
 except ImportError:
-    warnings.warn('Apex not installed.', RuntimeWarning)
+    warnings.warn("Apex not installed.", RuntimeWarning)
     amp = None
 
 
@@ -21,18 +21,19 @@ def to_Apex(model: Model, opt_level=None, verbosity=0, **kwargs) -> Model:
     try:
         # try to convert to apex model.
         orig_device: torch.device = model.torchnet.parameters().__next__().device
-        model.to(torch.device('cuda'))
+        model.to(torch.device("cuda"))
         model.torchnet, model.optimizer = amp.initialize(
-            model.torchnet, model.optimizer,
+            model.torchnet,
+            model.optimizer,
             opt_level=opt_level,
             verbosity=verbosity,
-            **kwargs
+            **kwargs,
         )
         model.to(orig_device)
         model.is_apex = True
     except Exception as e:
         # nothing happens.
-        warnings.warn(f'to_apex fails with eror message: {e}', RuntimeWarning)
+        warnings.warn(f"to_apex fails with eror message: {e}", RuntimeWarning)
         assert model.is_apex is False
     finally:
         return model

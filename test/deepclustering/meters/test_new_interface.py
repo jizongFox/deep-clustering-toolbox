@@ -7,7 +7,10 @@ from deepclustering.meters import MeterInterface, AverageValueMeter, SliceDiceMe
 
 class TestMeterInterface(TestCase):
     def setUp(self) -> None:
-        self.meter_config = {"loss": AverageValueMeter(), 'tra_dice': SliceDiceMeter(C=5)}
+        self.meter_config = {
+            "loss": AverageValueMeter(),
+            "tra_dice": SliceDiceMeter(C=5),
+        }
         self.criterion = nn.CrossEntropyLoss()
 
     def _batch_generator(self, batchsize=10):
@@ -19,8 +22,8 @@ class TestMeterInterface(TestCase):
         for num_batch in range(num_batchs):
             pred, gt = self._batch_generator()
             loss = self.criterion(pred, gt)
-            Meter['loss'].add(loss.item())
-            Meter['tra_dice'].add(pred, gt)
+            Meter["loss"].add(loss.item())
+            Meter["tra_dice"].add(pred, gt)
 
     def test_Initialize_MeterInterface(self):
         Meter = MeterInterface(meter_config=self.meter_config)
@@ -36,10 +39,10 @@ class TestMeterInterface(TestCase):
             Meter1.step()
             print(Meter1.summary())
         meter1_dict = Meter1.state_dict
-        print('Meter1 saved.')
+        print("Meter1 saved.")
         Meter2 = MeterInterface(meter_config=self.meter_config)
         Meter2.load_state_dict(meter1_dict)
-        print('Meter2 loaded')
+        print("Meter2 loaded")
         print(Meter2.summary())
         for epoch in range(5):
             self._training_loop(Meter2)

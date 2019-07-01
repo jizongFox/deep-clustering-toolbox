@@ -1,5 +1,15 @@
-__all__ = ["Compose", "Img2Tensor", "PILCutout", "RandomCrop", "RandomHorizontalFlip", "Resize", "CenterCrop",
-           "ToTensor", "ToLabel", "SobelProcess"]
+__all__ = [
+    "Compose",
+    "Img2Tensor",
+    "PILCutout",
+    "RandomCrop",
+    "RandomHorizontalFlip",
+    "Resize",
+    "CenterCrop",
+    "ToTensor",
+    "ToLabel",
+    "SobelProcess",
+]
 import collections
 import numbers
 import random
@@ -15,12 +25,12 @@ from torchvision.transforms import Compose
 Iterable = collections.abc.Iterable
 
 _pil_interpolation_to_str = {
-    Image.NEAREST: 'PIL.Image.NEAREST',
-    Image.BILINEAR: 'PIL.Image.BILINEAR',
-    Image.BICUBIC: 'PIL.Image.BICUBIC',
-    Image.LANCZOS: 'PIL.Image.LANCZOS',
-    Image.HAMMING: 'PIL.Image.HAMMING',
-    Image.BOX: 'PIL.Image.BOX',
+    Image.NEAREST: "PIL.Image.NEAREST",
+    Image.BILINEAR: "PIL.Image.BILINEAR",
+    Image.BICUBIC: "PIL.Image.BICUBIC",
+    Image.LANCZOS: "PIL.Image.LANCZOS",
+    Image.HAMMING: "PIL.Image.HAMMING",
+    Image.BOX: "PIL.Image.BOX",
 }
 
 
@@ -29,7 +39,7 @@ class Identity(object):
         return m
 
     def __repr__(self):
-        return 'Identify'
+        return "Identify"
 
 
 class Img2Tensor(object):
@@ -38,8 +48,10 @@ class Img2Tensor(object):
 
     def __init__(self, include_rgb: bool = False, include_grey: bool = True) -> None:
         super().__init__()
-        assert (include_rgb or include_grey), f'Options must be \
-        True for at least one option, given {include_rgb}, {include_grey}'
+        assert (
+            include_rgb or include_grey
+        ), f"Options must be \
+        True for at least one option, given {include_rgb}, {include_grey}"
         self.include_rgb = include_rgb
         self.include_grey = include_grey
 
@@ -49,8 +61,9 @@ class Img2Tensor(object):
         :return: image tensor based on the include_gray and include_rgb
         """
 
-        assert len(np.array(rgb_img).shape) in (2, 3), f'Check data dimension:' \
-            f' {np.array(rgb_img).shape}'  # type: ignore
+        assert len(np.array(rgb_img).shape) in (2, 3), (
+            f"Check data dimension:" f" {np.array(rgb_img).shape}"
+        )  # type: ignore
         if len(np.array(rgb_img).shape) == 3:
             assert np.array(rgb_img).shape[2] == 3
         isrgb: bool = np.array(rgb_img).shape.__len__() == 3
@@ -58,7 +71,9 @@ class Img2Tensor(object):
         grey_img_tensor = tf.to_tensor(grey_img)
         assert grey_img_tensor.shape[0] == 1
         if not isrgb:
-            assert self.include_grey, f'Input grey image, you must set include_grey to be True'
+            assert (
+                self.include_grey
+            ), f"Input grey image, you must set include_grey to be True"
             return grey_img_tensor
         # else:  # you have multiple choice of returning data
         rgb_img_tensor = tf.to_tensor(rgb_img)
@@ -69,7 +84,7 @@ class Img2Tensor(object):
             return grey_img_tensor
         if not self.include_grey and self.include_rgb:
             return rgb_img_tensor
-        raise AttributeError(f'Something wrong here with img, or options.')
+        raise AttributeError(f"Something wrong here with img, or options.")
 
 
 class PILCutout(object):
@@ -92,14 +107,14 @@ class PILCutout(object):
         w, h = img.size
         # find left, upper, right, lower
         box_sz = np.random.randint(self.min_box, self.max_box + 1)
-        half_box_sz = int(np.floor(box_sz / 2.))
+        half_box_sz = int(np.floor(box_sz / 2.0))
         x_c = np.random.randint(half_box_sz, w - half_box_sz)
         y_c = np.random.randint(half_box_sz, h - half_box_sz)
         box = (
             x_c - half_box_sz,
             y_c - half_box_sz,
             x_c + half_box_sz,
-            y_c + half_box_sz
+            y_c + half_box_sz,
         )
         r_img.paste(self.pad_value, box=box)
         return r_img
@@ -141,11 +156,14 @@ class RandomCrop(object):
 
     """
 
-    def __init__(self, size: Union[int, Tuple[int, int], List[int]],
-                 padding: Union[int, Tuple[int, int, int, int], List[int]] = None,
-                 pad_if_needed: bool = False,
-                 fill: Union[int, float] = 0,
-                 padding_mode: str = 'constant'):
+    def __init__(
+        self,
+        size: Union[int, Tuple[int, int], List[int]],
+        padding: Union[int, Tuple[int, int, int, int], List[int]] = None,
+        pad_if_needed: bool = False,
+        fill: Union[int, float] = 0,
+        padding_mode: str = "constant",
+    ):
         if isinstance(size, numbers.Number):
             self.size: Tuple[int, int] = (int(size), int(size))
         else:
@@ -188,17 +206,23 @@ class RandomCrop(object):
 
         # pad the width if needed
         if self.pad_if_needed and img.size[0] < self.size[1]:
-            img = tf.pad(img, (self.size[1] - img.size[0], 0), self.fill, self.padding_mode)
+            img = tf.pad(
+                img, (self.size[1] - img.size[0], 0), self.fill, self.padding_mode
+            )
         # pad the height if needed
         if self.pad_if_needed and img.size[1] < self.size[0]:
-            img = tf.pad(img, (0, self.size[0] - img.size[1]), self.fill, self.padding_mode)
+            img = tf.pad(
+                img, (0, self.size[0] - img.size[1]), self.fill, self.padding_mode
+            )
 
         i, j, h, w = self.get_params(img, self.size)
 
         return tf.crop(img, i, j, h, w)
 
     def __repr__(self) -> str:
-        return self.__class__.__name__ + '(size={0}, padding={1})'.format(self.size, self.padding)
+        return self.__class__.__name__ + "(size={0}, padding={1})".format(
+            self.size, self.padding
+        )
 
 
 class Resize(object):
@@ -238,8 +262,9 @@ class Resize(object):
 
     def __repr__(self) -> str:
         interpolate_str = _pil_interpolation_to_str[self.interpolation]
-        return self.__class__.__name__ + '(size={0}, ' \
-                                         'interpolation={1})'.format(self.size, interpolate_str)
+        return self.__class__.__name__ + "(size={0}, " "interpolation={1})".format(
+            self.size, interpolate_str
+        )
 
 
 class CenterCrop(object):
@@ -267,7 +292,7 @@ class CenterCrop(object):
         return tf.center_crop(img, self.size)
 
     def __repr__(self) -> str:
-        return self.__class__.__name__ + '(size={0})'.format(self.size)
+        return self.__class__.__name__ + "(size={0})".format(self.size)
 
 
 class RandomRotation(object):
@@ -338,12 +363,12 @@ class RandomRotation(object):
         return tf.rotate(img, angle, self.resample, self.expand, self.center)
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + '(degrees={0}'.format(self.degrees)
-        format_string += ', resample={0}'.format(self.resample)
-        format_string += ', expand={0}'.format(self.expand)
+        format_string = self.__class__.__name__ + "(degrees={0}".format(self.degrees)
+        format_string += ", resample={0}".format(self.resample)
+        format_string += ", expand={0}".format(self.expand)
         if self.center is not None:
-            format_string += ', center={0}'.format(self.center)
-        format_string += ')'
+            format_string += ", center={0}".format(self.center)
+        format_string += ")"
         return format_string
 
 
@@ -370,7 +395,7 @@ class RandomHorizontalFlip(object):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + '(p={})'.format(self.p)
+        return self.__class__.__name__ + "(p={})".format(self.p)
 
 
 class RandomVerticalFlip(object):
@@ -396,7 +421,7 @@ class RandomVerticalFlip(object):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + '(p={})'.format(self.p)
+        return self.__class__.__name__ + "(p={})".format(self.p)
 
 
 class SobelProcess(object):
@@ -421,23 +446,32 @@ class SobelProcess(object):
 
         csobel1 = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]]).astype(np.float)
         self.cconv1 = nn.Conv2d(3, 1, kernel_size=3, stride=1, padding=1, bias=False)
-        self.cconv1.weight = nn.Parameter(torch.Tensor(csobel1).unsqueeze(0).expand((1, 3, 3, 3)) / 3.0)
+        self.cconv1.weight = nn.Parameter(
+            torch.Tensor(csobel1).unsqueeze(0).expand((1, 3, 3, 3)) / 3.0
+        )
         csobel2 = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]]).astype(np.float)
         self.cconv2 = nn.Conv2d(3, 1, kernel_size=3, stride=1, padding=1, bias=False)
-        self.cconv2.weight = nn.Parameter(torch.Tensor(csobel2).unsqueeze(0).expand((1, 3, 3, 3)) / 3.0)
+        self.cconv2.weight = nn.Parameter(
+            torch.Tensor(csobel2).unsqueeze(0).expand((1, 3, 3, 3)) / 3.0
+        )
 
     def __call__(self, img: torch.Tensor) -> torch.Tensor:
         assert isinstance(img, torch.Tensor)
         b, c, h, w = img.shape
-        assert c in (1, 3), f'Image channel should be 1 or 3, given {c}.'
+        assert c in (1, 3), f"Image channel should be 1 or 3, given {c}."
         if c == 3:
             import warnings
-            warnings.warn('only C = 1 supported for sobel filtering, given {}.'.format(c))
 
-        dx: torch.Tensor = self.conv1(img).detach() if c == 1 \
-            else self.cconv1(img).detach()
-        dy: torch.Tensor = self.conv2(img).detach() if c == 1 \
-            else self.cconv2(img).detach()
+            warnings.warn(
+                "only C = 1 supported for sobel filtering, given {}.".format(c)
+            )
+
+        dx: torch.Tensor = self.conv1(img).detach() if c == 1 else self.cconv1(
+            img
+        ).detach()
+        dy: torch.Tensor = self.conv2(img).detach() if c == 1 else self.cconv2(
+            img
+        ).detach()
         sobel_imgs: torch.Tensor = torch.cat((dx, dy), dim=1)
         if not self.include_origin:
             return sobel_imgs
@@ -464,11 +498,11 @@ class RandomTransforms(object):
         raise NotImplementedError()
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + '('
+        format_string = self.__class__.__name__ + "("
         for t in self.transforms:
-            format_string += '\n'
-            format_string += '    {0}'.format(t)
-        format_string += '\n)'
+            format_string += "\n"
+            format_string += "    {0}".format(t)
+        format_string += "\n)"
         return format_string
 
 
@@ -481,9 +515,7 @@ class RandomApply(RandomTransforms):
     """
 
     def __init__(
-            self,
-            transforms: Union[Tuple[Callable], List[Callable]],
-            p: float = 0.5
+        self, transforms: Union[Tuple[Callable], List[Callable]], p: float = 0.5
     ):
         super(RandomApply, self).__init__(transforms)
         self.p = p
@@ -496,12 +528,12 @@ class RandomApply(RandomTransforms):
         return img
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + '('
-        format_string += '\n    p={}'.format(self.p)
+        format_string = self.__class__.__name__ + "("
+        format_string += "\n    p={}".format(self.p)
         for t in self.transforms:
-            format_string += '\n'
-            format_string += '    {0}'.format(t)
-        format_string += '\n)'
+            format_string += "\n"
+            format_string += "    {0}".format(t)
+        format_string += "\n)"
         return format_string
 
 
@@ -538,7 +570,7 @@ class ToTensor(object):
         return tf.to_tensor(pic)
 
     def __repr__(self):
-        return self.__class__.__name__ + '()'
+        return self.__class__.__name__ + "()"
 
 
 class ToLabel(object):

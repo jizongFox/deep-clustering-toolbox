@@ -11,16 +11,28 @@ __all__ = ["ClusterNet5gTwoHead", "ClusterNet5gTwoHead_Param"]
 
 
 class ClusterNet5gTwoHeadHead(nn.Module):
-    def __init__(self, output_k: int, num_sub_heads: int, semisup: bool = False, batchnorm_track: bool = True):
+    def __init__(
+        self,
+        output_k: int,
+        num_sub_heads: int,
+        semisup: bool = False,
+        batchnorm_track: bool = True,
+    ):
         super(ClusterNet5gTwoHeadHead, self).__init__()
         self.batchnorm_track = batchnorm_track
         self.semisup = semisup
         if not self.semisup:
-            ''' Here the difference between semisup and not are the Softmax layer.'''
+            """ Here the difference between semisup and not are the Softmax layer."""
             self.num_sub_heads = num_sub_heads
-            self.heads = nn.ModuleList([nn.Sequential(
-                nn.Linear(512 * BasicBlock.expansion, output_k),
-                nn.Softmax(dim=1)) for _ in range(self.num_sub_heads)])
+            self.heads = nn.ModuleList(
+                [
+                    nn.Sequential(
+                        nn.Linear(512 * BasicBlock.expansion, output_k),
+                        nn.Softmax(dim=1),
+                    )
+                    for _ in range(self.num_sub_heads)
+                ]
+            )
         else:
             self.head = nn.Linear(512 * BasicBlock.expansion, output_k)
 
@@ -44,12 +56,16 @@ class ClusterNet5gTwoHead(ResNet):
     other is for normal clustering
     """
 
-    def __init__(self, num_channel: int = 3, output_k_A: int = 10,
-                 output_k_B: int = 10,
-                 semisup: bool = False,
-                 num_sub_heads: int = 5,
-                 batchnorm_track: bool = True,
-                 verbose=False):
+    def __init__(
+        self,
+        num_channel: int = 3,
+        output_k_A: int = 10,
+        output_k_B: int = 10,
+        semisup: bool = False,
+        num_sub_heads: int = 5,
+        batchnorm_track: bool = True,
+        verbose=False,
+    ):
         r"""
         :param input_size: image size of the raw image, only support 96, 64, 32
         :param num_channel: image channel
@@ -63,20 +79,34 @@ class ClusterNet5gTwoHead(ResNet):
 
         self.batchnorm_track = batchnorm_track
         # resnet structure
-        self.trunk = ClusterNet5gTrunk(num_channel=num_channel,
-                                       batchnorm_track=self.batchnorm_track)
-        self.head_A = ClusterNet5gTwoHeadHead(output_k=output_k_A, num_sub_heads=num_sub_heads, semisup=semisup,
-                                              batchnorm_track=self.batchnorm_track)
+        self.trunk = ClusterNet5gTrunk(
+            num_channel=num_channel, batchnorm_track=self.batchnorm_track
+        )
+        self.head_A = ClusterNet5gTwoHeadHead(
+            output_k=output_k_A,
+            num_sub_heads=num_sub_heads,
+            semisup=semisup,
+            batchnorm_track=self.batchnorm_track,
+        )
         self.verbose = verbose
         if self.verbose:
             print("semisup: %s" % semisup)
-        self.head_B = ClusterNet5gTwoHeadHead(output_k=output_k_B, num_sub_heads=num_sub_heads, semisup=semisup,
-                                              batchnorm_track=self.batchnorm_track)
+        self.head_B = ClusterNet5gTwoHeadHead(
+            output_k=output_k_B,
+            num_sub_heads=num_sub_heads,
+            semisup=semisup,
+            batchnorm_track=self.batchnorm_track,
+        )
         self._initialize_weights()
 
-    def forward(self, x, head="B", kmeans_use_features=False,
-                trunk_features=False,
-                penultimate_features=False):
+    def forward(
+        self,
+        x,
+        head="B",
+        kmeans_use_features=False,
+        trunk_features=False,
+        penultimate_features=False,
+    ):
         # default is "B" for use by eval IIC
         # training script switches between A and B
         x = self.trunk(x, penultimate_features=penultimate_features)
@@ -93,8 +123,9 @@ class ClusterNet5gTwoHead(ResNet):
 
 
 ClusterNet5gTwoHead_Param = {
-    'num_channel': 3,
-    'output_k_A': 70,
-    'output_k_B': 10,
-    'num_sub_heads': 5,
-    'semisup': False}
+    "num_channel": 3,
+    "output_k_A": 70,
+    "output_k_B": 10,
+    "num_sub_heads": 5,
+    "semisup": False,
+}

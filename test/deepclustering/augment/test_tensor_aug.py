@@ -8,7 +8,11 @@ from PIL import Image
 import numpy as np
 from unittest import TestCase
 import torch
-from deepclustering.augment.tensor_augment import RandomCrop, RandomHorizontalFlip, RandomVerticalFlip
+from deepclustering.augment.tensor_augment import (
+    RandomCrop,
+    RandomHorizontalFlip,
+    RandomVerticalFlip,
+)
 
 URL = f"https://cdn1.medicalnewstoday.com/content/images/articles/322/322868/golden-retriever-puppy.jpg"
 

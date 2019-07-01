@@ -24,7 +24,7 @@ def init_weights(modules):
 class vgg16_bn(torch.nn.Module):
     def __init__(self, pretrained=True, freeze=True):
         super(vgg16_bn, self).__init__()
-        model_urls['vgg16_bn'] = model_urls['vgg16_bn'].replace('https://', 'http://')
+        model_urls["vgg16_bn"] = model_urls["vgg16_bn"].replace("https://", "http://")
         vgg_pretrained_features = models.vgg16_bn(pretrained=pretrained).features
         self.slice1 = torch.nn.Sequential()
         self.slice2 = torch.nn.Sequential()
@@ -44,7 +44,7 @@ class vgg16_bn(torch.nn.Module):
         self.slice5 = torch.nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
             nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6),
-            nn.Conv2d(1024, 1024, kernel_size=1)
+            nn.Conv2d(1024, 1024, kernel_size=1),
         )
 
         if not pretrained:
@@ -70,11 +70,13 @@ class vgg16_bn(torch.nn.Module):
         h_relu5_3 = h
         h = self.slice5(h)
         h_fc7 = h
-        vgg_outputs = namedtuple("VggOutputs", ['fc7', 'relu5_3', 'relu4_3', 'relu3_2', 'relu2_2'])
+        vgg_outputs = namedtuple(
+            "VggOutputs", ["fc7", "relu5_3", "relu4_3", "relu3_2", "relu2_2"]
+        )
         out = vgg_outputs(h_fc7, h_relu5_3, h_relu4_3, h_relu3_2, h_relu2_2)
         return out
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     net = vgg16_bn(pretrained=True, freeze=True)
     breakpoint()

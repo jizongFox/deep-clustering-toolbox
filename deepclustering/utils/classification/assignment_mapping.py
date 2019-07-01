@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
+    warnings.simplefilter("ignore", DeprecationWarning)
     from sklearn.utils.linear_assignment_ import linear_assignment
 
 
@@ -15,16 +15,21 @@ def flat_acc(flat_preds, flat_targets):
     return mean.item()
 
 
-def hungarian_match(flat_preds, flat_targets, preds_k, targets_k) -> Tuple[torch.Tensor, Dict[int, int]]:
-    assert (isinstance(flat_preds, torch.Tensor) and
-            isinstance(flat_targets, torch.Tensor) and
-            flat_preds.is_cuda and flat_targets.is_cuda)
+def hungarian_match(
+    flat_preds, flat_targets, preds_k, targets_k
+) -> Tuple[torch.Tensor, Dict[int, int]]:
+    assert (
+        isinstance(flat_preds, torch.Tensor)
+        and isinstance(flat_targets, torch.Tensor)
+        and flat_preds.is_cuda
+        and flat_targets.is_cuda
+    )
 
     assert flat_preds.shape == flat_targets.shape
 
     num_samples = flat_targets.shape[0]
 
-    assert (preds_k == targets_k)  # one to one
+    assert preds_k == targets_k  # one to one
     num_k = preds_k
     num_correct = np.zeros((num_k, num_k))
 
@@ -36,7 +41,7 @@ def hungarian_match(flat_preds, flat_targets, preds_k, targets_k) -> Tuple[torch
 
     # num_correct is small
     with warnings.catch_warnings():
-        warnings.simplefilter('ignore', DeprecationWarning)
+        warnings.simplefilter("ignore", DeprecationWarning)
         match = linear_assignment(num_samples - num_correct)
 
     # return as list of tuples, out_c to gt_c
@@ -54,9 +59,12 @@ def hungarian_match(flat_preds, flat_targets, preds_k, targets_k) -> Tuple[torch
 def original_match(flat_preds, flat_targets, preds_k, targets_k):
     # map each output channel to the best matching ground truth (many to one)
 
-    assert (isinstance(flat_preds, torch.Tensor) and
-            isinstance(flat_targets, torch.Tensor) and
-            flat_preds.is_cuda and flat_targets.is_cuda)
+    assert (
+        isinstance(flat_preds, torch.Tensor)
+        and isinstance(flat_targets, torch.Tensor)
+        and flat_preds.is_cuda
+        and flat_targets.is_cuda
+    )
 
     out_to_gts = {}
     out_to_gts_scores = {}

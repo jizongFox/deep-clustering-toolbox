@@ -22,18 +22,20 @@ val_loader = DataLoader(val_set, batch_size=4, num_workers=4)
 
 def conv_block(in_channels, out_channels, kernel_size, stride, padding):
     return nn.Sequential(
-        nn.Conv2d(in_channels=in_channels,
-                  out_channels=out_channels,
-                  kernel_size=kernel_size,
-                  stride=stride,
-                  padding=padding, bias=False),
+        nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            bias=False,
+        ),
         nn.BatchNorm2d(out_channels),
-        nn.ReLU(inplace=True)
+        nn.ReLU(inplace=True),
     )
 
 
 class Net(nn.Module):
-
     def __init__(self):
         super().__init__()
         self.conv_block1 = conv_block(3, 16, 7, 2, 3)
@@ -62,17 +64,17 @@ optimiser = Adam(net.parameters(), lr=1e-4)
 model = Model()
 model.torchnet = net
 model.optimizer = optimiser
-model = to_Apex(model, opt_level='O2')
+model = to_Apex(model, opt_level="O2")
 
 criterion = nn.CrossEntropyLoss()
-model.to(torch.device('cuda'))
+model.to(torch.device("cuda"))
 
 
 def val(model, val_loader, epoch):
     model.eval()
     acc_meter = ConfusionMatrix(num_classes=3)
     val_loader_ = tqdm_(val_loader)
-    val_loader_.set_description(f'Validating {epoch}')
+    val_loader_.set_description(f"Validating {epoch}")
     for i, (img, target) in enumerate(val_loader_):
         img, target = img.cuda(), target.cuda()
         pred = model(img)

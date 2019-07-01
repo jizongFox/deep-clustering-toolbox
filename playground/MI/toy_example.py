@@ -9,7 +9,11 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from deepclustering.utils import tqdm, tqdm_
-from deepclustering.utils.classification.assignment_mapping import hungarian_match, flat_acc, original_match
+from deepclustering.utils.classification.assignment_mapping import (
+    hungarian_match,
+    flat_acc,
+    original_match,
+)
 from deepclustering.loss.IID_losses import IIDLoss, IID_loss
 from deepclustering.loss.loss import KL_div, Entropy
 from deepclustering.loss.IMSAT_loss import MultualInformaton_IMSAT
@@ -41,7 +45,6 @@ optimizer = torch.optim.Adam(net.parameters(), lr=1e-4)
 
 
 class Trainer:
-
     def __init__(self, model, optimizer) -> None:
         super().__init__()
         self.model = model
@@ -68,7 +71,7 @@ class Trainer:
             self.optimizer.step()
             if i % 10 == 0:
                 self.show(p1, p2)
-            itera.set_postfix({'loss': loss.item(), 'acc': acc, 'acc2': acc2})
+            itera.set_postfix({"loss": loss.item(), "acc": acc, "acc2": acc2})
 
     def show(self, p1, p2):
         joint_p = p1.unsqueeze(1) * p2.unsqueeze(2)
@@ -84,15 +87,13 @@ class Trainer:
 
 
 class IIC_Trainer(Trainer):
-
     def _loss_function(self, x1, p1, x2, p2):
         loss, *_ = IIDLoss()(p1, p2)
         marginal_entropy = Entropy()(p1.mean(0).unsqueeze(0)).mean()
-        return loss - 0.5*marginal_entropy
+        return loss - 0.5 * marginal_entropy
 
 
 class IMSAT(Trainer):
-
     def _loss_function(self, x1, p1, x2, p2):
         loss, *_ = MultualInformaton_IMSAT()(p1)
         sat_loss = KL_div(reduce=True)(p2, p1.detach())

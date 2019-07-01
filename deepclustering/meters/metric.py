@@ -9,7 +9,7 @@ from ..utils.decorator import export
 
 
 def change_dataframe_name(dataframe: pd.DataFrame, name: str):
-    dataframe.columns = list(map(lambda x: name + '_' + x, dataframe.columns))
+    dataframe.columns = list(map(lambda x: name + "_" + x, dataframe.columns))
     return dataframe
 
 
@@ -69,7 +69,7 @@ class AggragatedMeter(object):
         It contains an entry for every variable in self.__dict__ which
         is not the optimizer.
         """
-        return {key: value for key, value in self.__dict__.items() if key != 'meter'}
+        return {key: value for key, value in self.__dict__.items() if key != "meter"}
 
     def load_state_dict(self, state_dict) -> None:
         """Loads the schedulers state.
@@ -96,14 +96,17 @@ class MeterInterface(object):
         for k, v in meter_config.items():
             assert isinstance(k, str), k
             assert isinstance(v, Metric), v  # can also check the subclasses.
-        self.ind_meter_dict = edict(meter_config) if not isinstance(meter_config, edict) else meter_config
+        self.ind_meter_dict = (
+            edict(meter_config) if not isinstance(meter_config, edict) else meter_config
+        )
         for _, v in self.ind_meter_dict.items():
             v.reset()
         for k, v in self.ind_meter_dict.items():
             setattr(self, k, v)
 
-        self.aggregated_meter_dict: Dict[str, AggragatedMeter] = edict({k: AggragatedMeter() for k in
-                                                                        self.ind_meter_dict.keys()})
+        self.aggregated_meter_dict: Dict[str, AggragatedMeter] = edict(
+            {k: AggragatedMeter() for k in self.ind_meter_dict.keys()}
+        )
 
     def __getitem__(self, meter_name) -> Metric:
         return self.ind_meter_dict[meter_name]
@@ -119,9 +122,15 @@ class MeterInterface(object):
         summary on the list of sub summarys, merging them together.
         :return:
         """
-        list_of_summary = [change_dataframe_name(v.summary(), k) for k, v in self.aggregated_meter_dict.items()]
+        list_of_summary = [
+            change_dataframe_name(v.summary(), k)
+            for k, v in self.aggregated_meter_dict.items()
+        ]
         # merge the list
-        summary = functools.reduce(lambda x, y: pd.merge(x, y, left_index=True, right_index=True), list_of_summary)
+        summary = functools.reduce(
+            lambda x, y: pd.merge(x, y, left_index=True, right_index=True),
+            list_of_summary,
+        )
         return pd.DataFrame(summary)
 
     def step(self) -> None:
@@ -159,6 +168,8 @@ class MeterInterface(object):
         submeter_names = list(checkpoint.keys())
         for k in submeter_names:
             Meters[k] = AggragatedMeter()
-        wholeMeter = cls(names=submeter_names, listAggregatedMeter=list(Meters.values()))
+        wholeMeter = cls(
+            names=submeter_names, listAggregatedMeter=list(Meters.values())
+        )
         wholeMeter.load_state_dict(checkpoint)
         return wholeMeter, Meters

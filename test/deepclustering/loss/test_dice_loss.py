@@ -2,7 +2,12 @@ import time
 from unittest import TestCase
 
 import torch
-from deepclustering.loss.dice_loss import TwoDimDiceLoss, dice_batch, MetaDice, ThreeDimDiceLoss
+from deepclustering.loss.dice_loss import (
+    TwoDimDiceLoss,
+    dice_batch,
+    MetaDice,
+    ThreeDimDiceLoss,
+)
 from deepclustering.utils import class2one_hot, logit2one_hot
 from torch.nn import functional as F
 
@@ -27,7 +32,7 @@ class TestDiceLoss(TestCase):
         end2 = time.time()
         print(f"for method2 costed time{end2 - end1}")
         for _ in range(iteration):
-            loss3 = MetaDice(method='3d')(onehot_pred, onehot_target, )
+            loss3 = MetaDice(method="3d")(onehot_pred, onehot_target)
         end3 = time.time()
         print(f"for method3 costed time{end3 - end2}")
 
@@ -51,10 +56,14 @@ class TestDiceLoss(TestCase):
 
     def test_2ddice_loss(self):
         criterion = TwoDimDiceLoss(reduce=False, ignore_index=0)
-        loss, dices = criterion(F.softmax(self.predict_logit, 1), class2one_hot(self.target, 3))
+        loss, dices = criterion(
+            F.softmax(self.predict_logit, 1), class2one_hot(self.target, 3)
+        )
         print()
 
     def test_3ddice_loss(self):
         criterion = ThreeDimDiceLoss()
-        loss, dices = criterion(F.softmax(self.predict_logit, 1), class2one_hot(self.target, 3))
+        loss, dices = criterion(
+            F.softmax(self.predict_logit, 1), class2one_hot(self.target, 3)
+        )
         print()

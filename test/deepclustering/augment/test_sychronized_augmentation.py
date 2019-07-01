@@ -20,18 +20,16 @@ class Test_Sequential_Wrapper(TestCase):
 
     def test_synchronized_transform(self):
         config_1 = {
-            'randomcrop': {'size': (200, 200)},
-            'resize': {'size': (320, 320)},
-            'Img2Tensor': {'include_rgb': False, 'include_grey': True}
+            "randomcrop": {"size": (200, 200)},
+            "resize": {"size": (320, 320)},
+            "Img2Tensor": {"include_rgb": False, "include_grey": True},
         }
         transform1 = TransformInterface(config_1)
         transform2 = TransformInterface(config_1)
         synchronized_transform = SequentialWrapper(
-            img_transform=transform1,
-            target_transform=transform2
+            img_transform=transform1, target_transform=transform2
         )
         result_imgs = synchronized_transform(
-            [self.color_img, self.mask],
-            if_is_target=[False, False]
+            [self.color_img, self.mask], if_is_target=[False, False]
         )
         # assert np.allclose(np.array(result_imgs[0]), np.array(result_imgs[1]))

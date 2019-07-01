@@ -77,8 +77,7 @@ class ConfusionMatrix(Metric):
 
         # hack for bincounting 2 arrays together
         x = predicted[mask] + self.num_classes * target[mask]
-        bincount_2d = np.bincount(
-            x.astype(np.int32), minlength=self.num_classes ** 2)
+        bincount_2d = np.bincount(x.astype(np.int32), minlength=self.num_classes ** 2)
         assert bincount_2d.size == self.num_classes ** 2
         conf = bincount_2d.reshape((self.num_classes, self.num_classes))
 
@@ -99,11 +98,11 @@ class ConfusionMatrix(Metric):
 
     def summary(self) -> dict:
         acc = np.diag(self.conf).sum() / np.sum(self.conf)
-        return {'acc': acc}
+        return {"acc": acc}
 
     def detailed_summary(self) -> dict:
         acc = np.diag(self.conf).sum() / np.sum(self.conf)
-        return {'acc': acc}
+        return {"acc": acc}
 
     def log(self):
         return self.conf
