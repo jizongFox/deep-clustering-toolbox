@@ -91,11 +91,10 @@ class IMSATTrainer(_Trainer):
         assert (
             self.model.training
         ), f"Model should be in train() model, given {self.model.training}."
-        train_loader_: tqdm = tqdm_(train_loader)  # reinitilize the train_loader
+        train_loader_: tqdm = tqdm_(train_loader)
         train_loader_.set_description(f"Training epoch: {epoch}")
         for batch, image_labels in enumerate(train_loader_):
             images, _, (index, *_) = list(zip(*image_labels))
-            # print(f"used time for dataloading:{time.time() - time_before}")
             tf1_images = torch.cat(
                 [images[0] for _ in range(images.__len__() - 1)], dim=0
             ).to(self.device)
@@ -121,7 +120,7 @@ class IMSATTrainer(_Trainer):
             # VAT_generator = VATLoss_Multihead(eps=10)
             vat_loss, adv_tf1_images, _ = VAT_generator(self.model.torchnet, tf1_images)
 
-            batch_loss: torch.Tensor = vat_loss - 0.1 * ml_losses
+            batch_loss: torch.Tensor = vat_loss + sat_losses - 0.1 * ml_losses
 
             self.METERINTERFACE["train_sat_loss"].add(sat_losses.item())
             self.METERINTERFACE["train_mi_loss"].add(ml_losses.item())

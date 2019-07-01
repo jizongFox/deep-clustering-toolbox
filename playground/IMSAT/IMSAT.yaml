@@ -1,5 +1,7 @@
 Arch:
-  name: clusternetimsat
+  name: clusternet6cTwoHead
+  input_size: 28
+  num_channel: 1
   output_k_A: 50
   output_k_B: 10
   num_sub_heads: 1
@@ -21,4 +23,3 @@ Trainer:
   max_epoch: 1000
   save_dir: imsat
   device: cuda
-
