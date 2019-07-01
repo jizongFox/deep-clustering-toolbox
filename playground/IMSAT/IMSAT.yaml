@@ -2,7 +2,7 @@ Arch:
   name: clusternetimsat
   output_k_A: 50
   output_k_B: 10
-  num_sub_heads: 5
+  num_sub_heads: 1
 Optim:
   name: Adam
   lr: 0.002

@@ -2,6 +2,7 @@
 In this file, we adopt the original IMSAT loss here.
 """
 import torch
+from termcolor import colored
 from torch import Tensor
 from torch import nn
 from torch.nn import functional as F
@@ -28,6 +29,7 @@ class MultualInformaton_IMSAT(nn.Module):
         self.mu = mu
         self.eps = eps
         self.separate_return = separate_return
+        print(colored(f"MI initialized with mu: {self.mu}."))
 
     def forward(self, pred: Tensor):
         """

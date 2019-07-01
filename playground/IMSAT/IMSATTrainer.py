@@ -121,7 +121,7 @@ class IMSATTrainer(_Trainer):
             # VAT_generator = VATLoss_Multihead(eps=10)
             vat_loss, adv_tf1_images, _ = VAT_generator(self.model.torchnet, tf1_images)
 
-            batch_loss: torch.Tensor = vat_loss + sat_losses - 0.1 * ml_losses
+            batch_loss: torch.Tensor = vat_loss - 0.1 * ml_losses
 
             self.METERINTERFACE["train_sat_loss"].add(sat_losses.item())
             self.METERINTERFACE["train_mi_loss"].add(ml_losses.item())
