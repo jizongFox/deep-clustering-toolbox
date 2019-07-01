@@ -29,7 +29,7 @@ class MultualInformaton_IMSAT(nn.Module):
         self.mu = mu
         self.eps = eps
         self.separate_return = separate_return
-        print(colored(f"MI initialized with mu: {self.mu}."))
+        print(colored(f"MI initialized with mu: {self.mu}.", "green"))
 
     def forward(self, pred: Tensor):
         """

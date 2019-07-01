@@ -9,12 +9,12 @@ __all__ = ["ClusterNet6cTwoHead", "ClusterNet6cTwoHead_Param"]
 
 class ClusterNet6cTwoHeadHead(nn.Module):
     def __init__(
-        self,
-        input_size: int = 64,
-        output_k: int = 10,
-        num_sub_heads: int = 5,
-        semisup=False,
-        batchnorm_track: bool = True,
+            self,
+            input_size: int = 64,
+            output_k: int = 10,
+            num_sub_heads: int = 5,
+            semisup=False,
+            batchnorm_track: bool = True,
     ):
         r"""
         :param input_size: input_size of the image
@@ -28,7 +28,7 @@ class ClusterNet6cTwoHeadHead(nn.Module):
         self.cfg = ClusterNet6c.cfg
         num_features = self.cfg[-1][0]
         self.semisup = semisup
-        if input_size == 24:
+        if input_size in (24, 28):
             features_sp_size = 3
         elif input_size == 64:
             features_sp_size = 8
@@ -36,7 +36,7 @@ class ClusterNet6cTwoHeadHead(nn.Module):
             features_sp_size = 4
         else:
             raise ValueError(
-                f"`input_size` should be in {24, 32, 64}, given {input_size}."
+                f"`input_size` should be in {24, 28, 32, 64}, given {input_size}."
             )
         if not semisup:
             self.num_sub_heads = num_sub_heads
@@ -77,14 +77,14 @@ class ClusterNet6cTwoHead(VGGNet):
     cfg = [(64, 1), ("M", None), (128, 1), ("M", None), (256, 1), ("M", None), (512, 1)]
 
     def __init__(
-        self,
-        num_channel: int = 3,
-        input_size: int = 64,
-        output_k_A: int = 10,
-        output_k_B: int = 10,
-        num_sub_heads: int = 5,
-        semisup: bool = False,
-        batchnorm_track: bool = True,
+            self,
+            num_channel: int = 3,
+            input_size: int = 64,
+            output_k_A: int = 10,
+            output_k_B: int = 10,
+            num_sub_heads: int = 5,
+            semisup: bool = False,
+            batchnorm_track: bool = True,
     ):
         super(ClusterNet6cTwoHead, self).__init__()
 
@@ -113,12 +113,12 @@ class ClusterNet6cTwoHead(VGGNet):
         self._initialize_weights()
 
     def forward(
-        self,
-        x,
-        head="B",
-        kmeans_use_features=False,
-        trunk_features=False,
-        penultimate_features=False,
+            self,
+            x,
+            head="B",
+            kmeans_use_features=False,
+            trunk_features=False,
+            penultimate_features=False,
     ):
         if penultimate_features:
             print("Not needed/implemented for this arch")
