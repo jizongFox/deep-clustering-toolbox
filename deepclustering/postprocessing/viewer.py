@@ -18,8 +18,8 @@ class Crop:
         H, W, *_ = slices.shape
 
         return slices[
-            self.size // 2 : H - self.size // 2, self.size // 2 : W - self.size // 2
-        ]
+               self.size // 2: H - self.size // 2, self.size // 2: W - self.size // 2
+               ]
 
 
 class Identical:
@@ -46,14 +46,14 @@ class PLTViewer(object):
 
 class multi_slice_viewer(PLTViewer):
     def __init__(
-        self,
-        img_cmap=None,
-        mask_cmp=None,
-        crop=None,
-        is_contour=True,
-        alpha=0.5,
-        up_key="j",
-        down_key="k",
+            self,
+            img_cmap=None,
+            mask_cmp=None,
+            crop=None,
+            is_contour=True,
+            alpha=0.5,
+            up_key="j",
+            down_key="k",
     ) -> None:
         try:
             import matplotlib
@@ -82,7 +82,7 @@ class multi_slice_viewer(PLTViewer):
             B, H, W = img_volume.shape[0:3]
             _B, *_, _H, _W = gt_volumes[0].shape
             assert (
-                B == _B and H == _H and W == _W
+                    B == _B and H == _H and W == _W
             ), f"img.shape: {img_volume.shape} and gt_shape: {gt_volumes.shape}"
         fig, axs = plt.subplots(1, max(len(gt_volumes), 1))
         if not isinstance(axs, np.ndarray):
@@ -91,7 +91,7 @@ class multi_slice_viewer(PLTViewer):
         fig.canvas.mpl_connect("scroll_event", self.process_mouse_wheel)
 
         for i, (ax, volume) in enumerate(
-            zip(axs, repeat(None) if len(gt_volumes) == 0 else list(gt_volumes))
+                zip(axs, repeat(None) if len(gt_volumes) == 0 else list(gt_volumes))
         ):
             ax.gt_volume = volume
             ax.img_volume = img_volume
@@ -228,6 +228,8 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor) -> None:
         ax.set_title(f"plane = {ax.index}")
 
     img_volume = img_volume.squeeze()
+    if isinstance(img_volume, torch.Tensor):
+        img_volume = img_volume.cpu()
     assert len(img_volume.shape) in (
         3,
         4,
@@ -237,14 +239,14 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor) -> None:
         B, H, W = img_volume.shape[0:3]
         _B, *_, _H, _W = gt_volumes[0].shape
         assert (
-            B == _B and H == _H and W == _W
+                B == _B and H == _H and W == _W
         ), f"img.shape: {img_volume.shape} and gt_shape: {gt_volumes.shape}"
     fig, axs = plt.subplots(1, max(len(gt_volumes), 1))
     if not isinstance(axs, np.ndarray):
         axs = np.array([axs])
 
     for i, (ax, volume) in enumerate(
-        zip(axs, repeat(None) if len(gt_volumes) == 0 else list(gt_volumes))
+            zip(axs, repeat(None) if len(gt_volumes) == 0 else list(gt_volumes))
     ):
         ax.gt_volume = volume
         ax.img_volume = img_volume
