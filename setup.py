@@ -33,5 +33,6 @@ setup(
         "tensorboard",
         "opencv-python",
         "medpy",
+        "pyyaml"
     ],
 )

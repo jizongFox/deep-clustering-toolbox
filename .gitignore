@@ -16,5 +16,5 @@ script/runs/
 /playground/runs/
 /archives/
 **/.mypy_cache/
-
+.DS_Store
 **/*.pyc
