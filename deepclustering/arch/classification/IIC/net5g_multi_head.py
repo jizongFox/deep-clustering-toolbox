@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from .net5g import ClusterNet5gTrunk
 from .residual import BasicBlock, ResNet
-from ....utils.decorator import export
+from deepclustering.decorator.decorator import export
 
 # resnet34 and full channels
 

@@ -5,7 +5,7 @@ from torch import Tensor
 from .metric import Metric
 from ..loss.dice_loss import dice_coef, dice_batch
 from ..utils import probs2one_hot, class2one_hot
-from ..utils.decorator import threaded
+from deepclustering.decorator.decorator import threaded
 
 __all__ = ["SliceDiceMeter", "BatchDiceMeter"]
 

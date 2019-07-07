@@ -21,7 +21,7 @@ from deepclustering.dataset import BackgroundGenerator
 from deepclustering.dataset.segmentation.medicalSegmentationDataset import (
     MedicalImageSegmentationDataset,
 )
-from deepclustering.utils.decorator import Timer
+from deepclustering.decorator.decorator import TimeBlock
 
 
 class TestMedicalDataSegmentationWithBackgroundGenerator(TestCase):
@@ -60,7 +60,7 @@ class TestMedicalDataSegmentationWithBackgroundGenerator(TestCase):
     def test_conventional_dataloader(self):
         dataloader = DataLoader(self.dataset, batch_size=8, num_workers=8)
         for _ in range(30):
-            with Timer() as timer:
+            with TimeBlock() as timer:
                 for i, (data, filename) in enumerate(dataloader):
                     for i in range(100):
                         _ = np.random.randn(512)
@@ -71,7 +71,7 @@ class TestMedicalDataSegmentationWithBackgroundGenerator(TestCase):
         dataloader = BackgroundGenerator(
             DataLoader(self.dataset, batch_size=8, num_workers=8), max_prefetch=10
         )
-        with Timer() as timer:
+        with TimeBlock() as timer:
             for i, (data, filename) in enumerate(tqdm(dataloader)):
                 time1 = time.time()
                 while True:

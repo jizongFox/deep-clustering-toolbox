@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 from .vgg import VGGTrunk, VGGNet
-from ....utils.decorator import export
+from deepclustering.decorator.decorator import export
 
 # 4h but for cifar, 24x24
 

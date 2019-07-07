@@ -5,7 +5,7 @@ from typing import *
 import pandas as pd
 from easydict import EasyDict as edict
 
-from ..utils.decorator import export
+from deepclustering.decorator.decorator import export
 
 
 def change_dataframe_name(dataframe: pd.DataFrame, name: str):

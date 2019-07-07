@@ -5,9 +5,19 @@ import time
 from functools import wraps
 
 from torch.multiprocessing import Process
-from typing_inspect import is_union_type
 
 
+# in order to export functions
+def export(fn):
+    mod = sys.modules[fn.__module__]
+    if hasattr(mod, "__all__"):
+        mod.__all__.append(fn.__name__)
+    else:
+        mod.__all__ = [fn.__name__]
+    return fn
+
+
+# in order to deal with BN tracking problem.
 @contextlib.contextmanager
 def _disable_tracking_bn_stats(model):
     def switch_attr(m):
@@ -22,7 +32,8 @@ def _disable_tracking_bn_stats(model):
     model.apply(switch_attr)
 
 
-class Timer(object):
+# in order to count execution time
+class TimeBlock:
     """
     with Timer() as timer:
         ...
@@ -43,34 +54,23 @@ class Timer(object):
         return exc_type is None
 
 
-def export(fn):
-    mod = sys.modules[fn.__module__]
-    if hasattr(mod, "__all__"):
-        mod.__all__.append(fn.__name__)
-    else:
-        mod.__all__ = [fn.__name__]
-    return fn
+def timethis(func):
+    """
+    Decorator that reports the execution time.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        end = time.time()
+        print(func.__name__, end - start)
+        return result
+
+    return wrapper
 
 
-@export
-def accepts(func):
-    types = func.__annotations__
-    for k, v in types.items():
-        if is_union_type(v):
-            types[k] = tuple(v.__args__)
-
-    def check_accepts(*args, **kwargs):
-        for (a, t) in zip(args, list(types.values())):
-            assert isinstance(a, t), "arg %r does not match %s" % (a, t)
-
-        for k, v in kwargs.items():
-            assert isinstance(v, types[k]), f"kwargs {k}:{v} does not match {types[k]}"
-
-        return func(*args, **kwargs)
-
-    return check_accepts
-
-
+# in order to convert parameter types
 def convert_params(f):
     """Decorator to call the process_params method of the class."""
 
@@ -81,6 +81,7 @@ def convert_params(f):
     return wrapper
 
 
+# in order to begin a new thread for IO-bounded job.
 def threaded(f):
     """Decorator to run the process in an extra thread."""
 
@@ -91,12 +92,14 @@ def threaded(f):
     return wrapper
 
 
+# in order to call a new process to play.
 def processed(f):
     """Decorator to run the process in an extra process."""
 
     @wraps(f)
     def wrapper(*args, **kwargs):
         func = Process(target=f, args=args, kwargs=kwargs)
+        func.daemon = True
         func.start()
         return func
 

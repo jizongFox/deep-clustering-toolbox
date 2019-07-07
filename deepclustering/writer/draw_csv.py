@@ -13,7 +13,7 @@ import pandas as pd
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
 from deepclustering import PROJECT_PATH
-from ..utils.decorator import threaded
+from deepclustering.decorator.decorator import threaded
 
 
 class DrawCSV(object):

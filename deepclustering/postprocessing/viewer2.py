@@ -260,13 +260,3 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor) -> None:
     fig.canvas.mpl_connect("key_press_event", process_key)
     fig.canvas.mpl_connect("scroll_event", process_mouse_wheel)
     plt.show()
-
-
-if __name__ == "__main__":
-    img = torch.randn(10, 32, 32)
-    gt = torch.randint(0, 2, (10, 32, 32))
-    # multi_slice_viewer(is_contour=False)(img, gt)
-    from deepclustering.postprocessing._viewer_backup import multi_slice_viewer
-
-    multi_slice_viewer(img, gt)
-    plt.show()

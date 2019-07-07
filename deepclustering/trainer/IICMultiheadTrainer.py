@@ -18,7 +18,7 @@ from ..loss.IID_losses import IIDLoss
 from ..meters import AverageValueMeter, MeterInterface
 from ..model import Model, ZeroGradientBackwardStep
 from ..utils import tqdm_, simplex, tqdm, dict_filter
-from ..utils.decorator import Timer
+from deepclustering.decorator.decorator import TimeBlock
 from ..utils.classification.assignment_mapping import flat_acc, hungarian_match
 
 matplotlib.use("agg")
@@ -122,7 +122,7 @@ class IICMultiHeadTrainer(_Trainer):
                 self.METERINTERFACE.summary().iloc[-1].to_dict(),
                 global_step=epoch,
             )
-            with Timer() as timer:
+            with TimeBlock() as timer:
                 self.drawer.draw(self.METERINTERFACE.summary())
             print(timer.cost)
             self.save_checkpoint(self.state_dict, epoch, current_score)

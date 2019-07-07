@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-from ..utils.decorator import _disable_tracking_bn_stats
+from deepclustering.decorator.decorator import _disable_tracking_bn_stats
 
 
 class FSGMGenerator(object):
