@@ -15,15 +15,16 @@ from ....utils import _warnings
 class IMSATNet(nn.Module):
     def __init__(
             self,
-            output_k_A=50,
-            output_k_B=10,
-            num_sub_heads=5,
+            in_channel: int = 784,
+            output_k_A: int = 50,
+            output_k_B: int = 10,
+            num_sub_heads: int = 5,
             *args,
             **kwargs
     ):
         _warnings(args, kwargs)
         super(IMSATNet, self).__init__()
-        self.fc1 = nn.Linear(28 * 28, 1200)
+        self.fc1 = nn.Linear(in_channel, 1200)
         torch.nn.init.normal_(self.fc1.weight, std=0.1 * math.sqrt(2 / (28 * 28)))
         self.fc1.bias.data.fill_(0)
         self.fc2 = nn.Linear(1200, 1200)
@@ -40,6 +41,7 @@ class IMSATNet(nn.Module):
         """
         output gives the logit value
         :param x:
+        :param head: the head to perform inference
         :param update_batch_stats:
         :return:
         """
