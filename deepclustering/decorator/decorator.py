@@ -3,6 +3,8 @@ import contextlib
 import sys
 import time
 from functools import wraps
+from threading import Thread
+import threading
 
 from torch.multiprocessing import Process
 
@@ -82,7 +84,7 @@ def convert_params(f):
 
 
 # in order to begin a new thread for IO-bounded job.
-def threaded(f):
+def threaded_(f):
     """Decorator to run the process in an extra thread."""
 
     @wraps(f)
@@ -90,6 +92,38 @@ def threaded(f):
         return _thread.start_new(f, args, kwargs)
 
     return wrapper
+
+
+def threaded(name="meter", daemon=True):
+    """Decorator to run the process in an extra thread."""
+
+    def decorator_thread(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            new_thread = Thread(target=f, args=args, kwargs=kwargs, name=name)
+            print("new_thread_name:", new_thread.getName())
+            new_thread.daemon = daemon
+            new_thread.start()
+            return new_thread
+
+        return wrapper
+
+    return decorator_thread
+
+
+class WaitThreadsEnd:
+
+    def __init__(self, thread_name: str = "meter") -> None:
+        super().__init__()
+        self.thread_name = thread_name
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for t in threading.enumerate():
+            if t.name == self.thread_name:
+                t.join()
 
 
 # in order to call a new process to play.
