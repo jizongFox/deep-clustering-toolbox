@@ -59,8 +59,10 @@ class Model(ABC):
             self.arch_name = None
             self.arch_params = None
             torchnet = PlaceholderNet()
+
         # this put the tensor to cuda directly, including the forward image implicitly.
         # torchnet = nn.DataParallel(torchnet)
+
         if self.optim_dict is not None:
             self.optim_name = self.optim_dict["name"]
             self.optim_params = {

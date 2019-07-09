@@ -10,11 +10,11 @@ class MetaDice(nn.Module):
     """
 
     def __init__(
-        self,
-        method: str,
-        weight: Tensor = None,
-        reduce: bool = False,
-        eps: float = 1e-8,
+            self,
+            method: str,
+            weight: Tensor = None,
+            reduce: bool = False,
+            eps: float = 1e-8,
     ) -> None:
         """
         :param method must be in (2d, 3d)
@@ -83,7 +83,7 @@ class TwoDimDiceLoss(MetaDice):
     """
 
     def __init__(
-        self, weight: Tensor = None, ignore_index: int = None, reduce: bool = False
+            self, weight: Tensor = None, ignore_index: int = None, reduce: bool = False
     ) -> None:
         super(TwoDimDiceLoss, self).__init__("2d", weight, reduce, 1e-8)
         self.ignore_index = ignore_index
@@ -128,7 +128,7 @@ class GeneralizedDiceLoss(nn.Module):
     """
 
     def __init__(
-        self, epsilon=1e-5, weight=None, ignore_index=None, sigmoid_normalization=True
+            self, epsilon=1e-5, weight=None, ignore_index=None, sigmoid_normalization=True
     ):
         super(GeneralizedDiceLoss, self).__init__()
         self.epsilon = epsilon
@@ -146,7 +146,7 @@ class GeneralizedDiceLoss(nn.Module):
         input = self.normalization(input)
 
         assert (
-            input.size() == target.size()
+                input.size() == target.size()
         ), "'input' and 'target' must have the same shape"
         # so the target here is the onehot
 

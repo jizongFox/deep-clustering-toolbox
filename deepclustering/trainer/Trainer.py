@@ -1,9 +1,8 @@
 import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
-from math import isnan
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Dict, Any
 
 import torch
 import yaml
@@ -29,16 +28,16 @@ class _Trainer(ABC):
     checkpoint_identifier = "last.pth"
 
     def __init__(
-        self,
-        model: Model,
-        train_loader: DataLoader,
-        val_loader: DataLoader,
-        max_epoch: int = 100,
-        save_dir: str = "base",
-        checkpoint_path: str = None,
-        device="cpu",
-        config: dict = None,
-        **kwargs
+            self,
+            model: Model,
+            train_loader: DataLoader,
+            val_loader: DataLoader,
+            max_epoch: int = 100,
+            save_dir: str = "base",
+            checkpoint_path: str = None,
+            device="cpu",
+            config: dict = None,
+            **kwargs
     ) -> None:
         super().__init__()
         _warnings((), kwargs)
@@ -69,9 +68,7 @@ class _Trainer(ABC):
             csv_name=self.wholemeter_filename,
         )
         if self.checkpoint:
-            assert (
-                Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir()
-            ), Path(self.checkpoint)
+            assert (Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir()), Path(self.checkpoint)
             state_dict = torch.load(
                 str(Path(self.checkpoint) / self.checkpoint_identifier),
                 map_location=torch.device("cpu"),
@@ -89,14 +86,14 @@ class _Trainer(ABC):
     @abstractmethod
     def _training_report_dict(self):
         report_dict = flatten_dict({})
-        report_dict = dict_filter(report_dict, lambda k, v: 1 - isnan(v))
+        report_dict = dict_filter(report_dict)
         return report_dict
 
     @property
     @abstractmethod
     def _eval_report_dict(self):
         report_dict = flatten_dict({})
-        report_dict = dict_filter(report_dict, lambda k, v: 1 - isnan(v))
+        report_dict = dict_filter(report_dict)
         return report_dict
 
     def start_training(self):
@@ -109,9 +106,6 @@ class _Trainer(ABC):
             # save meters and checkpoints
             SUMMARY = self.METERINTERFACE.summary()
             SUMMARY.to_csv(self.save_dir / self.wholemeter_filename)
-            self.writer.add_scalars(
-                "Scalars", SUMMARY.iloc[-1].to_dict(), global_step=epoch
-            )
             self.drawer.draw(SUMMARY)
             self.save_checkpoint(self.state_dict, epoch, current_score)
 
@@ -120,7 +114,7 @@ class _Trainer(ABC):
 
     @abstractmethod
     def _train_loop(
-        self, train_loader=None, epoch: int = 0, mode=ModelMode.TRAIN, *args, **kwargs
+            self, train_loader=None, epoch: int = 0, mode=ModelMode.TRAIN, *args, **kwargs
     ):
         # warning control
         _warnings(args, kwargs)
@@ -131,12 +125,12 @@ class _Trainer(ABC):
 
     @abstractmethod
     def _eval_loop(
-        self,
-        val_loader: DataLoader = None,
-        epoch: int = 0,
-        mode=ModelMode.EVAL,
-        *args,
-        **kwargs
+            self,
+            val_loader: DataLoader = None,
+            epoch: int = 0,
+            mode=ModelMode.EVAL,
+            *args,
+            **kwargs
     ) -> float:
         # warning control
         _warnings(args, kwargs)
@@ -148,9 +142,7 @@ class _Trainer(ABC):
         :param kwargs:
         :return:
         """
-        assert Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir(), Path(
-            self.checkpoint
-        )
+        assert Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir(), Path(self.checkpoint)
         state_dict = torch.load(
             str(Path(self.checkpoint) / "best.pth"), map_location=torch.device("cpu")
         )
@@ -159,7 +151,7 @@ class _Trainer(ABC):
         # to be added
 
     @property
-    def state_dict(self):
+    def state_dict(self) -> Dict[str, Any]:
         """
         return trainer's state dict, can be extended by subclasses
         :return:
@@ -170,7 +162,7 @@ class _Trainer(ABC):
         }
         return state_dictionary
 
-    def load_checkpoint(self, state_dict):
+    def load_checkpoint(self, state_dict) -> None:
         """
         load checkpoint to models, meters, best score and _start_epoch
         Can be extended by add more state_dict

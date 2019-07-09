@@ -1,40 +1,13 @@
+__all__ = ["SliceDiceMeter", "BatchDiceMeter"]
+
 import torch
 import torch.nn.functional as F
 from torch import Tensor
 
+from deepclustering.decorator.decorator import threaded
 from .metric import Metric
 from ..loss.dice_loss import dice_coef, dice_batch
 from ..utils import probs2one_hot, class2one_hot
-from deepclustering.decorator.decorator import threaded
-
-__all__ = ["SliceDiceMeter", "BatchDiceMeter"]
-
-'''
-# todo: improve it very slow.
-def meta_dice(sum_str: str, pred: Tensor, label: Tensor, smooth: float = 1e-8) -> Tensor:
-    """
-    This dice can only measure the dice for one_hot predictions, not for dice loss.
-    :param sum_str:
-    :param label:
-    :param pred:
-    :param smooth:
-    :return:
-    """
-    assert label.shape == pred.shape
-    # assert one_hot(label)
-    # assert one_hot(pred)
-
-    inter_size: Tensor = einsum(sum_str, [intersection(label, pred)]).type(torch.float32)
-    sum_sizes: Tensor = (einsum(sum_str, [label]) + einsum(sum_str, [pred])).type(torch.float32)
-
-    dices: Tensor = (2 * inter_size) / sum_sizes.clamp(min=smooth)
-
-    return dices
-    
-    
-# dice_coef = partial(meta_dice, "bcwh->bc")
-# dice_batch = partial(meta_dice, "bcwh->c")  # used for 3d dice
-'''
 
 
 def toOneHot(pred_logit, mask):
@@ -74,9 +47,7 @@ class _DiceMeter(Metric):
         assert pred_logit.shape.__len__() == 4, f"pred_logit shape:{pred_logit.shape}"
         assert gt.shape.__len__() in (3, 4)
         if gt.shape.__len__() == 4:
-            assert (
-                gt.shape[1] == 1
-            ), f"gt shape must be 1 in the 2nd axis, given {gt.shape[1]}."
+            assert (gt.shape[1] == 1), f"gt shape must be 1 in the 2nd axis, given {gt.shape[1]}."
         dice_value = self.diceCall(*toOneHot(pred_logit, gt))
         if dice_value.shape.__len__() == 1:
             dice_value = dice_value.unsqueeze(0)
@@ -101,7 +72,7 @@ class _DiceMeter(Metric):
         try:
             log = torch.cat(self.diceLog)
         except:
-            log = torch.Tensor([0 for _ in range(self.C)])
+            log = torch.Tensor(tuple([0 for _ in range(self.C)]))
         if len(log.shape) == 1:
             log = log.unsqueeze(0)
         assert len(log.shape) == 2
