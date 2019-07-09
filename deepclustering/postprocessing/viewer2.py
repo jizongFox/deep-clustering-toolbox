@@ -179,7 +179,7 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor) -> None:
     try:
         import matplotlib
 
-        matplotlib.use("qt5agg")
+        matplotlib.use("tkagg")
     except Exception as e:
         print(e)
 
