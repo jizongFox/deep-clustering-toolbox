@@ -1,10 +1,10 @@
 import _thread
 import contextlib
 import sys
+import threading
 import time
 from functools import wraps
 from threading import Thread
-import threading
 
 from torch.multiprocessing import Process
 
@@ -94,21 +94,23 @@ def threaded_(f):
     return wrapper
 
 
-def threaded(name="meter", daemon=True):
+def threaded(_func=None, *, name="meter", daemon=True):
     """Decorator to run the process in an extra thread."""
 
     def decorator_thread(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
             new_thread = Thread(target=f, args=args, kwargs=kwargs, name=name)
-            print("new_thread_name:", new_thread.getName())
             new_thread.daemon = daemon
             new_thread.start()
             return new_thread
 
         return wrapper
 
-    return decorator_thread
+    if _func is None:
+        return decorator_thread
+    else:
+        return decorator_thread(_func)
 
 
 class WaitThreadsEnd:
