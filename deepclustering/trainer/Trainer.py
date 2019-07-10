@@ -149,6 +149,7 @@ class _Trainer(ABC):
         self.load_checkpoint(state_dict)
         self.model.to(self.device)
         # to be added
+        # probably call self._eval() method.
 
     @property
     def state_dict(self) -> Dict[str, Any]:
