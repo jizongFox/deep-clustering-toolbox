@@ -111,18 +111,18 @@ class IMSATTrainer(_Trainer):
             for subhead_num, (tf1_pred, tf2_pred) in enumerate(zip(tf1_pred_logit, tf2_pred_logit)):
                 sat_loss = self.SAT_criterion(tf2_pred, tf1_pred.detach())
                 ml_loss, *_ = self.MI_criterion(tf1_pred)
-                sat_losses.append(sat_loss)
+                # sat_losses.append(sat_loss)
                 ml_losses.append(ml_loss)
             ml_losses = sum(ml_losses) / len(ml_losses)
-            sat_losses = sum(sat_losses) / len(sat_losses)
+            # sat_losses = sum(sat_losses) / len(sat_losses)
 
-            VAT_generator = VATLoss_Multihead(eps=self.nearest_dict[index])
-            # VAT_generator = VATLoss_Multihead(eps=10)
+            # VAT_generator = VATLoss_Multihead(eps=self.nearest_dict[index])
+            VAT_generator = VATLoss_Multihead(eps=10)
             vat_loss, adv_tf1_images, _ = VAT_generator(self.model.torchnet, tf1_images)
 
-            batch_loss: torch.Tensor = vat_loss + sat_losses - 0.1 * ml_losses
+            batch_loss: torch.Tensor = vat_loss  - 0.1 * ml_losses
 
-            self.METERINTERFACE["train_sat_loss"].add(sat_losses.item())
+            # self.METERINTERFACE["train_sat_loss"].add(sat_losses.item())
             self.METERINTERFACE["train_mi_loss"].add(ml_losses.item())
             self.METERINTERFACE["train_adv_loss"].add(vat_loss.item())
             self.model.zero_grad()

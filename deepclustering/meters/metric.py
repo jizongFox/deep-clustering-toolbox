@@ -1,3 +1,4 @@
+__all__ = ["Metric", "AggragatedMeter", "MeterInterface"]
 import functools
 from abc import abstractmethod
 from typing import *
@@ -5,15 +6,12 @@ from typing import *
 import pandas as pd
 from easydict import EasyDict as edict
 
-from deepclustering.decorator.decorator import export
 
-
-def change_dataframe_name(dataframe: pd.DataFrame, name: str):
+def rename_df_columns(dataframe: pd.DataFrame, name: str):
     dataframe.columns = list(map(lambda x: name + "_" + x, dataframe.columns))
     return dataframe
 
 
-@export
 class Metric(object):
     """Base class for all metrics.
 
@@ -41,7 +39,6 @@ class Metric(object):
         raise NotImplementedError
 
 
-@export
 class AggragatedMeter(object):
     """
     Aggregate historical information in a List.
@@ -49,21 +46,21 @@ class AggragatedMeter(object):
 
     def __init__(self) -> None:
         super().__init__()
-        self.record: List[dict] = []
+        self.record: List[Dict[str, float]] = []
 
     # public interface of dict
-    def summary(self, if_dict=False) -> Union[pd.DataFrame, List[dict]]:
+    def summary(self, if_dict=False) -> Union[pd.DataFrame, List[Dict[str, float]]]:
         if if_dict:
             return self.record
         return pd.DataFrame(self.record)
 
-    def add(self, input_dict) -> None:
+    def add(self, input_dict: Dict[str, float]) -> None:
         self.record.append(input_dict)
 
-    def reset(self):
+    def reset(self) -> None:
         self.record = []
 
-    def state_dict(self) -> dict:
+    def state_dict(self) -> Dict[str, Any]:
         """Returns the state of the scheduler as a :class:`dict`.
 
         It contains an entry for every variable in self.__dict__ which
@@ -71,7 +68,7 @@ class AggragatedMeter(object):
         """
         return {key: value for key, value in self.__dict__.items() if key != "meter"}
 
-    def load_state_dict(self, state_dict) -> None:
+    def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
         """Loads the schedulers state.
 
         Arguments:
@@ -81,7 +78,6 @@ class AggragatedMeter(object):
         self.__dict__.update(state_dict)
 
 
-@export
 class MeterInterface(object):
     """
     A listed of Aggregated Meters with names, that severs to be a interface for project.
@@ -111,10 +107,11 @@ class MeterInterface(object):
     def __getitem__(self, meter_name) -> Metric:
         return self.ind_meter_dict[meter_name]
 
-    def register_new_meter(self, name: str, meter: Metric):
+    def register_new_meter(self, name: str, meter: Metric) -> None:
         assert isinstance(name, str), name
         assert isinstance(meter, Metric), meter
         self.ind_meter_dict[name] = meter
+        setattr(self, name, meter)
         self.aggregated_meter_dict[name] = AggragatedMeter()
 
     def summary(self) -> pd.DataFrame:
@@ -123,7 +120,7 @@ class MeterInterface(object):
         :return:
         """
         list_of_summary = [
-            change_dataframe_name(v.summary(), k)
+            rename_df_columns(v.summary(), k)
             for k, v in self.aggregated_meter_dict.items()
         ]
         # merge the list
@@ -133,14 +130,17 @@ class MeterInterface(object):
         )
         return pd.DataFrame(summary)
 
-    def step(self) -> None:
+    def step(self, detailed_summary=False) -> None:
         """
         This is to put individual Meter summary to Aggregated Meter dict
         And reset the individual Meters
+        :param detailed_summary: return `detailed_summary` instead of `summary`
         :return: None
         """
         for k in self.ind_meter_dict.keys():
-            self.aggregated_meter_dict[k].add(self.ind_meter_dict[k].summary())
+            self.aggregated_meter_dict[k].add(
+                self.ind_meter_dict[k].summary() if not detailed_summary else self.ind_meter_dict[k].detailed_summary()
+            )
             self.ind_meter_dict[k].reset()
 
     @property
@@ -161,15 +161,3 @@ class MeterInterface(object):
         for k, v in self.aggregated_meter_dict.items():
             v.record = checkpoint[k]
         print(self.summary().tail())
-
-    @classmethod
-    def initialize_from_state_dict(cls, checkpoint: Dict[str, dict]):
-        Meters = edict()
-        submeter_names = list(checkpoint.keys())
-        for k in submeter_names:
-            Meters[k] = AggragatedMeter()
-        wholeMeter = cls(
-            names=submeter_names, listAggregatedMeter=list(Meters.values())
-        )
-        wholeMeter.load_state_dict(checkpoint)
-        return wholeMeter, Meters

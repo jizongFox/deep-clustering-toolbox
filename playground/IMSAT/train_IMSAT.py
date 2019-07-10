@@ -6,7 +6,7 @@ from deepclustering.utils import fix_all_seed
 from playground.IMSAT.IMSATTrainer import IMSATTrainer
 from playground.IMSAT.mnist_helper import MNISTClusteringDatasetInterface
 
-fix_all_seed(2)
+fix_all_seed(3)
 
 DEFAULT_CONFIG = "./IMSAT.yaml"
 
