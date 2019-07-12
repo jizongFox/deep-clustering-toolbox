@@ -39,7 +39,6 @@ class _Trainer(ABC):
             config: dict = None,
             **kwargs
     ) -> None:
-        super().__init__()
         _warnings((), kwargs)
         self.model = model
         self.train_loader = train_loader
