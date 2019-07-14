@@ -22,12 +22,12 @@ class DrawCSV(object):
     """
 
     def __init__(
-        self,
-        columns_to_draw=None,
-        save_dir=None,
-        save_name="plot.png",
-        csv_name="wholeMeter.csv",
-        figsize=[10, 15],
+            self,
+            columns_to_draw=None,
+            save_dir=None,
+            save_name="plot.png",
+            csv_name="wholeMeter.csv",
+            figsize=[10, 15],
     ) -> None:
         super().__init__()
         warnings.warn(
@@ -89,12 +89,12 @@ class DrawCSV(object):
 
 class DrawCSV2(object):
     def __init__(
-        self,
-        columns_to_draw=None,
-        save_dir=None,
-        save_name="plot.png",
-        csv_name="wholeMeter.csv",
-        figsize=[10, 15],
+            self,
+            columns_to_draw=None,
+            save_dir=None,
+            save_name="plot.png",
+            csv_name="wholeMeter.csv",
+            figsize=[10, 15],
     ) -> None:
         super().__init__()
         if columns_to_draw is not None and not isinstance(columns_to_draw, list):
@@ -105,7 +105,7 @@ class DrawCSV2(object):
         self.figsize = tuple(figsize)
         self.csv_name = csv_name
 
-    @threaded
+    @threaded(daemon=False)
     def draw(self, dataframe):
         fig, axs = plt.subplots(
             nrows=self.columns_to_draw.__len__(), sharex=True, figsize=self.figsize
