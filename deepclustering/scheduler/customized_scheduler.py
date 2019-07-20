@@ -1,4 +1,3 @@
-import torch
 import numpy as np
 
 
@@ -24,7 +23,7 @@ class Scheduler(object):
         is not the optimizer.
         """
         return {
-            key: value for key, value in self.__dict__.items() if key != "optimizer"
+            key: value for key, value in self.__dict__.items()
         }
 
     def load_state_dict(self, state_dict):
@@ -124,7 +123,7 @@ class RampDownScheduler(Scheduler):
         elif epoch >= cutoff:
             return min_val
         return (
-            max_val
-            - max_val * np.exp(mult * (1.0 - float(epoch) / (cutoff)) ** 2)
-            + min_val
+                max_val
+                - max_val * np.exp(mult * (1.0 - float(epoch) / (cutoff)) ** 2)
+                + min_val
         )

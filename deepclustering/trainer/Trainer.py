@@ -153,14 +153,26 @@ class _Trainer(ABC):
     @property
     def state_dict(self) -> Dict[str, Any]:
         """
-        return trainer's state dict, can be extended by subclasses
+        return trainer's state dict. The dict is built by considering all the submodules having `state_dict` method.
+        """
+        state_dictionary = {}
+        for module_name, module in self.__dict__.items():
+            if hasattr(module, "state_dict"):
+                state_dictionary[module_name] = module.state_dict
+        return state_dictionary
+
+    def load_state_dict(self, state_dict) -> None:
+        """
+        Load state_dict for submodules having "load_state_dict" method.
+        :param state_dict:
         :return:
         """
-        state_dictionary = {
-            "model_state_dict": self.model.state_dict,
-            "meter_state_dict": self.METERINTERFACE.state_dict,
-        }
-        return state_dictionary
+        for module_name, module in self.__dict__.items():
+            if hasattr(module, "load_state_dict"):
+                try:
+                    module.load_state_dict(state_dict[module_name])
+                except KeyError as e:
+                    print(f"Loading checkpoint error for {module_name}, {e}.")
 
     def load_checkpoint(self, state_dict) -> None:
         """
@@ -169,12 +181,7 @@ class _Trainer(ABC):
         :param state_dict:
         :return:
         """
-        self.model.load_state_dict(state_dict["model_state_dict"])
-        try:
-            self.METERINTERFACE.load_state_dict(state_dict["meter_state_dict"])
-        except KeyError:
-            warnings.warn("Meter checkpoint does not match.")
-
+        self.load_state_dict(state_dict)
         self.best_score = state_dict["best_score"]
         self._start_epoch = state_dict["epoch"] + 1
 
