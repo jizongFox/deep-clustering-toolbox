@@ -112,9 +112,6 @@ class IICMultiHeadTrainer(_Trainer):
                 current_score = self._eval_loop(self.val_loader, epoch)
             self.METERINTERFACE.step()
             self.model.schedulerStep()
-            # save meters and checkpoints
-            for k, v in self.METERINTERFACE.aggregated_meter_dict.items():
-                v.summary().to_csv(self.save_dir / f"meters/{k}.csv")
             self.METERINTERFACE.summary().to_csv(self.save_dir / f"wholeMeter.csv")
 
             self.writer.add_scalars(
@@ -122,9 +119,7 @@ class IICMultiHeadTrainer(_Trainer):
                 self.METERINTERFACE.summary().iloc[-1].to_dict(),
                 global_step=epoch,
             )
-            with TimeBlock() as timer:
-                self.drawer.draw(self.METERINTERFACE.summary())
-            print(timer.cost)
+            self.drawer.draw(self.METERINTERFACE.summary())
             self.save_checkpoint(self.state_dict, epoch, current_score)
 
     def _train_loop(
