@@ -17,7 +17,7 @@ class Scheduler(object):
         return NotImplementedError
 
     def state_dict(self):
-        """Returns the state of the scheduler as a :class:`dict`.
+        """Returns the state of the weight_scheduler as a :class:`dict`.
 
         It contains an entry for every variable in self.__dict__ which
         is not the optimizer.
@@ -30,7 +30,7 @@ class Scheduler(object):
         """Loads the schedulers state.
 
         Arguments:
-            state_dict (dict): scheduler state. Should be an object returned
+            state_dict (dict): weight_scheduler state. Should be an object returned
                 from a call to :meth:`state_dict`.
         """
         self.__dict__.update(state_dict)
@@ -41,7 +41,7 @@ class Scheduler(object):
 
 
 class RampScheduler(Scheduler):
-    def __init__(self, begin_epoch, max_epoch, max_value, ramp_mult):
+    def __init__(self, begin_epoch, max_epoch, max_value, ramp_mult=-5):
         super().__init__()
         self.begin_epoch = int(begin_epoch)
         self.max_epoch = int(max_epoch)
