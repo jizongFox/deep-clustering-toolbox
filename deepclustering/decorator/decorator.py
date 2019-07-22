@@ -1,11 +1,12 @@
 import _thread
 import contextlib
+import random
 import sys
 import threading
 import time
 from functools import wraps
 from threading import Thread
-
+import numpy as np
 from torch.multiprocessing import Process
 
 
@@ -140,3 +141,18 @@ def processed(f):
         return func
 
     return wrapper
+
+
+class FixRandomSeed:
+    def __init__(self, random_seed: int = 0):
+        self.random_seed = random_seed
+        self.randombackup = random.getstate()
+        self.npbackup = np.random.get_state()
+
+    def __enter__(self):
+        np.random.seed(self.random_seed)
+        random.seed(self.random_seed)
+
+    def __exit__(self, *_):
+        np.random.set_state(self.npbackup)
+        random.setstate(self.randombackup)

@@ -22,7 +22,7 @@ class _LRScheduler(object):
         self.step(last_epoch)
 
     def state_dict(self):
-        """Returns the state of the weight_scheduler as a :class:`dict`.
+        """Returns the state of the scheduler as a :class:`dict`.
 
         It contains an entry for every variable in self.__dict__ which
         is not the optimizer.
@@ -33,7 +33,7 @@ class _LRScheduler(object):
         """Loads the schedulers state.
 
         Arguments:
-            state_dict (dict): weight_scheduler state. Should be an object returned
+            state_dict (dict): scheduler state. Should be an object returned
                 from a call to :meth:`state_dict`.
         """
         self.__dict__.update(state_dict)
@@ -64,11 +64,11 @@ class LambdaLR(_LRScheduler):
         >>> # Assuming optimizer has two groups.
         >>> lambda1 = lambda epoch: epoch // 30
         >>> lambda2 = lambda epoch: 0.95 ** epoch
-        >>> weight_scheduler = LambdaLR(optimizer, lr_lambda=[lambda1, lambda2])
+        >>> scheduler = LambdaLR(optimizer, lr_lambda=[lambda1, lambda2])
         >>> for epoch in range(100):
         >>>     train(...)
         >>>     validate(...)
-        >>>     weight_scheduler.step()
+        >>>     scheduler.step()
     """
 
     def __init__(self, optimizer, lr_lambda, last_epoch=-1):
@@ -84,7 +84,7 @@ class LambdaLR(_LRScheduler):
         super(LambdaLR, self).__init__(optimizer, last_epoch)
 
     def state_dict(self):
-        """Returns the state of the weight_scheduler as a :class:`dict`.
+        """Returns the state of the scheduler as a :class:`dict`.
 
         It contains an entry for every variable in self.__dict__ which
         is not the optimizer.
@@ -104,7 +104,7 @@ class LambdaLR(_LRScheduler):
         """Loads the schedulers state.
 
         Arguments:
-            state_dict (dict): weight_scheduler state. Should be an object returned
+            state_dict (dict): scheduler state. Should be an object returned
                 from a call to :meth:`state_dict`.
         """
         lr_lambdas = state_dict.pop('lr_lambdas')
@@ -122,7 +122,7 @@ class LambdaLR(_LRScheduler):
 class StepLR(_LRScheduler):
     """Decays the learning rate of each parameter group by gamma every
     step_size epochs. Notice that such decay can happen simultaneously with
-    other changes to the learning rate from outside this weight_scheduler. When
+    other changes to the learning rate from outside this scheduler. When
     last_epoch=-1, sets initial lr as lr.
 
     Args:
@@ -138,11 +138,11 @@ class StepLR(_LRScheduler):
         >>> # lr = 0.005    if 30 <= epoch < 60
         >>> # lr = 0.0005   if 60 <= epoch < 90
         >>> # ...
-        >>> weight_scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
+        >>> scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
         >>> for epoch in range(100):
         >>>     train(...)
         >>>     validate(...)
-        >>>     weight_scheduler.step()
+        >>>     scheduler.step()
     """
 
     def __init__(self, optimizer, step_size, gamma=0.1, last_epoch=-1):
@@ -161,7 +161,7 @@ class MultiStepLR(_LRScheduler):
     """Decays the learning rate of each parameter group by gamma once the
     number of epoch reaches one of the milestones. Notice that such decay can
     happen simultaneously with other changes to the learning rate from outside
-    this weight_scheduler. When last_epoch=-1, sets initial lr as lr.
+    this scheduler. When last_epoch=-1, sets initial lr as lr.
 
     Args:
         optimizer (Optimizer): Wrapped optimizer.
@@ -175,11 +175,11 @@ class MultiStepLR(_LRScheduler):
         >>> # lr = 0.05     if epoch < 30
         >>> # lr = 0.005    if 30 <= epoch < 80
         >>> # lr = 0.0005   if epoch >= 80
-        >>> weight_scheduler = MultiStepLR(optimizer, milestones=[30,80], gamma=0.1)
+        >>> scheduler = MultiStepLR(optimizer, milestones=[30,80], gamma=0.1)
         >>> for epoch in range(100):
         >>>     train(...)
         >>>     validate(...)
-        >>>     weight_scheduler.step()
+        >>>     scheduler.step()
     """
 
     def __init__(self, optimizer, milestones, gamma=0.1, last_epoch=-1):
@@ -230,8 +230,8 @@ class CosineAnnealingLR(_LRScheduler):
 
     When last_epoch=-1, sets initial lr as lr. Notice that because the schedule
     is defined recursively, the learning rate can be simultaneously modified
-    outside this weight_scheduler by other operators. If the learning rate is set
-    solely by this weight_scheduler, the learning rate at each step becomes:
+    outside this scheduler by other operators. If the learning rate is set
+    solely by this scheduler, the learning rate at each step becomes:
 
     .. math::
         \eta_t = \eta_{min} + \frac{1}{2}(\eta_{max} - \eta_{min})(1 +
@@ -273,7 +273,7 @@ class CosineAnnealingLR(_LRScheduler):
 class ReduceLROnPlateau(object):
     """Reduce learning rate when a metric has stopped improving.
     Models often benefit from reducing the learning rate by a factor
-    of 2-10 once learning stagnates. This weight_scheduler reads a metrics
+    of 2-10 once learning stagnates. This scheduler reads a metrics
     quantity and if no improvement is seen for a 'patience' number
     of epochs, the learning rate is reduced.
 
@@ -311,12 +311,12 @@ class ReduceLROnPlateau(object):
 
     Example:
         >>> optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
-        >>> weight_scheduler = ReduceLROnPlateau(optimizer, 'min')
+        >>> scheduler = ReduceLROnPlateau(optimizer, 'min')
         >>> for epoch in range(10):
         >>>     train(...)
         >>>     val_loss = validate(...)
         >>>     # Note that step should be called after validate()
-        >>>     weight_scheduler.step(val_loss)
+        >>>     scheduler.step(val_loss)
     """
 
     def __init__(self, optimizer, mode='min', factor=0.1, patience=10,
@@ -509,12 +509,12 @@ class CyclicLR(_LRScheduler):
 
     Example:
         >>> optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
-        >>> weight_scheduler = torch.optim.CyclicLR(optimizer)
+        >>> scheduler = torch.optim.CyclicLR(optimizer)
         >>> data_loader = torch.utils.data.DataLoader(...)
         >>> for epoch in range(10):
         >>>     for batch in data_loader:
         >>>         train_batch(...)
-        >>>         weight_scheduler.step()
+        >>>         scheduler.step()
 
 
     .. _Cyclical Learning Rates for Training Neural Networks: https://arxiv.org/abs/1506.01186
@@ -692,11 +692,11 @@ class CosineAnnealingWarmRestarts(_LRScheduler):
         This function can be called in an interleaved way.
 
         Example:
-            >>> weight_scheduler = SGDR(optimizer, T_0, T_mult)
+            >>> scheduler = SGDR(optimizer, T_0, T_mult)
             >>> for epoch in range(20):
-            >>>     weight_scheduler.step()
-            >>> weight_scheduler.step(26)
-            >>> weight_scheduler.step() # weight_scheduler.step(27), instead of weight_scheduler(20)
+            >>>     scheduler.step()
+            >>> scheduler.step(26)
+            >>> scheduler.step() # scheduler.step(27), instead of scheduler(20)
         """
         if epoch is None:
             epoch = self.last_epoch + 1
