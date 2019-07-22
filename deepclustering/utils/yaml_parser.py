@@ -100,19 +100,21 @@ class YAMLArgParser(object):
 
     @staticmethod
     def parse_hierachy(k_v_dict: Dict[str, Any]) -> Dict[str, Any]:
-        assert len(k_v_dict) <= 1
-        if len(k_v_dict) == 0:
+        try:
+            assert len(k_v_dict) <= 1
+            if len(k_v_dict) == 0:
+                return {}
+        except TypeError:
             return {}
-        else:
-            key = list(k_v_dict.keys())[0]
-            value = k_v_dict[key]
-            keys = key.split(".")
-            keys.reverse()
-            for k in keys:
-                d = {}
-                d[k] = value
-                value = dcopy(d)
-            return dict(value)
+        key = list(k_v_dict.keys())[0]
+        value = k_v_dict[key]
+        keys = key.split(".")
+        keys.reverse()
+        for k in keys:
+            d = {}
+            d[k] = value
+            value = dcopy(d)
+        return dict(value)
 
     @staticmethod
     def merge_dict(dict_list: List[Dict[str, Any]]) -> Dict[str, Any]:
