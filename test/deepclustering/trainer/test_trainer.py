@@ -1,6 +1,6 @@
 from unittest import TestCase
 from deepclustering.model import Model
-from deepclustering.scheduler.customized_scheduler import RampScheduler
+from deepclustering.weight_scheduler.customized_scheduler import RampScheduler
 
 
 class TestTrainer(TestCase):

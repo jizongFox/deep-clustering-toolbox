@@ -86,6 +86,9 @@ class Img2Tensor(object):
             return rgb_img_tensor
         raise AttributeError(f"Something wrong here with img, or options.")
 
+    def __repr__(self):
+        return f"Image2Tensor(include_rgb={self.include_rgb}, include_grey={self.include_grey})"
+
 
 class PILCutout(object):
     r"""

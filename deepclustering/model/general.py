@@ -143,7 +143,6 @@ class Model(ABC):
         if self.scheduler is not None:
             self.scheduler.step()
 
-    @property
     def state_dict(self):
         return {
             "arch_dict": self.arch_dict,

@@ -14,10 +14,6 @@ from ..segmentation.toydataset import (
     ShapesDataset,
 )
 
-__doc__ = (
-    "This interface is to define clustering datasets with different transformations"
-)
-
 
 class ClusterDatasetInterface(object):
     """
@@ -27,15 +23,15 @@ class ClusterDatasetInterface(object):
     ALLOWED_SPLIT = []
 
     def __init__(
-        self,
-        DataClass: Dataset,
-        data_root: str,
-        split_partitions: List[str],
-        batch_size: int = 1,
-        shuffle: bool = False,
-        num_workers: int = 1,
-        pin_memory: bool = True,
-        drop_last=False,
+            self,
+            DataClass: Dataset,
+            data_root: str,
+            split_partitions: List[str],
+            batch_size: int = 1,
+            shuffle: bool = False,
+            num_workers: int = 1,
+            pin_memory: bool = True,
+            drop_last=False,
     ) -> None:
         """
         :param batch_size: batch_size = 1
@@ -59,10 +55,10 @@ class ClusterDatasetInterface(object):
 
     @abstractmethod
     def _creat_concatDataset(
-        self,
-        image_transform: Callable,
-        target_transform: Callable,
-        dataset_dict: dict = {},
+            self,
+            image_transform: Callable,
+            target_transform: Callable,
+            dataset_dict: dict = {},
     ):
         """
         create concat dataset with only one type of transform.
@@ -75,10 +71,10 @@ class ClusterDatasetInterface(object):
         raise NotImplementedError
 
     def _creat_combineDataset(
-        self,
-        image_transforms: Tuple[Callable, ...],
-        target_transform: Tuple[Callable, ...] = None,
-        dataset_dict: Dict[str, Any] = {},
+            self,
+            image_transforms: Tuple[Callable, ...],
+            target_transform: Tuple[Callable, ...] = None,
+            dataset_dict: Dict[str, Any] = {},
     ):
         if target_transform is None:
             assert len(image_transforms) >= 1, f"Given {image_transforms}"
@@ -100,11 +96,11 @@ class ClusterDatasetInterface(object):
         return combineSet
 
     def SerialDataLoader(
-        self,
-        image_transform: Callable = None,
-        target_transform: Callable = None,
-        dataset_dict: Dict[str, Any] = {},
-        dataloader_dict: Dict[str, Any] = {},
+            self,
+            image_transform: Callable = None,
+            target_transform: Callable = None,
+            dataset_dict: Dict[str, Any] = {},
+            dataloader_dict: Dict[str, Any] = {},
     ) -> DataLoader:
         r"""
         Combine several dataset in a serial way.
@@ -129,11 +125,11 @@ class ClusterDatasetInterface(object):
         return concatLoader
 
     def ParallelDataLoader(
-        self,
-        *image_transforms: Callable,
-        target_transform: Union[Callable, Tuple[Callable, ...]] = None,
-        dataset_dict: Dict[str, Any] = {},
-        dataloader_dict: Dict[str, Any] = {},
+            self,
+            *image_transforms: Callable,
+            target_transform: Union[Callable, Tuple[Callable, ...]] = None,
+            dataset_dict: Dict[str, Any] = {},
+            dataloader_dict: Dict[str, Any] = {},
     ) -> DataLoader:
         parallel_set = self._creat_combineDataset(
             image_transforms, target_transform, dataset_dict

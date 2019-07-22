@@ -106,7 +106,7 @@ class _Trainer(ABC):
             SUMMARY = self.METERINTERFACE.summary()
             SUMMARY.to_csv(self.save_dir / self.wholemeter_filename)
             self.drawer.draw(SUMMARY)
-            self.save_checkpoint(self.state_dict, epoch, current_score)
+            self.save_checkpoint(self.state_dict(), epoch, current_score)
 
     def to(self, device):
         self.model.to(device=device)
@@ -150,7 +150,6 @@ class _Trainer(ABC):
         # to be added
         # probably call self._eval() method.
 
-    @property
     def state_dict(self) -> Dict[str, Any]:
         """
         return trainer's state dict. The dict is built by considering all the submodules having `state_dict` method.
@@ -158,7 +157,7 @@ class _Trainer(ABC):
         state_dictionary = {}
         for module_name, module in self.__dict__.items():
             if hasattr(module, "state_dict"):
-                state_dictionary[module_name] = module.state_dict
+                state_dictionary[module_name] = module.state_dict()
         return state_dictionary
 
     def load_state_dict(self, state_dict) -> None:

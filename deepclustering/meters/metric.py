@@ -61,7 +61,7 @@ class AggragatedMeter(object):
         self.record = []
 
     def state_dict(self) -> Dict[str, Any]:
-        """Returns the state of the scheduler as a :class:`dict`.
+        """Returns the state of the weight_scheduler as a :class:`dict`.
 
         It contains an entry for every variable in self.__dict__ which
         is not the optimizer.
@@ -72,7 +72,7 @@ class AggragatedMeter(object):
         """Loads the schedulers state.
 
         Arguments:
-            state_dict (dict): scheduler state. Should be an object returned
+            state_dict (dict): weight_scheduler state. Should be an object returned
                 from a call to :math:`state_dict`.
         """
         self.__dict__.update(state_dict)
@@ -143,7 +143,6 @@ class MeterInterface(object):
             )
             self.ind_meter_dict[k].reset()
 
-    @property
     def state_dict(self) -> dict:
         """
         to export dict
