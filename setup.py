@@ -25,7 +25,7 @@ setup(
         "pathlib2",
         "matplotlib",
         "typing_inspect",
-        "tqdm",
+        "tqdm==4.32.2",
         "pytest==4.4.0",
         "py==1.8.0",
         "pytest-remotedata==0.3.1",
@@ -33,6 +33,7 @@ setup(
         "tensorboard",
         "opencv-python",
         "medpy",
-        "pyyaml"
+        "pyyaml",
+        "termcolor"
     ],
 )

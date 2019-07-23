@@ -19,7 +19,7 @@ wrapper(){
      --time=0-${hour}:00 \
      --account="${account}" \
      --mail-user=jizong.peng.1@etsmtl.net \
-     --mail-type=END, FAIL   \
+     --mail-type=ALL   \
     ./tmp.sh
     rm -rf ./tmp.sh
 }

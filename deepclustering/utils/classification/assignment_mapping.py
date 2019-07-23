@@ -16,13 +16,12 @@ def flat_acc(flat_preds, flat_targets):
 
 
 def hungarian_match(
-    flat_preds, flat_targets, preds_k, targets_k
+        flat_preds, flat_targets, preds_k, targets_k
 ) -> Tuple[torch.Tensor, Dict[int, int]]:
     assert (
-        isinstance(flat_preds, torch.Tensor)
-        and isinstance(flat_targets, torch.Tensor)
-        and flat_preds.is_cuda
-        and flat_targets.is_cuda
+            isinstance(flat_preds, torch.Tensor)
+            and isinstance(flat_targets, torch.Tensor)
+            and (flat_preds.is_cuda == flat_targets.is_cuda)
     )
 
     assert flat_preds.shape == flat_targets.shape
@@ -60,10 +59,10 @@ def original_match(flat_preds, flat_targets, preds_k, targets_k):
     # map each output channel to the best matching ground truth (many to one)
 
     assert (
-        isinstance(flat_preds, torch.Tensor)
-        and isinstance(flat_targets, torch.Tensor)
-        and flat_preds.is_cuda
-        and flat_targets.is_cuda
+            isinstance(flat_preds, torch.Tensor)
+            and isinstance(flat_targets, torch.Tensor)
+            and flat_preds.is_cuda
+            and flat_targets.is_cuda
     )
 
     out_to_gts = {}

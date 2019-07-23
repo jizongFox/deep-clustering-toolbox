@@ -158,5 +158,8 @@ class MeterInterface(object):
         """
         assert isinstance(checkpoint, dict)
         for k, v in self.aggregated_meter_dict.items():
-            v.record = checkpoint[k]
+            try:
+                v.record = checkpoint[k]
+            except KeyError:
+                continue
         print(self.summary().tail())

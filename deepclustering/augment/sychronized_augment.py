@@ -1,9 +1,11 @@
 __all__ = ["FixRandomSeed", "SequentialWrapper"]
-from typing import Callable, List, Union
-import torch
 import random
+from typing import Callable, List, Union
+
 import numpy as np
+import torch
 from PIL import Image
+
 from .pil_augment import Identity
 
 
