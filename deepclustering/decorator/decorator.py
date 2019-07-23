@@ -136,7 +136,7 @@ def processed(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         func = Process(target=f, args=args, kwargs=kwargs)
-        func.daemon = True
+        func.daemon = False
         func.start()
         return func
 

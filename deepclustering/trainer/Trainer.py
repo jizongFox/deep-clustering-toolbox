@@ -166,6 +166,16 @@ class _Trainer(ABC):
         :param state_dict:
         :return:
         """
+        # previous method to be removed latter
+        try:
+            self.model.load_state_dict(state_dict["model_state_dict"])
+        except Exception as e:
+            print(f"Loading checkpoint error for model_state_dict, {e}")
+        try:
+            self.METERINTERFACE.load_state_dict(state_dict["meter_state_dict"])
+        except Exception as e:
+            print(f"Loading meter error for model_state_dict, {e}")
+
         for module_name, module in self.__dict__.items():
             if hasattr(module, "load_state_dict"):
                 try:
