@@ -60,6 +60,9 @@ def weights_init(m):
     elif type(m) == nn.BatchNorm2d:
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
+    elif type(m) == nn.Linear:
+        m.weight.data.normal_(0.0, 0.02)
+        m.bias.data.fill_(0)
 
 
 def get_arch(arch: str, kwargs) -> nn.Module:
