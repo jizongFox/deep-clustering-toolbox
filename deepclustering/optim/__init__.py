@@ -1,3 +1,4 @@
 # merge the interface for adabound and torch.optim
-from .adabound import AdaBound, AdaBoundW
 from torch.optim import *
+from torch.optim.optimizer import Optimizer
+from .adabound import AdaBound, AdaBoundW

@@ -12,7 +12,7 @@ def rename_df_columns(dataframe: pd.DataFrame, name: str):
     return dataframe
 
 
-class Metric(object):
+class Metric:
     """Base class for all metrics.
 
     From: https://github.com/pytorch/tnt/blob/master/torchnet/meter/meter.py
@@ -39,7 +39,7 @@ class Metric(object):
         raise NotImplementedError
 
 
-class AggragatedMeter(object):
+class AggragatedMeter:
     """
     Aggregate historical information in a List.
     """
@@ -66,7 +66,7 @@ class AggragatedMeter(object):
         It contains an entry for every variable in self.__dict__ which
         is not the optimizer.
         """
-        return {key: value for key, value in self.__dict__.items() if key != "meter"}
+        return self.__dict__
 
     def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
         """Loads the schedulers state.
@@ -78,7 +78,7 @@ class AggragatedMeter(object):
         self.__dict__.update(state_dict)
 
 
-class MeterInterface(object):
+class MeterInterface:
     """
     A listed of Aggregated Meters with names, that severs to be a interface for project.
     """
@@ -87,14 +87,11 @@ class MeterInterface(object):
         """
         :param meter_config: a dict of individual meter configurations
         """
-        super().__init__()
         # check:
         for k, v in meter_config.items():
             assert isinstance(k, str), k
             assert isinstance(v, Metric), v  # can also check the subclasses.
-        self.ind_meter_dict = (
-            edict(meter_config) if not isinstance(meter_config, edict) else meter_config
-        )
+        self.ind_meter_dict = (edict(meter_config) if not isinstance(meter_config, edict) else meter_config)
         for _, v in self.ind_meter_dict.items():
             v.reset()
         for k, v in self.ind_meter_dict.items():

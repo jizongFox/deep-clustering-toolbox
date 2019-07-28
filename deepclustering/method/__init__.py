@@ -1,8 +1,9 @@
-import warnings
 from abc import abstractmethod
 
 from ..model import Model
 
+
+# I think this should be something like mixin class for multiinherent class
 
 class _Method(object):
     """
@@ -17,13 +18,6 @@ class _Method(object):
         :param args: unassigned args
         :param kwargsa: unassigned kwargs
         """
-        # warning control
-        if len(args) > 0:
-            warnings.warn(f"Received unassigned args with args: {args}.")
-        if len(kwargs) > 0:
-            kwarg_str = ", ".join([f"{k}:{v}" for k, v in kwargs.items()])
-            warnings.warn(f"Received unassigned kwargs: \n{kwarg_str}")
-        # warning control ends
         self.model = model
 
     @abstractmethod
@@ -35,13 +29,6 @@ class _Method(object):
         :param kwargs:
         :return:
         """
-        # warning control
-        if len(args) > 0:
-            warnings.warn(f"Received unassigned args with args: {args}.")
-        if len(kwargs) > 0:
-            kwarg_str = ", ".join([f"{k}:{v}" for k, v in kwargs.items()])
-            warnings.warn(f"Received unassigned kwargs: \n{kwarg_str}")
-        # warning control ends
 
     @abstractmethod
     def update(self, *args, **kwargs):
@@ -51,16 +38,10 @@ class _Method(object):
         :param kwargs:
         :return:
         """
-        # warning control
-        if len(args) > 0:
-            warnings.warn(f"Received unassigned args with args: {args}.")
-        if len(kwargs) > 0:
-            kwarg_str = ", ".join([f"{k}:{v}" for k, v in kwargs.items()])
-            warnings.warn(f"Received unassigned kwargs: \n{kwarg_str}")
-        # warning control ends
 
     @property
     def state_dict(self):
+        # todo: it can be problematic when pass model to dict.
         return self.__dict__
 
     def load_state_dict(self, state_dict):
