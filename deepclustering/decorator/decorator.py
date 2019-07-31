@@ -96,7 +96,7 @@ def threaded_(f):
     return wrapper
 
 
-def threaded(_func=None, *, name="meter", daemon=True):
+def threaded(_func=None, *, name="meter", daemon=False):
     """Decorator to run the process in an extra thread."""
 
     def decorator_thread(f):
