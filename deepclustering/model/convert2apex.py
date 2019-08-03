@@ -9,7 +9,7 @@ from .general import Model
 try:
     from apex import amp
 except ImportError:
-    warnings.warn("Apex not installed.", RuntimeWarning)
+    warnings.warn("Apex not installed, using PyTorch default setting.", RuntimeWarning)
     amp = None
 
 
@@ -33,7 +33,7 @@ def to_Apex(model: Model, opt_level=None, verbosity=0, **kwargs) -> Model:
         model.is_apex = True
     except Exception as e:
         # nothing happens.
-        warnings.warn(f"to_apex fails with eror message: {e}", RuntimeWarning)
+        warnings.warn(f"`to_Apex` fails with error message: {e}", RuntimeWarning)
         assert model.is_apex is False
     finally:
         return model

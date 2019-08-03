@@ -15,7 +15,7 @@ wrapper(){
      --nodes=1  \
      --gres=gpu:1 \
      --cpus-per-task=6  \
-     --mem=16000M \
+     --mem=32000M \
      --time=0-${hour}:00 \
      --account="${account}" \
      --mail-user=jizong.peng.1@etsmtl.net \

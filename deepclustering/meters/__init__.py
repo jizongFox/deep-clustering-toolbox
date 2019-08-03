@@ -6,3 +6,4 @@ from .hausdorff import HaussdorffDistance
 from .metric import AggragatedMeter, MeterInterface
 from .confusionmatrix import ConfusionMatrix
 from .cache import Cache
+from .instance import InstanceValue
