@@ -36,7 +36,6 @@ class _DiceMeter(Metric):
     def reset(self):
         self.diceLog = []
 
-    @threaded
     def add(self, pred_logit: Tensor, gt: Tensor):
         """
         call class2one_hot to convert onehot to input.
