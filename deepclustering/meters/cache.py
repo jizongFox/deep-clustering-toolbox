@@ -1,4 +1,7 @@
+import torch
+from numbers import Number
 from .metric import Metric
+import numpy as np
 
 
 class Cache(Metric):
@@ -24,3 +27,29 @@ class Cache(Metric):
 
     def detailed_summary(self) -> dict:
         return self.summary()
+
+
+class AveragewithStd(Cache):
+    """
+    this Meter is going to return the mean and std_lower, std_high for a list of scalar values
+    """
+
+    def add(self, input):
+        assert isinstance(input, Number) \
+               or (isinstance(input, torch.Tensor) and input.shape.__len__() <= 1) \
+               or (isinstance(input, np.ndarray) and input.shape.__len__() <= 1)
+
+        super().add(input)
+
+    def value(self, **kwargs):
+        return torch.Tensor(self.log).mean().item()
+
+    def summary(self) -> dict:
+        torch_log = torch.Tensor(self.log)
+        mean = torch_log.mean()
+        std = torch_log.std()
+        return {
+            "mean": mean.item(),
+            "lstd": mean.item() - std.item(),
+            "hstd": mean.item() + std.item()
+        }
