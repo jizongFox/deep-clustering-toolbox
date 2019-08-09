@@ -183,6 +183,8 @@ class _Trainer(ABC):
                     module.load_state_dict(state_dict[module_name])
                 except KeyError as e:
                     print(f"Loading checkpoint error for {module_name}, {e}.")
+                except RuntimeError as e:
+                    print(f"Interface changed error for {module_name}, {e}")
 
     def load_checkpoint(self, state_dict) -> None:
         """
