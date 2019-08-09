@@ -10,6 +10,7 @@ from PIL import Image
 from pathlib2 import Path
 
 Tensor = Union[np.ndarray, torch.Tensor]
+identical = lambda x: x
 
 
 def map_(func: Callable, iterator_: Iterable) -> List[Any]:
@@ -46,7 +47,7 @@ class Volume(object):
     """
 
     def __init__(self, img_folder: str, mask_folder_list: List[str], group_pattern=r'patient\d+_\d+',
-                 img_extension: str = 'png', crop: int = 0) -> None:
+                 img_extension: str = 'png', crop: int = 0, mapping=None) -> None:
         super().__init__()
         self.img_folder: Path = Path(img_folder)
         self.crop = crop
@@ -74,16 +75,23 @@ class Volume(object):
         self.current_identify = 0
         self.img_source: np.ndarray
         self.mask_dicts: Dict[str, np.ndarray]
+        if mapping:
+            print(f"mapping: {mapping}.")
+        self.mapping_module: Callable[[np.ndarray], np.ndarray] = np.vectorize(
+            lambda x: mapping.get(x)) if mapping else identical
+
         self.img_source, self.mask_dicts = self._preload_subjects(
             self.img_paths_group[self.identifies[self.current_identify]],
-            self.mask_paths_group_dict[self.identifies[self.current_identify]])
+            self.mask_paths_group_dict[self.identifies[self.current_identify]],
+            self.mapping_module)
 
     def __next__(self):
         if self.current_identify < len(self.identifies) - 1:
             self.current_identify += 1
             self.img_source, self.mask_dicts = self._preload_subjects(
                 self.img_paths_group[self.identifies[self.current_identify]],
-                self.mask_paths_group_dict[self.identifies[self.current_identify]])
+                self.mask_paths_group_dict[self.identifies[self.current_identify]],
+                self.mapping_module)
             if self.crop > 0:
                 self.img_source = self.img_source[:, self.crop:-self.crop, self.crop:-self.crop]
                 self.mask_dicts = {k: v[:, self.crop:-self.crop, self.crop:-self.crop] for k, v in
@@ -96,7 +104,8 @@ class Volume(object):
             self.current_identify -= 1
             self.img_source, self.mask_dicts = self._preload_subjects(
                 self.img_paths_group[self.identifies[self.current_identify]],
-                self.mask_paths_group_dict[self.identifies[self.current_identify]])
+                self.mask_paths_group_dict[self.identifies[self.current_identify]],
+                self.mapping_module)
             if self.crop > 0:
                 self.img_source = self.img_source[:, self.crop:-self.crop, self.crop:-self.crop]
                 self.mask_dicts = {k: v[:, self.crop:-self.crop, self.crop:-self.crop] for k, v in
@@ -141,12 +150,13 @@ class Volume(object):
         return img_paths_group, mask_paths_group
 
     @staticmethod
-    def _preload_subjects(batch_image_path: List[Path], batch_mask_paths_dict: Dict[str, List[Path]]) \
+    def _preload_subjects(batch_image_path: List[Path], batch_mask_paths_dict: Dict[str, List[Path]], mapping_module) \
             -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         img_source: np.ndarray = np.stack([np.array(Image.open(str(x)).convert('P')) for x in batch_image_path], axis=0)
         mask_source_dict: Dict[str, np.ndarray] = {}
         for k, v in batch_mask_paths_dict.items():
             mask_source_dict[k] = np.stack([np.array(Image.open(str(x)).convert('P')) for x in v], axis=0)
+            mask_source_dict[k] = mapping_module(mask_source_dict[k])
             assert mask_source_dict[k].shape == img_source.shape
         return img_source, mask_source_dict
 
@@ -280,6 +290,7 @@ if __name__ == '__main__':
         group_pattern=args.group_pattern,
         img_extension=args.img_extension,
         crop=args.crop,
+        mapping=args.mapping
     )
 
     Viewer = Multi_Slice_Viewer(V, shuffle_subject=args.shuffle, n_subject=args.n_subject)
