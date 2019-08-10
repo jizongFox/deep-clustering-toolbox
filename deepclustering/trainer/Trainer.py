@@ -1,4 +1,3 @@
-import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
 from pathlib import Path
@@ -10,6 +9,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 
 from .. import ModelMode, PROJECT_PATH
+from ..decorator import lazy_load_checkpoint
 from ..meters import MeterInterface
 from ..model import Model
 from ..utils import flatten_dict, _warnings, dict_filter
@@ -27,6 +27,7 @@ class _Trainer(ABC):
     wholemeter_filename = "wholeMeter.csv"
     checkpoint_identifier = "last.pth"
 
+    @lazy_load_checkpoint
     def __init__(
             self,
             model: Model,
@@ -66,14 +67,6 @@ class _Trainer(ABC):
             save_name="plot.png",
             csv_name=self.wholemeter_filename,
         )
-        if self.checkpoint:
-            assert (Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir()), Path(self.checkpoint)
-            state_dict = torch.load(
-                str(Path(self.checkpoint) / self.checkpoint_identifier),
-                map_location=torch.device("cpu"),
-            )
-            self.load_checkpoint(state_dict)
-        self.model.to(self.device)
 
     @abstractmethod
     def __init_meters__(self) -> List[Union[str, List[str]]]:
@@ -160,40 +153,6 @@ class _Trainer(ABC):
                 state_dictionary[module_name] = module.state_dict()
         return state_dictionary
 
-    def load_state_dict(self, state_dict) -> None:
-        """
-        Load state_dict for submodules having "load_state_dict" method.
-        :param state_dict:
-        :return:
-        """
-        # previous method to be removed latter
-        try:
-            self.model.load_state_dict(state_dict["model_state_dict"])
-        except Exception as e:
-            print(f"Loading checkpoint error for model_state_dict, {e}")
-        try:
-            self.METERINTERFACE.load_state_dict(state_dict["meter_state_dict"])
-        except Exception as e:
-            print(f"Loading meter error for model_state_dict, {e}")
-
-        for module_name, module in self.__dict__.items():
-            if hasattr(module, "load_state_dict"):
-                try:
-                    module.load_state_dict(state_dict[module_name])
-                except KeyError as e:
-                    print(f"Loading checkpoint error for {module_name}, {e}.")
-
-    def load_checkpoint(self, state_dict) -> None:
-        """
-        load checkpoint to models, meters, best score and _start_epoch
-        Can be extended by add more state_dict
-        :param state_dict:
-        :return:
-        """
-        self.load_state_dict(state_dict)
-        self.best_score = state_dict["best_score"]
-        self._start_epoch = state_dict["epoch"] + 1
-
     def save_checkpoint(self, state_dict, current_epoch, best_score):
         """
         save checkpoint with adding 'epoch' and 'best_score' attributes
@@ -211,6 +170,40 @@ class _Trainer(ABC):
         torch.save(state_dict, str(self.save_dir / "last.pth"))
         if save_best:
             torch.save(state_dict, str(self.save_dir / "best.pth"))
+
+    def load_state_dict(self, state_dict) -> None:
+        """
+        Load state_dict for submodules having "load_state_dict" method.
+        :param state_dict:
+        :return:
+        """
+        for module_name, module in self.__dict__.items():
+            if hasattr(module, "load_state_dict"):
+                try:
+                    module.load_state_dict(state_dict[module_name])
+                except KeyError as e:
+                    print(f"Loading checkpoint error for {module_name}, {e}.")
+                except RuntimeError as e:
+                    print(f"Interface changed error for {module_name}, {e}")
+
+    def load_checkpoint(self, state_dict) -> None:
+        """
+        load checkpoint to models, meters, best score and _start_epoch
+        Can be extended by add more state_dict
+        :param state_dict:
+        :return:
+        """
+        self.load_state_dict(state_dict)
+        self.best_score = state_dict["best_score"]
+        self._start_epoch = state_dict["epoch"] + 1
+
+    def load_checkpoint_from_path(self, checkpoint_path):
+        assert (Path(checkpoint_path).exists() and Path(checkpoint_path).is_dir()), Path(checkpoint_path)
+        state_dict = torch.load(
+            str(Path(checkpoint_path) / self.checkpoint_identifier),
+            map_location=torch.device("cpu"),
+        )
+        self.load_checkpoint(state_dict)
 
     def clean_up(self, wait_time=3):
         """
