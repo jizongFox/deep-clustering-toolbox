@@ -125,7 +125,7 @@ class DrawCSV2(object):
         time.sleep(3)
 
     def _draw_single(self, ax, data_frame: pd.DataFrame, column_name: str):
-        ax.plot(data_frame[column_name], label=column_name)
+        ax.plot(pd.Series(data_frame[column_name]).fillna(limit=5, method='ffill'), label=column_name)
         ax.legend()
         ax.grid()
         ax.set_title(
@@ -135,7 +135,8 @@ class DrawCSV2(object):
 
     def _draw_mulitple(self, ax, data_frame: pd.DataFrame, column_names: List[str]):
         for k in column_names:
-            ax.plot(data_frame[k], label=k)
+            ax.plot(pd.Series(data_frame[k]).fillna(limit=5, method='ffill'), label=k)
+            # ax.plot(data_frame[k], label=k)
         ax.legend()
         ax.grid()
         title = (
