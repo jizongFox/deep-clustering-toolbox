@@ -19,7 +19,7 @@ Several projects are rooted from this repo, including:
 >- `Adversarial Learning for Semi-Supervised Semantic Segmentation`, 
 >- `Semi-Supervised and Task-Driven Data Augmentation`, etc.
 + Discretely-constrained CNN for
->- [`Discretely-constrained deep network for weaklysupervised segmentation`](https://github.com/jizongFox/Discretly-constrained-CNN/).
+>- [`Discretely-constrained deep network for weakly-supervised segmentation`](https://github.com/jizongFox/Discretly-constrained-CNN/).
 ___
 ### Installation
 ```
