@@ -1,6 +1,9 @@
 import os
 from unittest import TestCase
 
+import matplotlib
+
+matplotlib.use("agg")
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 

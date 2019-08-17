@@ -27,9 +27,9 @@ class Test_Sequential_Wrapper(TestCase):
         transform1 = TransformInterface(config_1)
         transform2 = TransformInterface(config_1)
         synchronized_transform = SequentialWrapper(
-            img_transform=transform1, target_transform=transform2
+            img_transform=transform1, target_transform=transform2, if_is_target=[False, False]
         )
         result_imgs = synchronized_transform(
-            [self.color_img, self.mask], if_is_target=[False, False]
+            self.color_img, self.color_img
         )
-        # assert np.allclose(np.array(result_imgs[0]), np.array(result_imgs[1]))
+        assert np.allclose(np.array(result_imgs[0]), np.array(result_imgs[1]))

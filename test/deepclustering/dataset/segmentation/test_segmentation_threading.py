@@ -1,5 +1,4 @@
 import os
-import time
 from unittest import TestCase
 
 import numpy as np
@@ -73,9 +72,5 @@ class TestMedicalDataSegmentationWithBackgroundGenerator(TestCase):
         )
         with TimeBlock() as timer:
             for i, (data, filename) in enumerate(tqdm(dataloader)):
-                time1 = time.time()
-                while True:
-                    _ = np.random.randn(512)
-                    if time.time() - time1 > 0.1:
-                        break
-        print(timer.cost)
+                if i > 10:
+                    break

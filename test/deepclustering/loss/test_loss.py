@@ -2,6 +2,7 @@ import unittest
 
 import torch
 import torch.nn.functional as F
+
 from deepclustering.loss import loss
 from deepclustering.loss.IID_losses import IIDLoss
 from deepclustering.utils import simplex

@@ -12,9 +12,9 @@ from typing import Iterable, Set, Tuple, TypeVar, Callable, List, Dict, Any, Uni
 
 import numpy as np
 import torch
-from torch import nn
 import torch.nn.functional as F
 from torch import Tensor
+from torch import nn
 from tqdm import tqdm
 
 A = TypeVar("A")

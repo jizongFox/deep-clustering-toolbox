@@ -3,6 +3,7 @@ from unittest import TestCase
 import numpy as np
 import requests
 from PIL import Image
+
 from deepclustering.augment.pil_augment import (
     Img2Tensor,
     PILCutout,
@@ -63,7 +64,7 @@ class TestPILCutout(TestCase):
         cropped_color_img = self.transform(self.color_img)
         assert cropped_color_img.size == self.color_img.size
         assert (
-            np.array(cropped_color_img).mean() < np.array(self.color_img).mean()
+                np.array(cropped_color_img).mean() < np.array(self.color_img).mean()
         )  # type: ignore
 
 

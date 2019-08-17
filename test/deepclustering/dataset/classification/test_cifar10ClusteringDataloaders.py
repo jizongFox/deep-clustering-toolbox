@@ -1,4 +1,5 @@
 import random
+import time
 from unittest import TestCase
 
 import torch
@@ -9,7 +10,6 @@ from deepclustering.dataset import (
     Cifar10ClusteringDatasetInterface,
     BackgroundGenerator,
 )
-import time
 
 
 class TestCifar(TestCase):
@@ -59,6 +59,8 @@ class TestCifar(TestCase):
         )
         for i, data in enumerate(tqdm(combineLoader)):
             time.sleep(0.1)
+            if i > 10:
+                break
 
     def test_threading_speed(self):
         combineLoader = self.cifarGenerator.ParallelDataLoader(
@@ -71,6 +73,7 @@ class TestCifar(TestCase):
             self.transform_list["tf3"],
         )
         for i, data in enumerate(
-            tqdm(BackgroundGenerator(combineLoader, max_prefetch=20))
+                tqdm(BackgroundGenerator(combineLoader, max_prefetch=20))
         ):
-            time.sleep(0.1)
+            if i>100:
+                break

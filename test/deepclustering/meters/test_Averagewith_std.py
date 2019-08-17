@@ -1,8 +1,8 @@
 import time
 from unittest import TestCase
 
-import torch
 import numpy as np
+import torch
 
 from deepclustering.meters import AveragewithStd, MeterInterface
 from deepclustering.writer.draw_csv import DrawCSV2

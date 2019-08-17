@@ -2,6 +2,7 @@ from unittest import TestCase
 
 import torch
 import torch.nn as nn
+
 from deepclustering.meters import MeterInterface, AverageValueMeter, SliceDiceMeter
 
 
@@ -38,11 +39,11 @@ class TestMeterInterface(TestCase):
             self._training_loop(Meter1)
             Meter1.step()
             print(Meter1.summary())
-        meter1_dict = Meter1.state_dict
-        print("Meter1 saved.")
+        meter1_dict = Meter1.state_dict()
+        # print("Meter1 saved.")
         Meter2 = MeterInterface(meter_config=self.meter_config)
         Meter2.load_state_dict(meter1_dict)
-        print("Meter2 loaded")
+        # print("Meter2 loaded")
         print(Meter2.summary())
         for epoch in range(5):
             self._training_loop(Meter2)

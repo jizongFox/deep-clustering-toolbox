@@ -4,6 +4,12 @@ from copy import deepcopy as dcp
 
 
 def lazy_load_checkpoint(func):
+    """
+    This function is to decorate the __init__ to get the checkpoint of the neural network.
+    :param func:
+    :return:
+    """
+
     @functools.wraps(func)
     def wrapped_init_(self, *args, **kwargs):
         _kwargs = dcp(kwargs)
@@ -15,7 +21,6 @@ def lazy_load_checkpoint(func):
         # reset the checkpoint_path
         self.checkpoint = kwargs.get("checkpoint_path")
         if self.checkpoint:
-            print(f"the function to load checkpoint {func}")
             self.load_checkpoint_from_path(self.checkpoint)
         self.to(self.device)
 

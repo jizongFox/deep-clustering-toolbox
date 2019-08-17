@@ -1,6 +1,7 @@
 from unittest import TestCase
+
 from deepclustering.model import Model
-from deepclustering.weight_scheduler.customized_scheduler import RampScheduler
+from deepclustering.schedulers.customized_scheduler import RampScheduler
 
 
 class TestTrainer(TestCase):
@@ -25,10 +26,9 @@ class TestTrainer(TestCase):
         }
 
         self.model = Model(arch_dict, optim_dict, scheduler_dict)
-        self.scheduler = RampScheduler(10, 100, 1, -5)
+        self.scheduler = RampScheduler(0, 50, 0, 100, -5)
 
     def test_save_trainer(self):
         for epoch in range(50):
             self.model.step()
             self.scheduler.step()
-            print(self.scheduler.value)

@@ -1,10 +1,11 @@
 from unittest import TestCase
 
 import torch
+from torch import nn
+
 from deepclustering import arch
 from deepclustering.arch import get_arch, ARCH_CALLABLES, ARCH_PARAM_DICT
 from deepclustering.utils import simplex
-from torch import nn
 
 
 class Test_arch_interface(TestCase):
@@ -50,9 +51,11 @@ class Test_arch_interface(TestCase):
         for k in net_keys:
             print(f"Building network {k}...")
             net = get_arch(k, ARCH_PARAM_DICT[k])
-            if k == "clusternetimsat":
+            if k in ("clusternetimsat"):
                 with self.assertRaises(RuntimeError):
-                    pred = net(self.image)
+                    pred = net(torch.rand(1, 1, 64, 64))
+            elif k in ("enet", "unet", "unet_bn", "cnet"):
+                pred = net(torch.rand(1, 1, 224, 224))
             else:
                 pred = net(self.image)
             print(pred.__len__())
