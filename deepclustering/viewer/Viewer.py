@@ -278,6 +278,21 @@ class Multi_Slice_Viewer(object):
         ax.set_title(f'{ax.subject_name} @ plane:{ax.index} with {ax.mask_name}')
 
 
+def main():
+    args = get_parser()
+    V = Volume(
+        args.img_source,
+        args.gt_folders,
+        group_pattern=args.group_pattern,
+        img_extension=args.img_extension,
+        crop=args.crop,
+        mapping=args.mapping
+    )
+
+    Viewer = Multi_Slice_Viewer(V, shuffle_subject=args.shuffle, n_subject=args.n_subject)
+    Viewer.show()
+
+
 if __name__ == '__main__':
     '''
     python admm_research/postprocessing/Viewer.py --img_source=admm_research/dataset/ACDC-2D-All/val/Img --gt_folders admm_research/dataset/ACDC-2D-All/val/GT archives/LV_prior/Livia/fs/iter1000/best/ archives/LV_prior/Livia/gc_size/iter1000/best/ archives/LV_prior/Livia/size/iter1000/best/ --group_pattern='patient\d+_\d+' --crop 70

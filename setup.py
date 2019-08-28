@@ -1,12 +1,17 @@
+import pathlib
+
 from setuptools import setup, find_packages
+
+HERE = pathlib.Path(__file__).parent
+README = (HERE / "README.md").read_text()
 
 setup(
     name="deepclustering",
     version="1.0.0",
     packages=find_packages(),
     url="https://github.com/jizongFox/deep-clustering-toolbox",
-    license="",
-    author="jizong",
+    license="MIT    ",
+    author="Jizong Peng",
     author_email="jizong.peng.1@etsmtl.net",
     description="",
     install_requires=[
@@ -36,4 +41,9 @@ setup(
         "pyyaml",
         "termcolor"
     ],
+    entry_points = {
+        "console_script":[
+            "viewer=deepclustering.viewer.Viewer:main",
+        ]
+    },
 )
