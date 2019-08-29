@@ -1,8 +1,8 @@
 import bisect
 import warnings
 
-from torch._utils import _accumulate
 from torch import randperm
+from torch._utils import _accumulate
 
 
 class Dataset(object):
@@ -212,6 +212,21 @@ class ConcatDataset(Dataset):
         return self.cumulative_sizes
 
 
+class CombineDataset(Dataset):
+    """
+    Combine multiple dataset to return their values in the same time.
+    """
+
+    def __init__(self, *datasets):
+        self.datasets = datasets
+
+    def __getitem__(self, i):
+        return tuple(d[i] for d in self.datasets)
+
+    def __len__(self):
+        return min(len(d) for d in self.datasets)
+
+
 class ChainDataset(IterableDataset):
     r"""Dataset for chainning multiple :class:`IterableDataset` s.
 
@@ -222,6 +237,7 @@ class ChainDataset(IterableDataset):
     Arguments:
         datasets (iterable of IterableDataset): datasets to be chained together
     """
+
     def __init__(self, datasets):
         super(ChainDataset, self).__init__()
         self.datasets = datasets
@@ -248,6 +264,7 @@ class Subset(Dataset):
         dataset (Dataset): The whole Dataset
         indices (sequence): Indices in the whole set selected for subset
     """
+
     def __init__(self, dataset, indices):
         self.dataset = dataset
         self.indices = indices

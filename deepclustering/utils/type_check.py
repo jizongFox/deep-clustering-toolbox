@@ -228,7 +228,16 @@ def is_generator(val):
     Returns
     -------
     bool
-        True is the variable is a generator. Otherwise False.
+        True if the variable is a generator. Otherwise False.
 
     """
     return isinstance(val, types.GeneratorType)
+
+
+def is_tuple_or_list(val):
+    """
+    Checks whether a variable is a list or a tuple
+    :param val: The variable to check
+    :return: True if the variable is a list or a tuple, otherwise False
+    """
+    return isinstance(val, (list, tuple))

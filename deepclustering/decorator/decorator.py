@@ -145,6 +145,10 @@ def processed(f):
 
 
 class FixRandomSeed:
+    """
+    This class fixes the seeds for numpy and random pkgs.
+    """
+
     def __init__(self, random_seed: int = 0):
         self.random_seed = random_seed
         self.randombackup = random.getstate()

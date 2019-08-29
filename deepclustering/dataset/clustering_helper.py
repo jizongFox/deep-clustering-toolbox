@@ -49,7 +49,7 @@ class ClusterDatasetInterface(object):
     def _creat_concatDataset(
             self,
             image_transform: Callable,
-            target_transform: Callable,
+            target_transform: Optional[Callable],
             dataset_dict: dict = {},
     ):
         """
