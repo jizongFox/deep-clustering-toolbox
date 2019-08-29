@@ -5,10 +5,10 @@ from unittest import TestCase
 import torch
 from tqdm import tqdm
 
+from deepclustering.dataloader import BackgroundGenerator
 from deepclustering.dataset import (
     default_cifar10_img_transform,
     Cifar10ClusteringDatasetInterface,
-    BackgroundGenerator,
 )
 
 
@@ -75,5 +75,5 @@ class TestCifar(TestCase):
         for i, data in enumerate(
                 tqdm(BackgroundGenerator(combineLoader, max_prefetch=20))
         ):
-            if i>100:
+            if i > 100:
                 break

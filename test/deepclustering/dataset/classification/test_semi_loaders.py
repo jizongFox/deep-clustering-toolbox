@@ -1,15 +1,10 @@
-#
-#
-#  This is to test the semi supervised data loaders
-#
-#
-__author__ = "Jizong Peng"
 from unittest import TestCase
 
 from deepclustering import DATA_PATH
 from deepclustering.dataset.classification.cifar_helper import (
     Cifar10SemiSupervisedDatasetInterface,
     default_cifar10_img_transform,
+    Cifar10SemiSupervisedParallelDatasetInterface
 )
 from deepclustering.dataset.classification.mnist_helper import (
     default_mnist_img_transform,
@@ -55,3 +50,29 @@ class Test_semisupervised_CIFAR(TestCase):
         iter(labeled_loader).__next__()
         iter(unlabeled_loader).__next__()
         iter(val_loader).__next__()
+
+
+class Test_cifar10SemiSupervisedParallelDatasetInterface(TestCase):
+    def setUp(self) -> None:
+        self.semisupervised_handler = Cifar10SemiSupervisedParallelDatasetInterface(data_root=DATA_PATH, batch_size=100,
+                                                                                    shuffle=True)
+        self.labeled_transform = default_cifar10_img_transform["tf1"]
+        self.unlabeled_transform = default_cifar10_img_transform["tf2"]
+        self.val_transform = default_cifar10_img_transform["tf3"]
+
+    def test_cifar10(self):
+        labeled_dataloader, unlabeled_dataloader, val_dataloader = self.semisupervised_handler.SemiSupervisedDataLoaders(
+            labeled_transform=self.labeled_transform,
+            unlabeled_transform=self.unlabeled_transform,
+            val_transform=self.val_transform,
+            target_transform=None
+        )
+
+    def test_cifar10_parallel(self):
+        labeled_dataloader, unlabeled_dataloader, val_dataloader = self.semisupervised_handler.SemiSupervisedParallelDataLoaders(
+            labeled_transforms=[self.labeled_transform] * 5,
+            unlabeled_transforms=[self.unlabeled_transform] * 5,
+            val_transforms=[self.val_transform],
+            target_transform=None
+        )
+        print()

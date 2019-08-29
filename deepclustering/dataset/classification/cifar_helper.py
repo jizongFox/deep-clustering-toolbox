@@ -10,11 +10,11 @@ __all__ = [
 from functools import reduce
 from typing import *
 
+from deepclustering.dataset.clustering_helper import ClusterDatasetInterface
+from deepclustering.dataset.semi_helper import SemiDatasetInterface, SemiDataSetInterface_
 from torch.utils.data import Dataset
 
 from .cifar import CIFAR10
-from deepclustering.dataset.clustering_helper import ClusterDatasetInterface
-from deepclustering.dataset.semi_helper import SemiDatasetInterface
 from ... import DATA_PATH
 from ...augment import TransformInterface
 
@@ -27,13 +27,13 @@ class Cifar10ClusteringDatasetInterface(ClusterDatasetInterface):
     ALLOWED_SPLIT = ["train", "val"]
 
     def __init__(
-        self,
-        data_root=DATA_PATH,
-        split_partitions: List[str] = ["train", "val"],
-        batch_size: int = 1,
-        shuffle: bool = False,
-        num_workers: int = 1,
-        pin_memory: bool = True,
+            self,
+            data_root=DATA_PATH,
+            split_partitions: List[str] = ["train", "val"],
+            batch_size: int = 1,
+            shuffle: bool = False,
+            num_workers: int = 1,
+            pin_memory: bool = True,
     ) -> None:
         super().__init__(
             CIFAR10,
@@ -46,14 +46,14 @@ class Cifar10ClusteringDatasetInterface(ClusterDatasetInterface):
         )
 
     def _creat_concatDataset(
-        self,
-        image_transform: Callable,
-        target_transform: Callable,
-        dataset_dict: dict = {},
+            self,
+            image_transform: Callable,
+            target_transform: Callable,
+            dataset_dict: dict = {},
     ):
         for split in self.split_partitions:
             assert (
-                split in self.ALLOWED_SPLIT
+                    split in self.ALLOWED_SPLIT
             ), f"Allowed split in cifar-10:{self.ALLOWED_SPLIT}, given {split}."
 
         _datasets = []
@@ -73,13 +73,13 @@ class Cifar10ClusteringDatasetInterface(ClusterDatasetInterface):
 
 class Cifar10SemiSupervisedDatasetInterface(SemiDatasetInterface):
     def __init__(
-        self,
-        data_root=DATA_PATH,
-        labeled_sample_num: int = 4000,
-        img_transformation: Callable = None,
-        target_transformation: Callable = None,
-        *args,
-        **kwargs,
+            self,
+            data_root=DATA_PATH,
+            labeled_sample_num: int = 4000,
+            img_transformation: Callable = None,
+            target_transformation: Callable = None,
+            *args,
+            **kwargs,
     ) -> None:
         super().__init__(
             CIFAR10,
@@ -92,7 +92,7 @@ class Cifar10SemiSupervisedDatasetInterface(SemiDatasetInterface):
         )
 
     def _init_train_and_test_test(
-        self, transform, target_transform, *args, **kwargs
+            self, transform, target_transform, *args, **kwargs
     ) -> Tuple[Dataset, Dataset]:
         super()._init_train_and_test_test(transform, target_transform, *args, **kwargs)
         train_set = self.DataClass(
@@ -112,6 +112,27 @@ class Cifar10SemiSupervisedDatasetInterface(SemiDatasetInterface):
             download=True,
             *args,
             **kwargs,
+        )
+        return train_set, val_set
+
+
+class Cifar10SemiSupervisedParallelDatasetInterface(SemiDataSetInterface_):
+
+    def __init__(self, data_root: str, labeled_sample_num: int = 4000, seed: int = 0, batch_size: int = 1,
+                 shuffle: bool = False, num_workers: int = 1, pin_memory: bool = True, drop_last=False) -> None:
+        super().__init__(CIFAR10, data_root, labeled_sample_num, seed, batch_size, shuffle, num_workers, pin_memory,
+                         drop_last)
+
+    def _init_train_val_sets(self) -> Tuple[Dataset, Dataset]:
+        train_set = self.DataClass(
+            DATA_PATH,
+            train=True,
+            download=True,
+        )
+        val_set = self.DataClass(
+            DATA_PATH,
+            train=False,
+            download=True,
         )
         return train_set, val_set
 

@@ -16,7 +16,7 @@ from deepclustering.augment.pil_augment import (
     Compose,
 )
 from deepclustering.augment.sychronized_augment import SequentialWrapper
-from deepclustering.dataset import BackgroundGenerator
+from deepclustering.dataloader import BackgroundGenerator
 from deepclustering.dataset.segmentation.medicalSegmentationDataset import (
     MedicalImageSegmentationDataset,
 )
