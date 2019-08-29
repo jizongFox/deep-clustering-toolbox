@@ -4,15 +4,7 @@ from typing import *
 
 from torch.utils.data import Dataset, DataLoader
 
-from .cifar import CIFAR10
-from .mnist import MNIST
-from .stl10 import STL10
-from .. import dataset
-from ..segmentation.toydataset import (
-    Seg_ShapesDataset,
-    Cls_ShapesDataset,
-    ShapesDataset,
-)
+from deepclustering.dataloader import dataset
 
 
 class ClusterDatasetInterface(object):

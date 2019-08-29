@@ -7,10 +7,11 @@ from typing import Tuple, Callable, List, Union, Any, Dict
 
 from numpy.random import choice
 from torch.utils.data import Dataset, DataLoader, Subset
-from ..DataLoader_helper import BackgroundGenerator
-from ...utils import _warnings
+
+from deepclustering.dataset.DataLoader_helper import BackgroundGenerator
 from ..dataset import CombineDataset
-from ...decorator import FixRandomSeed
+from deepclustering.decorator import FixRandomSeed
+from deepclustering.utils import _warnings
 
 
 class SemiDatasetInterface(object):
@@ -31,11 +32,11 @@ class SemiDatasetInterface(object):
         super().__init__()
         _warnings(args, kwargs)
         assert isinstance(labeled_sample_num, int)
+        self.data_root = data_root
         self.DataClass = DataClass
         self.labeled_sample_num = labeled_sample_num
         self.img_transform = img_transformation
         self.target_transform = target_transformation
-        self.data_root = data_root
 
     @abstractmethod
     def _init_train_and_test_test(
@@ -106,9 +107,7 @@ class SemiDatasetInterface(object):
         )
         unlabeled_indices = sorted(list(set(range(total_num)) - set(labeled_indices)))
         if verbose:
-            print(
-                f">>>Generating {len(labeled_indices)} labeled data and {len(unlabeled_indices)} unlabeled data."
-            )
+            print(f">>>Generating {len(labeled_indices)} labeled data and {len(unlabeled_indices)} unlabeled data.")
         return labeled_indices, unlabeled_indices
 
 

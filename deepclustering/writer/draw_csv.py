@@ -120,9 +120,7 @@ class DrawCSV2(object):
 
         plt.savefig(str(self.save_dir) + f"/{self.save_name}")
         plt.close(fig)
-        import time
 
-        time.sleep(3)
 
     def _draw_single(self, ax, data_frame: pd.DataFrame, column_name: str):
         ax.plot(pd.Series(data_frame[column_name]).fillna(limit=5, method='ffill'), label=column_name)

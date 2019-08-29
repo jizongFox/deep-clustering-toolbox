@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class Scheduler(object):
+class WeightScheduler(object):
     def __init__(self):
         pass
 
@@ -39,8 +39,37 @@ class Scheduler(object):
     def get_lr(**kwargs):
         raise NotImplementedError
 
+    def plot_weights(self):
+        _current_epoch = self.epoch
+        self.epoch = 0
+        epochs = list(range(int(self.max_epoch * 1.5)))
+        lrs = []
+        for _ in epochs:
+            lrs.append(self.value)
+            self.step()
+        assert len(lrs) == len(epochs)
+        import matplotlib  # type: ignore
+        _current_bkend = matplotlib.get_backend()
+        try:
+            matplotlib.use("tkagg")
+        except:
+            pass
+        import matplotlib.pyplot as plt  # type: ignore
+        plt.figure()
+        plt.plot(epochs, lrs)
+        plt.title(f"{self.__class__.__name__}, learning (weight) rate")
+        plt.show()
+        plt.pause(2)
 
-class RampScheduler(Scheduler):
+        # return back
+        self.epoch = _current_epoch
+        try:
+            matplotlib.use(_current_bkend)
+        except:
+            pass
+
+
+class RampScheduler(WeightScheduler):
     def __init__(self, begin_epoch=0, max_epoch=10, min_value=0.0, max_value=1.0, ramp_mult=-5.0):
         super().__init__()
         self.begin_epoch = int(begin_epoch)
@@ -70,7 +99,7 @@ class RampScheduler(Scheduler):
         )
 
 
-class ConstantScheduler(Scheduler):
+class ConstantScheduler(WeightScheduler):
     def __init__(self, begin_epoch, max_value=1.0):
         super().__init__()
         self.begin_epoch = int(begin_epoch)
@@ -90,41 +119,3 @@ class ConstantScheduler(Scheduler):
             return 0.0
         else:
             return max_value
-
-
-class RampDownScheduler(Scheduler):
-    def __init__(self, max_epoch, max_value, ramp_mult, min_val, cutoff):
-        super().__init__()
-        self.max_epoch = int(max_epoch)
-        self.max_value = float(max_value)
-        self.mult = float(ramp_mult)
-        self.epoch = 0
-        self.min_val = float(min_val)
-        self.cutoff = int(cutoff)
-
-    def step(self):
-        self.epoch += 1
-
-    @property
-    def value(self):
-        return self.ramp_down(
-            self.epoch,
-            self.max_epoch,
-            self.max_value,
-            self.mult,
-            self.min_val,
-            self.cutoff,
-        )
-
-    @staticmethod
-    def ramp_down(epoch, max_epochs, max_val, mult, min_val, cutoff):
-        assert cutoff < max_epochs
-        if epoch == 0:
-            return max_val
-        elif epoch >= cutoff:
-            return min_val
-        return (
-                max_val
-                - max_val * np.exp(mult * (1.0 - float(epoch) / (cutoff)) ** 2)
-                + min_val
-        )

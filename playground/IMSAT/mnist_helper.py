@@ -10,8 +10,8 @@ import PIL
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from deepclustering.dataset.classification.clustering_helper import ClusterDatasetInterface
-from deepclustering.dataset.classification.semi_helper import SemiDatasetInterface
+from deepclustering.dataset.clustering_helper import ClusterDatasetInterface
+from deepclustering.dataset.semi_helper import SemiDatasetInterface
 from .mnist import MNIST
 from deepclustering import DATA_PATH
 from deepclustering.augment import pil_augment

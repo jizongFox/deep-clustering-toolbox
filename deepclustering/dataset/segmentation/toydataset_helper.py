@@ -1,7 +1,7 @@
 from typing import Callable
 
 from .toydataset import Cls_ShapesDataset
-from ..classification.clustering_helper import ClusterDatasetInterface
+from deepclustering.dataset.clustering_helper import ClusterDatasetInterface
 
 
 class ToyExampleInterFace(ClusterDatasetInterface):

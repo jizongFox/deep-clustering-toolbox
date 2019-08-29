@@ -13,8 +13,8 @@ from typing import *
 from torch.utils.data import Dataset
 
 from .cifar import CIFAR10
-from .clustering_helper import ClusterDatasetInterface
-from .semi_helper import SemiDatasetInterface
+from deepclustering.dataset.clustering_helper import ClusterDatasetInterface
+from deepclustering.dataset.semi_helper import SemiDatasetInterface
 from ... import DATA_PATH
 from ...augment import TransformInterface
 

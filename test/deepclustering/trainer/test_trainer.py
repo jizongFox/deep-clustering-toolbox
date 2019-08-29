@@ -26,7 +26,8 @@ class TestTrainer(TestCase):
         }
 
         self.model = Model(arch_dict, optim_dict, scheduler_dict)
-        self.scheduler = RampScheduler(0, 50, 0, 100, -5)
+        self.scheduler = RampScheduler(100, 500, 10, 1, -5)
+        self.scheduler.plot_weights()
 
     def test_save_trainer(self):
         for epoch in range(50):

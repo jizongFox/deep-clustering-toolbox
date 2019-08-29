@@ -3,7 +3,7 @@ from typing import List, Callable
 
 from torchvision import transforms
 
-from .clustering_helper import ClusterDatasetInterface
+from deepclustering.dataset.clustering_helper import ClusterDatasetInterface
 from .stl10 import STL10
 from ... import DATA_PATH
 from ...augment import pil_augment
