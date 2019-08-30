@@ -75,5 +75,5 @@ class TestCifar(TestCase):
         for i, data in enumerate(
                 tqdm(BackgroundGenerator(combineLoader, max_prefetch=20))
         ):
-            if i > 100:
+            if i > 10:
                 break

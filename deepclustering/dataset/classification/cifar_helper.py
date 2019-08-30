@@ -11,7 +11,7 @@ from functools import reduce
 from typing import *
 
 from deepclustering.dataset.clustering_helper import ClusterDatasetInterface
-from deepclustering.dataset.semi_helper import SemiDatasetInterface, SemiDataSetInterface_
+from deepclustering.dataset.semi_helper import SemiDataSetInterface
 from torch.utils.data import Dataset
 
 from .cifar import CIFAR10
@@ -71,69 +71,18 @@ class Cifar10ClusteringDatasetInterface(ClusterDatasetInterface):
         return serial_dataset
 
 
-class Cifar10SemiSupervisedDatasetInterface(SemiDatasetInterface):
-    def __init__(
-            self,
-            data_root=DATA_PATH,
-            labeled_sample_num: int = 4000,
-            img_transformation: Callable = None,
-            target_transformation: Callable = None,
-            *args,
-            **kwargs,
-    ) -> None:
-        super().__init__(
-            CIFAR10,
-            data_root,
-            labeled_sample_num,
-            img_transformation,
-            target_transformation,
-            *args,
-            **kwargs,
-        )
+class Cifar10SemiSupervisedDatasetInterface(SemiDataSetInterface):
 
-    def _init_train_and_test_test(
-            self, transform, target_transform, *args, **kwargs
-    ) -> Tuple[Dataset, Dataset]:
-        super()._init_train_and_test_test(transform, target_transform, *args, **kwargs)
-        train_set = self.DataClass(
-            DATA_PATH,
-            train=True,
-            transform=transform,
-            target_transform=target_transform,
-            download=True,
-            *args,
-            **kwargs,
-        )
-        val_set = self.DataClass(
-            DATA_PATH,
-            train=False,
-            transform=transform,
-            target_transform=target_transform,
-            download=True,
-            *args,
-            **kwargs,
-        )
-        return train_set, val_set
-
-
-class Cifar10SemiSupervisedParallelDatasetInterface(SemiDataSetInterface_):
-
-    def __init__(self, data_root: str, labeled_sample_num: int = 4000, seed: int = 0, batch_size: int = 1,
-                 shuffle: bool = False, num_workers: int = 1, pin_memory: bool = True, drop_last=False) -> None:
-        super().__init__(CIFAR10, data_root, labeled_sample_num, seed, batch_size, shuffle, num_workers, pin_memory,
-                         drop_last)
+    def __init__(self, data_root: str = DATA_PATH, labeled_sample_num: int = 4000, seed: int = 0,
+                 batch_size: int = 10, labeled_batch_size: int = None, unlabeled_batch_size: int = None,
+                 val_batch_size: int = None, shuffle: bool = False, num_workers: int = 1, pin_memory: bool = True,
+                 drop_last=False, verbose: bool = True) -> None:
+        super().__init__(CIFAR10, data_root, labeled_sample_num, seed, batch_size, labeled_batch_size,
+                         unlabeled_batch_size, val_batch_size, shuffle, num_workers, pin_memory, drop_last, verbose)
 
     def _init_train_val_sets(self) -> Tuple[Dataset, Dataset]:
-        train_set = self.DataClass(
-            DATA_PATH,
-            train=True,
-            download=True,
-        )
-        val_set = self.DataClass(
-            DATA_PATH,
-            train=False,
-            download=True,
-        )
+        train_set = self.DataClass(self.data_root, train=True, download=True, )
+        val_set = self.DataClass(self.data_root, train=False, download=True, )
         return train_set, val_set
 
 

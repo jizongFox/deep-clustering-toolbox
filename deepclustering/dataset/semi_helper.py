@@ -1,13 +1,10 @@
 from abc import abstractmethod
 from copy import deepcopy as dcp
 from itertools import repeat
-from pathlib import Path
-from typing import Tuple, Callable, List, Union, Any, Dict
+from typing import Tuple, Callable, List, Type
 
-import numpy as np
 from PIL import Image
 from deepclustering.decorator import FixRandomSeed
-from deepclustering.utils import _warnings
 from numpy.random import choice
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader, Subset
@@ -37,159 +34,44 @@ def _draw_indices(dataset: Dataset, labeled_sample_num: int, verbose: bool = Tru
     return labeled_indices, unlabeled_indices
 
 
-class SemiDatasetInterface(object):
-    """
-    Dataset interface for semi supervised learning, which generates indices for samples.
-    """
-
-    def __init__(
-            self,
-            DataClass: Dataset,
-            data_root: str,
-            labeled_sample_num: int,
-            img_transformation: Callable[[Image.Image], Tensor] = None,
-            target_transformation: Callable[[Union[Tensor, np.ndarray]], Tensor] = None,
-            *args,
-            **kwargs,
-    ) -> None:
-        super(SemiDatasetInterface, self).__init__()
-        _warnings(args, kwargs)
-        assert isinstance(labeled_sample_num, int), "`labeled_sample_num` is expected to be `int`, given {}".format(
-            type(labeled_sample_num))
-        assert isinstance(data_root, (str, Path)), "`data_root` is expected to be 'str-like', given {}".format(
-            type(data_root))
-        self.data_root = data_root
-        self.DataClass = DataClass
-        self.labeled_sample_num = labeled_sample_num
-        self.img_transform = img_transformation
-        self.target_transform = target_transformation
-
-    @abstractmethod
-    def _init_train_and_test_test(
-            self, transform, target_transform, *args, **kwargs
-    ) -> Tuple[Dataset, Dataset]:  # type: ignore
-        """
-        This method initialize the train set and validation set
-        :return: train and test dataset
-        """
-        _warnings(args, kwargs)
-
-    def SemiSupervisedDataLoaders(self, batch_size=4,
-                                  shuffle=True,
-                                  drop_last=False,
-                                  num_workers=1, *args, **kwargs) -> Tuple[DataLoader, DataLoader, DataLoader]:
-        _warnings(args, kwargs)
-        train_set, val_set = self._init_train_and_test_test(
-            transform=self.img_transform, target_transform=self.target_transform
-        )
-        labeled_index, unlabeled_index = _draw_indices(
-            train_set, self.labeled_sample_num
-        )
-        labeled_loader = DataLoader(
-            Subset(train_set, labeled_index),
-            batch_size=batch_size,
-            shuffle=shuffle,
-            drop_last=drop_last,
-            num_workers=num_workers,
-            *args,
-            **kwargs,
-        )
-        unlabeled_loader = DataLoader(
-            Subset(train_set, unlabeled_index),
-            batch_size=batch_size,
-            shuffle=shuffle,
-            drop_last=drop_last,
-            num_workers=num_workers,
-            *args,
-            **kwargs,
-        )
-
-        val_loader = DataLoader(
-            val_set,
-            batch_size=batch_size,
-            shuffle=False,
-            drop_last=False,
-            num_workers=num_workers,
-            *args,
-            **kwargs,
-        )
-
-        assert (labeled_loader.dataset.__len__() + unlabeled_loader.dataset.__len__() == train_set.__len__())
-
-        return labeled_loader, unlabeled_loader, val_loader
-
-
-class SemiParallelDatasetInterface(object):
-    # todo: to be completed in the future
-
-    def __init__(
-            self,
-            DataClass: Dataset,
-            data_root: str,
-            labeled_sample_num: int,
-            batch_size: int = 1,
-            shuffle: bool = False,
-            num_workers: int = 1,
-            pin_memory: bool = True,
-            drop_last=False,
-    ) -> None:
-        super().__init__()
-        self.DataClass = DataClass
-        self.data_root = data_root
-        self.labeled_sample_num = labeled_sample_num
-        self.dataloader_params = {
-            "batch_size": batch_size,
-            "shuffle": shuffle,
-            "num_workers": num_workers,
-            "pin_memory": pin_memory,
-            "drop_last": drop_last
-        }
-
-    @abstractmethod
-    def _init_train_and_test_test(
-            self, transform, target_transform, *args, **kwargs
-    ) -> Tuple[Dataset, Dataset]:
-        pass
-
-    def _create_semi_supervised_datasets(self, image_transform: Callable, target_transform: Callable) -> Tuple[
-        Dataset, Dataset, Dataset]:
-        train_set, val_set = self._init_train_and_test_test(
-            transform=image_transform, target_transform=target_transform
-        )
-
-        labeled_index, unlabeled_index = _draw_indices(train_set, self.labeled_sample_num)
-        labeled_set, unlabeled_set = Subset(train_set, labeled_index), Subset(train_set, unlabeled_index)
-        return labeled_set, unlabeled_set, val_set
-
-    def _creat_combineDataset(self) -> CombineDataset:
-        pass
-
-    def ParallelDataLoaders(
-            self,
-            *image_transforms: Callable,
-            target_transform: Union[Callable, Tuple[Callable, ...]] = None,
-            dataloader_dict: Dict[str, Any] = {}
-    ):
-        pass
-
-
-class SemiDataSetInterface_(object):
+class SemiDataSetInterface(object):
 
     def __init__(self,
-                 DataClass: Dataset,
+                 DataClass: Type[Dataset],
                  data_root: str,
                  labeled_sample_num: int,
                  seed: int = 0,
                  batch_size: int = 1,
+                 labeled_batch_size: int = None,
+                 unlabeled_batch_size: int = None,
+                 val_batch_size: int = None,
                  shuffle: bool = False,
                  num_workers: int = 1,
                  pin_memory: bool = True,
-                 drop_last=False) -> None:
+                 drop_last=False,
+                 verbose: bool = True) -> None:
+        """
+        when batch_size is not `None`, we do not consider `labeled_batch_size`, `unlabeled_batch_size`, and `val_batch_size`
+        when batch_size is `None`, `labeled_batch_size`,`unlabeled_batch_size` and `val_batch_size` should be all int and >=1
+        """
         super().__init__()
         self.data_root = data_root
         self.DataClass = DataClass
         self.seed = seed
         self.labeled_sample_num = labeled_sample_num
+        self.verbose = verbose
+        self._if_use_indiv_bz: bool = self._use_individual_batch_size(
+            batch_size,
+            labeled_batch_size,
+            unlabeled_batch_size,
+            val_batch_size, verbose)
+
+        self.batch_params = {
+            "labeled_batch_size": labeled_batch_size,
+            "unlabeled_batch_size": unlabeled_batch_size,
+            "val_batch_size": val_batch_size
+        }
+
         self.dataloader_params = {
             "batch_size": batch_size,
             "shuffle": shuffle,
@@ -205,7 +87,8 @@ class SemiDataSetInterface_(object):
         :return: Tuple of dataset, Labeled Dataset, Unlabeled Dataset, Val Dataset
         """
         train_set, val_set = self._init_train_val_sets()
-        labeled_index, unlabeled_index = _draw_indices(train_set, self.labeled_sample_num, seed=self.seed)
+        labeled_index, unlabeled_index = _draw_indices(train_set, self.labeled_sample_num, seed=self.seed,
+                                                       verbose=self.verbose)
         #
         labeled_set = Subset(dcp(train_set), labeled_index)
 
@@ -213,6 +96,23 @@ class SemiDataSetInterface_(object):
 
         del train_set
         return labeled_set, unlabeled_set, val_set
+
+    @staticmethod
+    def _use_individual_batch_size(batch_size, l_batch_size, un_batch_size, val_batch_size, verbose):
+        if isinstance(l_batch_size, int) and isinstance(un_batch_size, int) and isinstance(val_batch_size, int):
+            assert l_batch_size >= 1 and un_batch_size >= 1 and val_batch_size >= 1, "batch_size should be greater than 1."
+            if verbose:
+                print(
+                    f"Using labeled_batch_size={l_batch_size}, unlabeled_batch_size={un_batch_size}, val_batch_size={val_batch_size}")
+            return True
+        elif isinstance(batch_size, int) and batch_size >= 1:
+            if verbose:
+                print(f"Using all same batch size of {batch_size}")
+            return False
+        else:
+            raise ValueError(
+                f"batch_size setting error, given batch_size={batch_size}, labeled_batch_size={l_batch_size}, "
+                f"unlabeled_batch_size={un_batch_size}, val_batch_size={val_batch_size}.")
 
     @abstractmethod
     def _init_train_val_sets(self) -> Tuple[Dataset, Dataset]:
@@ -254,9 +154,15 @@ class SemiDataSetInterface_(object):
             unlabeled_transform,
             val_transform,
             target_transform)
+        if self._if_use_indiv_bz:
+            self.dataloader_params.update({"batch_size": self.batch_params.get("labeled_batch_size")})
         labeled_loader = DataLoader(labeled_set, **self.dataloader_params)
+        if self._if_use_indiv_bz:
+            self.dataloader_params.update({"batch_size": self.batch_params.get("unlabeled_batch_size")})
         unlabeled_loader = DataLoader(unlabeled_set, **self.dataloader_params)
         self.dataloader_params.update({"shuffle": False})
+        if self._if_use_indiv_bz:
+            self.dataloader_params.update({"batch_size": self.batch_params.get("val_batch_size")})
         val_loader = DataLoader(val_set, **self.dataloader_params)
         return labeled_loader, unlabeled_loader, val_loader
 
@@ -287,3 +193,7 @@ class SemiDataSetInterface_(object):
         self.dataloader_params.update({"shuffle": False})
         val_loader = DataLoader(val_set, **self.dataloader_params)
         return labeled_loader, unlabeled_loader, val_loader
+
+
+class unzipParallelData(object):
+    pass
