@@ -24,5 +24,6 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - pip install -e .
+  - pip install pytest-xdist
 script:
-  - python -m pytest
+  - python -m pytest -n 10
