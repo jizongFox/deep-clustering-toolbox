@@ -10,6 +10,7 @@ from deepclustering.arch.classification.IIC.net6c_two_head import *
 from deepclustering.arch.classification.IMSAT.imsat import *
 from deepclustering.arch.classification.dummy import *
 from deepclustering.arch.classification.vat_network import *
+from deepclustering.arch.classification.preresnet import *
 
 """
 5G net is based on resnet34 while 6C net is based on VGG16.

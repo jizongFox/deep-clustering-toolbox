@@ -67,6 +67,7 @@ class Model(ABC):
         # torchnet = nn.DataParallel(torchnet)
 
         optimizer: optim.Optimizer
+        self.optim_params: Optional[Dict[str, Union[str, int, float]]]
         if self.optim_dict is not None:
             self.optim_name = self.optim_dict["name"]
             self.optim_params = {k: v for k, v in self.optim_dict.items() if k != "name"}

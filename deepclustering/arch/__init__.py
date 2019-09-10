@@ -36,6 +36,7 @@ _register_arch("enet", Enet)
 _register_arch("unet", UNet)
 _register_arch("unet_bn", UNet_bn)
 _register_arch("cnet", CorstemNet)
+_register_arch("preresnet", PreResNet)
 # Adding default keys here to enable automatic testing
 _register_param("clusternet5g", ClusterNet5g_Param)
 _register_param("clusternet5gtwohead", ClusterNet5gTwoHead_Param)
@@ -49,6 +50,7 @@ _register_param("enet", Enet_Param)
 _register_param("unet", Unet_Param)
 _register_param("unet_bn", Unetbn_Param)
 _register_param("cnet", CorstemNet_Param)
+_register_param("preresnet", PreResNet110_params)
 """
 Public interface
 """

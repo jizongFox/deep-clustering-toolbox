@@ -71,7 +71,7 @@ class MNISTTrainer(_Trainer):
     def __init_meters__(self) -> List[str]:
         METER_CONFIG = {"rec_loss": AverageValueMeter()}
         self.METERINTERFACE = MeterInterface(METER_CONFIG)
-        # return ["rec_loss_mean"]
+        return ["rec_loss_mean"]
 
     def _training_report_dict(self):
         return {"rec_loss": self.METERINTERFACE["rec_loss"].summary()["mean"]}
@@ -155,7 +155,7 @@ model.optimizer = torch.optim.Adam(
     model.torchnet.parameters(), lr=1e-3, weight_decay=1e-5
 )
 
-config = ConfigManger(None).parsed_args
+config = ConfigManger().parsed_args
 if config["loss"] == "mse":
     criterion = nn.MSELoss()
 elif config["loss"] == "gdl":

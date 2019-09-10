@@ -106,7 +106,7 @@ class _Trainer(ABC):
 
     @abstractmethod
     def _train_loop(
-            self, train_loader=None, epoch: int = 0, mode=ModelMode.TRAIN, *args, **kwargs
+            self, train_loader: DataLoader = None, epoch: int = 0, mode=ModelMode.TRAIN, *args, **kwargs
     ):
         # warning control
         _warnings(args, kwargs)
