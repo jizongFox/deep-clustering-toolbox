@@ -4,7 +4,7 @@ Arch:
   depth: 110
 
 Optim:
-  name:  radam
+  name: Adam
   lr: 0.0001
 
 Scheduler:
@@ -13,10 +13,12 @@ Scheduler:
   gamma: 0.7
 
 DataLoader:
-  batch_size: 20
-  shuffle: false
+  batch_size: 100
+  shuffle: true
   num_workers: 16
-  drop_last: False
+  drop_last: true
 
 Trainer:
-  max_epoch: 10
+  max_epoch: 1000
+  device: cuda
+  save_dir: swa/baseline

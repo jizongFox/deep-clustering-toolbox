@@ -40,7 +40,6 @@ class Model(ABC):
             optim_dict: Dict[str, Any] = None,
             scheduler_dict: Dict[str, Any] = None,
     ) -> None:
-        warnings.warn(f"{self.__class__} is being depreciated and will be removed in the next version.")
         super().__init__()
         self.arch_dict = arch_dict
         self.optim_dict = optim_dict

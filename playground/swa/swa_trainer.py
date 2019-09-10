@@ -1,14 +1,13 @@
-import torch
-from torch import nn
-from torch.nn import functional as F
 from typing import List, Union
+
+from torch import nn
 from torch.utils.data import DataLoader
 
 from deepclustering import ModelMode
+from deepclustering.decorator import lazy_load_checkpoint
+from deepclustering.meters import MeterInterface, AverageValueMeter, ConfusionMatrix
 from deepclustering.model import Model, ZeroGradientBackwardStep
 from deepclustering.trainer import _Trainer
-from deepclustering.meters import MeterInterface, AverageValueMeter, ConfusionMatrix
-from deepclustering.decorator import lazy_load_checkpoint
 from deepclustering.utils import filter_dict, tqdm_
 
 
@@ -33,7 +32,8 @@ class SWATrainer(_Trainer):
                         "val_swa_acc": ConfusionMatrix(10)
                         }
         self.METERINTERFACE = MeterInterface(METER_CONFIG)  # type:ignore
-        return [["train_loss", "val_loss", "val_swa_loss"], ["train_acc", "val_acc", "val_swa_acc"]]
+        return [["train_loss_mean", "val_loss_mean", "val_swa_loss_mean"],
+                ["train_acc_acc", "val_acc_acc", "val_swa_acc_acc"]]
 
     @property
     def _training_report_dict(self):
