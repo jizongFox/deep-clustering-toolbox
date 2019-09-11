@@ -10,7 +10,7 @@ from deepclustering.manager import ConfigManger
 from deepclustering.model import Model
 from playground.swa_cifar_benchmark.arch import _register_arch
 from playground.swa_cifar_benchmark.my_scheduler import CosineAnnealingLR_
-from playground.swa_cifar_benchmark.trainer import SWATrainer
+from playground.swa_cifar_benchmark.trainer import SWATrainer, SGDTrainer
 
 lr_scheduler.CosineAnnealingLR = CosineAnnealingLR_
 
@@ -38,11 +38,14 @@ transform_test = transforms.Compose([
 train_loader = DataLoader(CIFAR10(root=DATA_PATH, transform=transform_train, train=True), **config["DataLoader"])
 val_loader = DataLoader(CIFAR10(root=DATA_PATH, transform=transform_test, train=False), **config["DataLoader"])
 
-trainer = SWATrainer(
+Trainer = {"sgd": SGDTrainer, "swa": SWATrainer}.get(config["Trainer"].get("name"))
+assert Trainer
+trainer = Trainer(
     model=model,
     train_loader=train_loader,
     val_loader=val_loader,
     config=config,
-    **config["Trainer"]
+    **{k: v for k, v in config["Trainer"].items() if k != "name"}
 )
 trainer.start_training()
+trainer.clean_up(10)

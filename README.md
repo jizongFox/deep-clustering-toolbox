@@ -29,6 +29,7 @@ Several papers have been implemented based on this framework. I store them in th
 >- [`mixup: BEYOND EMPIRICAL RISK MINIMIZATION`](https://arxiv.org/pdf/1710.09412.pdf)
 >- [`MINE: Mutual Information Neural Estimation`](https://arxiv.org/abs/1801.04062)
 >- [`Averaging Weights Leads to Wider Optima and Better Generalization`](https://arxiv.org/pdf/1803.05407.pdf)
+>- [`THERE ARE MANY CONSISTENT EXPLANATIONS OF UNLABELED DATA: WHY YOU SHOULD AVERAGE`](https://arxiv.org/pdf/1806.05594.pdf)
 
 
 

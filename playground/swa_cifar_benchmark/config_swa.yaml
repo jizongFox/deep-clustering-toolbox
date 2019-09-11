@@ -8,9 +8,10 @@ Optim:
   weight_decay: !!float 5e-4
 
 Scheduler:
-  name: MultiStepLR
-  milestones: [150,250]
-  gamma: 0.1
+  name: CosineAnnealingLR
+  alpha_1: 1
+  alpha_2: 0.001
+  T: 100
 
 DataLoader:
   batch_size: 128
@@ -19,7 +20,7 @@ DataLoader:
   drop_last: false
 
 Trainer:
-  name: sgd
-  max_epoch: 350
+  name: swa
+  max_epoch: 500
   device: cuda
-  save_dir: swa/baseline_cifar
+  save_dir: swa/swa_cifar
