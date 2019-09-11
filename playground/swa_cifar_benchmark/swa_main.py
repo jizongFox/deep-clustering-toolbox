@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
@@ -8,7 +9,10 @@ from deepclustering.dataset.classification.cifar import CIFAR10
 from deepclustering.manager import ConfigManger
 from deepclustering.model import Model
 from playground.swa_cifar_benchmark.arch import _register_arch
-from playground.swa_cifar_benchmark.trainer import SGDTrainer
+from playground.swa_cifar_benchmark.my_scheduler import CosineAnnealingLR_
+from playground.swa_cifar_benchmark.trainer import SWATrainer
+
+lr_scheduler.CosineAnnealingLR = CosineAnnealingLR_
 
 _ = _register_arch
 DEFAULT_CONFIG = str(Path(__file__).parent / "config.yaml")
@@ -34,7 +38,7 @@ transform_test = transforms.Compose([
 train_loader = DataLoader(CIFAR10(root=DATA_PATH, transform=transform_train, train=True), **config["DataLoader"])
 val_loader = DataLoader(CIFAR10(root=DATA_PATH, transform=transform_test, train=False), **config["DataLoader"])
 
-trainer = SGDTrainer(
+trainer = SWATrainer(
     model=model,
     train_loader=train_loader,
     val_loader=val_loader,

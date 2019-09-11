@@ -37,7 +37,7 @@ class AverageValueMeter(Metric):
         self.sum = 0.0
         self.var = 0.0
         self.val = 0.0
-        self.mean = 0.0
+        self.mean = np.nan
         self.mean_old = 0.0
         self.m_s = 0.0
         self.std = 0.0

@@ -1,5 +1,6 @@
 from typing import List, Union
 
+import torch
 from termcolor import colored
 from torch import nn
 from torch.utils.data import DataLoader
@@ -92,6 +93,7 @@ class SWATrainer(SGDTrainer):
         # initialize swa_model.
         self.swa_model = Model.initialize_from_state_dict(model.state_dict())
         self.swa_model.to(self.device)
+        self.swa_n = 0
 
     def __init_meters__(self) -> List[Union[str, List[str]]]:
         _ = super().__init_meters__()
@@ -103,14 +105,19 @@ class SWATrainer(SGDTrainer):
         return [["train_loss_mean", "val_loss_mean"], ["train_swa_loss_mean", "val_swa_loss_mean"],
                 ["train_acc_acc", "val_acc_acc"], ["train_swa_acc_acc", "val_swa_acc_acc"], "lr_value"]
 
+    @property
+    def _eval_swa_report_dict(self):
+        return filter_dict({"val_loss": self.METERINTERFACE["val_swa_loss"].summary()["mean"],
+                            "val_acc": self.METERINTERFACE["val_swa_acc"].summary()["acc"]})
+
     def start_training(self):
-        import torch
         for epoch in range(self._start_epoch, self.max_epoch):
             self._train_loop(train_loader=self.train_loader, epoch=epoch)
             with torch.no_grad():
                 current_score = self._eval_loop(self.val_loader, epoch)
                 # inference on swa model
-                if True:  # if some condition
+                if self.model.scheduler.if_cycle_ends():
+                    print("swa")# if some condition
                     self.step_swa()
                     self._eval_swa_loop(self.val_loader, epoch)
                 # inference on swa ends
@@ -142,18 +149,71 @@ class SWATrainer(SGDTrainer):
             loss = self.ce_criterion(preds, targets)
             self.METERINTERFACE["val_swa_loss"].add(loss.item())
             self.METERINTERFACE["val_swa_acc"].add(preds.max(1)[1], targets)
-            report_dict = self._eval_report_dict
+            report_dict = self._eval_swa_report_dict
             _val_loader.set_postfix(report_dict)
         print(colored(f"Validating epoch {epoch}: SWA -> {nice_dict(report_dict)}", "blue"))
         return self.METERINTERFACE["val_swa_acc"].summary()["acc"]
 
     def step_swa(self):
-        self._moving_average(self.swa_model, self.model)
-        self._adjust_bn()
+        self._moving_average(self.swa_model, self.model, alpha=1.0 / (self.swa_n + 1))
+        self._adjust_bn(self.swa_model, self.train_loader)
+        self.swa_n += 1
 
     @staticmethod
-    def _adjust_bn():
-        pass
+    def _adjust_bn(swa_model, train_loader):
+
+        def _check_bn(module, flag):
+            if issubclass(module.__class__, torch.nn.modules.batchnorm._BatchNorm):
+                flag[0] = True
+
+        def check_bn(model):
+            flag = [False]
+            model.apply(lambda module: _check_bn(module, flag))
+            return flag[0]
+
+        def reset_bn(module):
+            if issubclass(module.__class__, torch.nn.modules.batchnorm._BatchNorm):
+                module.running_mean = torch.zeros_like(module.running_mean)
+                module.running_var = torch.ones_like(module.running_var)
+
+        def _get_momenta(module, momenta):
+            if issubclass(module.__class__, torch.nn.modules.batchnorm._BatchNorm):
+                momenta[module] = module.momentum
+
+        def _set_momenta(module, momenta):
+            if issubclass(module.__class__, torch.nn.modules.batchnorm._BatchNorm):
+                module.momentum = momenta[module]
+
+        def bn_update(loader, model):
+            """
+                BatchNorm buffers update (if any).
+                Performs 1 epochs to estimate buffers average using train dataset.
+
+                :param loader: train dataset loader for buffers average estimation.
+                :param model: model being update
+                :return: None
+            """
+            if not check_bn(model):
+                return
+            model.train()
+            momenta = {}
+            model.apply(reset_bn)
+            model.apply(lambda module: _get_momenta(module, momenta))
+            n = 0
+            for input, _ in loader:
+                input = input.cuda(non_blocking=True)
+                b = input.data.size(0)
+
+                momentum = b / (n + b)
+                for module in momenta.keys():
+                    module.momentum = momentum
+
+                model(input)
+                n += b
+
+            model.apply(lambda module: _set_momenta(module, momenta))
+
+        bn_update(train_loader, swa_model)
 
     @staticmethod
     def _moving_average(net1: Model, net2: Model, alpha=1):

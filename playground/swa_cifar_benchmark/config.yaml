@@ -3,14 +3,15 @@ Arch:
 
 Optim:
   name: SGD
-  lr: 0.1
+  lr: 0.05
   momentum: 0.9
   weight_decay: !!float 5e-4
 
 Scheduler:
-  name: MultiStepLR
-  milestones: [150,250]
-  gamma: 0.1
+  name: CosineAnnealingLR
+  alpha_1: 1
+  alpha_2: 0.001
+  T: 100
 
 DataLoader:
   batch_size: 128
@@ -19,6 +20,6 @@ DataLoader:
   drop_last: false
 
 Trainer:
-  max_epoch: 350
+  max_epoch: 1000
   device: cuda
   save_dir: swa/baseline_cifar
