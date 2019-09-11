@@ -7,8 +7,10 @@ from deepclustering import DATA_PATH
 from deepclustering.dataset.classification.cifar import CIFAR10
 from deepclustering.manager import ConfigManger
 from deepclustering.model import Model
-from playground.swa.swa_trainer import SWATrainer
+from playground.swa_cifar_benchmark.arch import _register_arch
+from playground.swa_cifar_benchmark.trainer import SGDTrainer
 
+_ = _register_arch
 DEFAULT_CONFIG = str(Path(__file__).parent / "config.yaml")
 
 config = ConfigManger(DEFAULT_CONFIG_PATH=DEFAULT_CONFIG, verbose=True).config
@@ -32,7 +34,7 @@ transform_test = transforms.Compose([
 train_loader = DataLoader(CIFAR10(root=DATA_PATH, transform=transform_train, train=True), **config["DataLoader"])
 val_loader = DataLoader(CIFAR10(root=DATA_PATH, transform=transform_test, train=False), **config["DataLoader"])
 
-trainer = SWATrainer(
+trainer = SGDTrainer(
     model=model,
     train_loader=train_loader,
     val_loader=val_loader,

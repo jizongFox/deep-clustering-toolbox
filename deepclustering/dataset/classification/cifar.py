@@ -54,13 +54,14 @@ class CIFAR10(data.Dataset):
     }
 
     def __init__(
-        self, root, train=True, transform=None, target_transform=None, download=False
+            self, root, train=True, transform=None, target_transform=None, download=False
     ):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
         self.train = train  # training set or test set
 
+        self.debug: bool = os.environ.get("PYDEBUG") == "1"
         if download:
             self.download()
 
@@ -135,6 +136,8 @@ class CIFAR10(data.Dataset):
         return img, target
 
     def __len__(self):
+        if self.debug:
+            return int(len(self.data) / 50)
         return int(len(self.data))
 
     def _check_integrity(self):

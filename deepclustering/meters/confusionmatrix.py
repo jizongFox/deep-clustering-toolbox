@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import torch
 
@@ -97,7 +99,9 @@ class ConfusionMatrix(Metric):
             return self.conf
 
     def summary(self) -> dict:
-        acc = np.diag(self.conf).sum() / np.sum(self.conf)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            acc = np.diag(self.conf).sum() / np.sum(self.conf)
         return {"acc": acc}
 
     def detailed_summary(self) -> dict:

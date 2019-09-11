@@ -6,7 +6,6 @@ from typing import *
 import torch
 from torch import Tensor
 from torch import nn
-from torch.nn import NLLLoss
 from torch.nn import functional as F
 from torch.optim import lr_scheduler
 
@@ -107,33 +106,11 @@ class Model(ABC):
     def step(self):
         self.optimizer.step()
 
-    def update(
-            self, img: Tensor, gt: Tensor, criterion: NLLLoss, mode=ModelMode.TRAIN
-    ) -> List[Tensor]:
-        # todo improve the code
-        assert img.shape.__len__() == 4
-        assert gt.shape.__len__() == 4
-        if mode == ModelMode.TRAIN:
-            self.train()
-        else:
-            self.eval()
-
-        if mode == ModelMode.TRAIN:
-            self.optimizer.zero_grad()
-            pred = self.predict(img)
-            loss = criterion(pred, gt.squeeze(1))
-            loss.backward()
-            self.optimizer.step()
-        else:
-            with torch.no_grad():
-                pred = self.predict(img)
-                loss = criterion(pred, gt.squeeze(1))
-        self.train()
-        return [pred.detach(), loss.detach()]
-
     def schedulerStep(self):
         if self.scheduler is not None:
-            self.scheduler.step()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.scheduler.step()
 
     def state_dict(self):
         return {
@@ -172,6 +149,12 @@ class Model(ABC):
 
     def __call__(self, img: Tensor, logit=True):
         return self.predict(img=img, logit=logit)
+
+    def get_lr(self):
+        lrs = []
+        for param_group in self.optimizer.param_groups:
+            lrs.append(param_group['lr'])
+        return lrs
 
     @classmethod
     def initialize_from_state_dict(cls, state_dict: Dict[str, dict]):
