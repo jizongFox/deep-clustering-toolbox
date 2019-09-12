@@ -5,16 +5,17 @@ functions to be run in multiprocessing. E.g., the data loading worker loop is
 in `./_utils/worker.py`.
 """
 
-import torch
+import itertools
 import multiprocessing as python_multiprocessing
+import threading
+
+import torch
 import torch.multiprocessing as multiprocessing
+from torch._six import queue, string_classes
+from torch._utils import ExceptionWrapper
+
 from . import IterableDataset, Sampler, SequentialSampler, RandomSampler, BatchSampler
 from . import _utils
-from torch._utils import ExceptionWrapper
-import threading
-import itertools
-from torch._six import queue, string_classes
-
 
 get_worker_info = _utils.worker.get_worker_info
 

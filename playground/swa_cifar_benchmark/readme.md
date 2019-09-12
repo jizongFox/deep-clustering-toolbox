@@ -6,7 +6,11 @@ This folder reproduces the algorithm proposed in the paper [`Averaging Weights L
 This folder also reimplemented the benchmark cifar10 based on `https://github.com/kuangliu/pytorch-cifar/tree/master/models`
 
 ```
-| network   | reported | implemented|
-| resnet-18 |  93.02%  | 95.55%
-|MobileNetV2|  94.43%  | 
+| network   | reported | implemented| SWA |
+| resnet-18 |  93.02%  | 95.55% | 95.1%
+|MobileNetV2|  94.43%  | 91.40% |
 ```
+
+# todo
+***
+Compared with original code to see the implementation difference leading to failure of a better accuracy compared with the SGD.
