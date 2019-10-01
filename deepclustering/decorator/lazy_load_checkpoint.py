@@ -12,14 +12,14 @@ def lazy_load_checkpoint(func):
 
     @functools.wraps(func)
     def wrapped_init_(self, *args, **kwargs):
-        _kwargs = dcp(kwargs)
+        _checkpoint_path = kwargs.get("checkpoint_path")
         # setting all parent class with checkpoint=None
-        if _kwargs.get("checkpoint_path"):
-            _kwargs["checkpoint_path"] = None
+        if _checkpoint_path:
+            kwargs["checkpoint_path"] = None
         # perform normal __init__
-        func(self, *args, **_kwargs)
+        func(self, *args, **kwargs)
         # reset the checkpoint_path
-        self.checkpoint = kwargs.get("checkpoint_path")
+        self.checkpoint = _checkpoint_path
         if self.checkpoint:
             self.load_checkpoint_from_path(self.checkpoint)
         self.to(self.device)
