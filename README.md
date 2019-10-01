@@ -9,7 +9,8 @@ Several projects are rooted from this repo, including:
 
 + DeepClustering implemented for 
 >- `Invariant Information Clustering for Unsupervised Image Classification and Segmentation`, 
->- `Learning Discrete Representations via Information Maximizing Self-Augmented Training`
+>- `Learning Discrete Representations via Information Maximizing Self-Augmented Training`,
+>- [`Information based Deep Clustering: An experimental study`](https://github.com/jizongFox/DeepClusteringProject)
 + SemiSupervised Clustering for 
 >- `Semi-Supervised Learning by Augmented Distribution Alignment`, 
 >- `Virtual Adversarial Training: A Regularization Method for Supervised and Semi-Supervised Learning`, 
