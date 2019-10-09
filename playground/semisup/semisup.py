@@ -658,7 +658,7 @@ def val(epoch, usetestforval, log):
         if args.stoch:
             if 1:
                 loss = -lmb * ((torch.stack(net.module.smp).mean()).log() * (
-                            1 - (outputs.max(1)[1].eq(targets)).float())).mean()
+                        1 - (outputs.max(1)[1].eq(targets)).float())).mean()
                 # loss = -outputs.softmax(1)[torch.arange(outputs.shape[0]).to(torch.long),targets].log().mean() -lmb*((torch.stack(net.module.smp).mean()).log()*(1-(outputs.max(1)[1].eq(targets)).float())).mean()
                 # loss = (-(net.module.smp1+net.module.smp2+net.module.smp3).log()*outputs.softmax(1)[torch.arange(outputs.shape[0]).to(torch.long),targets].log()).mean()
             else:

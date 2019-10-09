@@ -2,14 +2,14 @@ Arch:
   name: resnet18
 
 Optim:
-  name: SGD
-  lr: 0.1
-  momentum: 0.9
-  weight_decay: !!float 5e-4
+  name: AdaBound
+#  lr: 0.1
+#  momentum: 0.9
+#  weight_decay: !!float 5e-4
 
 Scheduler:
   name: MultiStepLR
-  milestones: [150,250]
+  milestones: [50,100]
   gamma: 0.1
 
 DataLoader:
@@ -20,6 +20,6 @@ DataLoader:
 
 Trainer:
   name: sgd
-  max_epoch: 350
+  max_epoch: 150
   device: cuda
   save_dir: swa/baseline_cifar

@@ -38,8 +38,9 @@ transform_test = transforms.Compose([
 train_loader = DataLoader(CIFAR10(root=DATA_PATH, transform=transform_train, train=True), **config["DataLoader"])
 val_loader = DataLoader(CIFAR10(root=DATA_PATH, transform=transform_test, train=False), **config["DataLoader"])
 
-Trainer = {"sgd": SGDTrainer, "swa": SWATrainer}.get(config["Trainer"].get("name"))
+Trainer = {"sgd": SGDTrainer, "swa": SWATrainer}.get(config["Trainer"].get("name").lower())
 assert Trainer
+
 trainer = Trainer(
     model=model,
     train_loader=train_loader,
