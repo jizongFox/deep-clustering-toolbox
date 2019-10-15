@@ -7,3 +7,4 @@ from .instance import InstanceValue
 from .iou import IoU
 from .kappa import KappaMetrics, Kappa2Annotator
 from .metric import AggragatedMeter, MeterInterface
+# todo: improve the stability of each meter

@@ -1,3 +1,4 @@
+# todo: this file is a mixin class to help with some other classes
 from abc import abstractmethod
 
 from ..model import Model

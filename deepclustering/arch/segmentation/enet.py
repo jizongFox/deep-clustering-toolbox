@@ -15,9 +15,9 @@ class InitialBlock(nn.Module):
     - input(Tensor): A 4D tensor of shape [batch_size, channel, height, width]
     """
 
-    def __init__(self):
+    def __init__(self, input_dim=1):
         super(InitialBlock, self).__init__()
-        self.conv = nn.Conv2d(1, 13, (3, 3), stride=2, padding=1)
+        self.conv = nn.Conv2d(input_dim, 13, (3, 3), stride=2, padding=1)
         self.batch_norm = nn.BatchNorm2d(13, 1e-3)
         self.prelu = nn.PReLU(13)
         self.pool = nn.MaxPool2d(2, stride=2)
@@ -58,16 +58,16 @@ class BottleNeck(nn.Module):
     """
 
     def __init__(
-        self,
-        input_channels=None,
-        output_channels=None,
-        regularlizer_prob=0.1,
-        downsampling=False,
-        upsampling=False,
-        dilated=False,
-        dilation_rate=None,
-        asymmetric=False,
-        use_relu=False,
+            self,
+            input_channels=None,
+            output_channels=None,
+            regularlizer_prob=0.1,
+            downsampling=False,
+            upsampling=False,
+            dilated=False,
+            dilation_rate=None,
+            asymmetric=False,
+            use_relu=False,
     ):
         super(BottleNeck, self).__init__()
         self.input_channels = input_channels
@@ -194,11 +194,11 @@ DECODER_LAYER_NAMES = [
 
 
 class Encoder(nn.Module):
-    def __init__(self, num_classes, train=True):
+    def __init__(self, input_dim=1, num_classes=2, train=True):
         super(Encoder, self).__init__()
         layers = []
-        layers.append(InitialBlock())
-        layers.append(BottleNeck(14, 64, regularlizer_prob=0.01, downsampling=True))
+        layers.append(InitialBlock(input_dim))
+        layers.append(BottleNeck(13 + input_dim, 64, regularlizer_prob=0.01, downsampling=True))
         for i in range(4):
             layers.append(BottleNeck(64, 64, regularlizer_prob=0.01))
 
@@ -260,15 +260,23 @@ class Decoder(nn.Module):
 
 
 class Enet(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, input_dim=1, num_classes=2):
         super(Enet, self).__init__()
-        self.encoder = Encoder(num_classes, train=False)
+        self.input_dim = input_dim
+        self.num_classes = num_classes
+        self.encoder = Encoder(input_dim, num_classes, train=False)
         self.decoder = Decoder(num_classes)
 
     def forward(self, input):
         output, pooling_stack = self.encoder(input)
         output = self.decoder(output, pooling_stack)
         return output
+
+    def get_input_dim(self):
+        return self.input_dim
+
+    def get_num_classes(self):
+        return self.num_classes
 
 
 Enet_Param = {"num_classes": 4}
