@@ -17,7 +17,7 @@ from deepclustering.dataset.classification.mnist_helper import (
     default_mnist_img_transform,
 )
 from deepclustering.loss.IMSAT_loss import MultualInformaton_IMSAT
-from deepclustering.loss.loss import JSD, KL_div
+from deepclustering.loss.loss import JSD_div, KL_div
 from deepclustering.loss.IID_losses import IIDLoss
 from deepclustering.manager import ConfigManger
 from deepclustering.meters import MeterInterface, AverageValueMeter
@@ -66,7 +66,7 @@ class IMSAT_Trainer(_Trainer):
         self.use_vat = use_vat
         self.sat_weight = float(sat_weight)
         self.criterion = MultualInformaton_IMSAT(mu=4, separate_return=True)
-        self.jsd = JSD()
+        self.jsd = JSD_div()
         self.kl = KL_div()
         plt.ion()
 
