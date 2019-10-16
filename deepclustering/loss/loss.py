@@ -1,107 +1,82 @@
-import warnings
-from functools import reduce
-from typing import List
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from torch import Tensor
 
-from ..utils.general import simplex
-
-
-class CrossEntropyLoss2d(nn.Module):
-    """
-    specific CE 2D interface
-    """
-
-    def __init__(self, weight=None, reduce=True, size_average=True, ignore_index=255):
-        super(CrossEntropyLoss2d, self).__init__()
-        self.weight = weight
-        self.ignore_index = ignore_index
-        if weight is not None:
-            weight: torch.Tensor = weight if isinstance(
-                weight, torch.Tensor
-            ) else torch.Tensor(weight)
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            self.loss = nn.NLLLoss(
-                weight,
-                reduce=reduce,
-                size_average=size_average,
-                ignore_index=ignore_index,
-            )
-
-    def forward(self, outputs, targets):
-        return self.loss(F.log_softmax(outputs, dim=1), targets)
+from ..utils.general import simplex, assert_list
 
 
-class PartialCrossEntropyLoss2d(nn.Module):
-    def __init__(self, reduce=True, size_average=True):
-        super(PartialCrossEntropyLoss2d, self).__init__()
-        weight = torch.Tensor([0, 1])
-        self.loss = nn.NLLLoss(weight=weight, reduce=reduce, size_average=size_average)
-
-    def forward(self, outputs, targets):
-        return self.loss(F.log_softmax(outputs, dim=1), targets)
-
-
-class MSE_2D(nn.Module):
-    def __init__(self):
-        super(MSE_2D, self).__init__()
-        self.loss = nn.MSELoss()
-
-    def forward(self, input, target):
-        assert input.shape == target.shape
-        warnings.warn(
-            "This function is only implemneted for "
-            "binary class and have impact on class=1"
-        )
-        prob = F.softmax(input, dim=1)[:, 1].squeeze()
-        target = target.squeeze()
-        assert prob.shape == target.shape
-        return self.loss(prob, target.float())
+def _check_reduction_params(reduction):
+    assert reduction in ("mean", "sum", "none"), \
+        "reduction should be in ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``, given {}".format(reduction)
 
 
 class Entropy(nn.Module):
-    """
-    General Entropy interface
+    r"""General Entropy interface
+
+    the definition of Entropy is - \sum p(xi) log (p(xi))
+
+    reduction (string, optional): Specifies the reduction to apply to the output:
+    ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``: no reduction will be applied,
+    ``'mean'``: the sum of the output will be divided by the number of
+    elements in the output, ``'sum'``: the output will be summed.
     """
 
-    def __init__(self, reduce=True, eps=1e-16):
+    def __init__(self, reduction="mean", eps=1e-16):
         super().__init__()
-        r"""
-        the definition of Entropy is - \sum p(xi) log (p(xi))
-        """
-        self.eps = eps
-        self.reduce = reduce
+        _check_reduction_params(reduction)
+        self._eps = eps
+        self._reduction = reduction
 
-    def forward(self, input: torch.Tensor):
+    def forward(self, input: Tensor) -> Tensor:
         assert input.shape.__len__() >= 2
         b, _, *s = input.shape
-        assert simplex(input)
-        e = input * (input + self.eps).log()
+        assert simplex(input), f"Entropy input should be a simplex"
+        e = input * (input + self._eps).log()
         e = -1.0 * e.sum(1)
         assert e.shape == torch.Size([b, *s])
-        if self.reduce:
+        if self._reduction == "mean":
             return e.mean()
-        return e
+        elif self._reduction == "sum":
+            return e.sum()
+        else:
+            return e
 
 
-class Entropy_2D(nn.Module):
-    def __init__(self):
-        super().__init__()
-        r"""
-        the definition of Entropy is - \sum p(xi) log (p(xi))
-        """
+class Entropy_2D(Entropy):
+    """
+    Give Entropy 2D maps, `reduction` fixed to be none
+    """
 
-    def forward(self, input: torch.Tensor):
+    def __init__(self, eps=1e-16):
+        super().__init__("none", eps)
+
+    def forward(self, input: torch.Tensor) -> Tensor:
         assert input.shape.__len__() == 4
-        b, _, h, w = input.shape
-        assert simplex(input)
-        e = input * (input + 1e-16).log()
-        e = -1.0 * e.sum(1)
-        assert e.shape == torch.Size([b, h, w])
-        return e
+        return super().forward(input)
+
+
+class SimplexCrossEntropyLoss(nn.Module):
+
+    def __init__(self, reduction="mean", eps=1e-16) -> None:
+        super().__init__()
+        _check_reduction_params(reduction)
+        self._reduction = reduction
+        self._eps = eps
+
+    def forward(self, prob: Tensor, target: Tensor) -> Tensor:
+        assert not target.requires_grad
+        assert prob.requires_grad
+        assert prob.shape == target.shape
+        assert simplex(prob)
+        assert simplex(target)
+        b, c, *_ = target.shape
+        ce_loss = (-target * torch.log(prob)).sum(1)
+        if self._reduction == "mean":
+            return ce_loss.mean()
+        elif self._reduction == "sum":
+            return ce_loss.sum()
+        else:
+            return ce_loss
 
 
 class KL_div(nn.Module):
@@ -110,125 +85,90 @@ class KL_div(nn.Module):
     where p, q are distributions
     p is usually the fixed one like one hot coding
     p is the target and q is the distribution to get approached.
+
+    reduction (string, optional): Specifies the reduction to apply to the output:
+    ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``: no reduction will be applied,
+    ``'mean'``: the sum of the output will be divided by the number of
+    elements in the output, ``'sum'``: the output will be summed.
     """
 
-    def __init__(self, reduce=True, eps=1e-16):
+    def __init__(self, reduction="mean", eps=1e-16):
         super().__init__()
-        self.eps = eps
-        self.reduce = reduce
+        _check_reduction_params(reduction)
+        self._eps = eps
+        self._reduction = reduction
 
-    def forward(self, prob: torch.Tensor, target: torch.Tensor):
+    def forward(self, prob: Tensor, target: Tensor) -> Tensor:
         assert not target.requires_grad
         assert prob.requires_grad
         assert prob.shape == target.shape
         assert simplex(prob)
         assert simplex(target)
         b, c, *_ = target.shape
-        kl = (-target * torch.log((prob + self.eps) / (target + self.eps))).sum(1)
-        if self.reduce:
-            return kl.sum() / float(b)
-        return kl
+        kl = (-target * torch.log((prob + self._eps) / (target + self._eps))).sum(1)
+        if self._reduction == "mean":
+            return kl.mean()
+        elif self._reduction == "sum":
+            return kl.sum()
+        else:
+            return kl
 
 
-class KL_Divergence_2D(nn.Module):
+class KL_div_2D(KL_div):
     """
     Specific KL 2D interface
     """
 
-    def __init__(self, reduce=False, eps=1e-10):
-        super().__init__()
-        self.reduce = reduce
-        self.eps = eps
+    def __init__(self, eps=1e-16):
+        super().__init__("none", eps)
 
-    def forward(self, p_prob: torch.Tensor, y_prob: torch.Tensor):
+    def forward(self, p_prob: Tensor, y_prob: Tensor):
         """
         :param p_probs:
         :param y_prob: the Y_logit is like that for cross-entropy
         :return: 2D map?
         """
-        assert not y_prob.requires_grad
-        assert p_prob.requires_grad
-        assert simplex(p_prob, 1)
-        assert simplex(y_prob, 1)
-
-        logp = (p_prob + self.eps).log()
-        logy = (y_prob + self.eps).log()
-
-        ylogy = (y_prob * logy).sum(dim=1)
-        ylogp = (y_prob * logp).sum(dim=1)
-        if self.reduce:
-            return (ylogy - ylogp).mean()
-        else:
-            return ylogy - ylogp
+        b, c, h, w = p_prob.shape
+        kl_map = super().forward(p_prob, y_prob)
+        assert kl_map.shape == torch.Size([b, h, w])
+        return kl_map
 
 
-class KL_Divergence_2D_Logit(nn.Module):
-    def __init__(self, reduce=False, eps=1e-10):
-        super().__init__()
-        self.reduce = reduce
-        self.eps = eps
-
-    def forward(self, p_logit: torch.Tensor, y_logit: torch.Tensor):
-        """
-        :param p_logit:
-        :param y_logit:
-        :return:
-        """
-        assert not y_logit.requires_grad
-        assert p_logit.requires_grad
-        assert not simplex(p_logit, 1)
-        assert not simplex(y_logit, 1)
-
-        logp = F.log_softmax(p_logit, 1)
-        logy = F.log_softmax(y_logit, 1)
-        y_prob = F.softmax(y_logit, 1)
-
-        ylogy = (y_prob * logy).sum(dim=1)
-        ylogp = (y_prob * logp).sum(dim=1)
-        if self.reduce:
-            return (ylogy - ylogp).mean()
-        else:
-            return ylogy - ylogp
-
-
-class JSD(nn.Module):
+class JSD_div(nn.Module):
     """
     general JS divergence interface
+    :<math>{\rm JSD}_{\pi_1, \ldots, \pi_n}(P_1, P_2, \ldots, P_n) = H\left(\sum_{i=1}^n \pi_i P_i\right) - \sum_{i=1}^n \pi_i H(P_i)</math>
+
+
+    reduction (string, optional): Specifies the reduction to apply to the output:
+        ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``: no reduction will be applied,
+        ``'mean'``: the sum of the output will be divided by the number of
+        elements in the output, ``'sum'``: the output will be summed.
     """
 
-    def __init__(self, reduce=True):
+    def __init__(self, reduction="mean", eps=1e-16):
         super().__init__()
-        self.entropy = Entropy()
-        self.reduce = reduce
+        _check_reduction_params(reduction)
+        self._reduction = reduction
+        self._eps = eps
+        self._entropy_criterion = Entropy(reduction=reduction, eps=eps)
 
-    def forward(self, input: List[torch.Tensor]):
-        for inprob in input:
-            assert simplex(inprob, 1)
-        # mean_prob = reduce(lambda x, y: x + y, input) / len(input)
+    def forward(self, *input: Tensor) -> Tensor:
+        assert assert_list(lambda x: simplex(x), input), f"input tensor should be a list of simplex."
+        assert assert_list(lambda x: x.shape == input[0].shape, input), "input tensor should have the same dimension"
         mean_prob = sum(input) / input.__len__()
-        f_term = self.entropy(mean_prob)
-        mean_entropy = sum(list(map(lambda x: self.entropy(x), input))) / len(input)
-        assert f_term.shape == mean_entropy.shape
-        if self.reduce:
-            return (f_term - mean_entropy).mean()
-        return f_term - mean_entropy
-
-
-class JSD_2D(nn.Module):
-    """
-    Specific JS divergence interface
-    """
-
-    def __init__(self):
-        super().__init__()
-        # self.C = num_probabilities
-        self.entropy = Entropy_2D()
-
-    def forward(self, input: List[torch.Tensor]):
-        for inprob in input:
-            assert simplex(inprob, 1)
-        mean_prob = reduce(lambda x, y: x + y, input) / len(input)
-        f_term = self.entropy(mean_prob)
-        mean_entropy = sum(list(map(lambda x: self.entropy(x), input))) / len(input)
+        f_term = self._entropy_criterion(mean_prob)
+        mean_entropy = sum(list(map(lambda x: self._entropy_criterion(x), input))) / len(input)
         assert f_term.shape == mean_entropy.shape
         return f_term - mean_entropy
+
+
+class JSD_div_2D(JSD_div):
+    def __init__(self, eps=1e-16):
+        super().__init__("none", eps)
+
+    def forward(self, *input: Tensor) -> Tensor:
+        b, c, h, w = input[0].shape
+        jsd_map = super().forward(*input)
+        assert jsd_map.shape == torch.Size([b, h, w])
+        return jsd_map

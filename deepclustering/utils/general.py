@@ -71,32 +71,31 @@ def set_benchmark(seed):
 
 # tqdm
 class tqdm_(tqdm):
-    def __init__(
-            self,
-            iterable=None,
-            desc=None,
-            total=None,
-            leave=False,
-            file=None,
-            ncols=15,
-            mininterval=0.1,
-            maxinterval=10.0,
-            miniters=None,
-            ascii=None,
-            disable=False,
-            unit="it",
-            unit_scale=False,
-            dynamic_ncols=False,
-            smoothing=0.3,
-            bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [" "{rate_fmt}{postfix}]",
-            initial=0,
-            position=None,
-            postfix=None,
-            unit_divisor=1000,
-            write_bytes=None,
-            gui=False,
-            **kwargs,
-    ):
+    def __init__(self,
+                 iterable=None,
+                 desc=None,
+                 total=None,
+                 leave=False,
+                 file=None,
+                 ncols=15,
+                 mininterval=0.1,
+                 maxinterval=10.0,
+                 miniters=None,
+                 ascii=None,
+                 disable=False,
+                 unit="it",
+                 unit_scale=False,
+                 dynamic_ncols=False,
+                 smoothing=0.3,
+                 bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [" "{rate_fmt}{postfix}]",
+                 initial=0,
+                 position=None,
+                 postfix=None,
+                 unit_divisor=1000,
+                 write_bytes=None,
+                 gui=False,
+                 **kwargs,
+                 ):
         super().__init__(
             iterable,
             desc,
@@ -126,15 +125,7 @@ class tqdm_(tqdm):
 
 # slack name for tqdm
 class _tqdm(tqdm_):
-
-    def __init__(self, iterable=None, desc=None, total=None, leave=False, file=None, ncols=15, mininterval=0.1,
-                 maxinterval=10.0, miniters=None, ascii=None, disable=False, unit="it", unit_scale=False,
-                 dynamic_ncols=False, smoothing=0.3,
-                 bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [" "{rate_fmt}{postfix}]", initial=0, position=None,
-                 postfix=None, unit_divisor=1000, write_bytes=None, gui=False, **kwargs):
-        super().__init__(iterable, desc, total, leave, file, ncols, mininterval, maxinterval, miniters, ascii, disable,
-                         unit, unit_scale, dynamic_ncols, smoothing, bar_format, initial, position, postfix,
-                         unit_divisor, write_bytes, gui, **kwargs)
+    pass
 
 
 # Assert utils
@@ -276,6 +267,10 @@ def assert_list(func: Callable[[A], bool], Iters: Iterable) -> bool:
     :return:
     """
     return reduce(and_, [func(x) for x in Iters])
+
+
+def iter_average(input_iter: Iterable):
+    return sum(input_iter) / len(input_iter)
 
 
 # dictionary helper functions
