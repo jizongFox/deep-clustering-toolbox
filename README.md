@@ -5,6 +5,8 @@ This repo contains the base code for a deep learning framework using `PyTorch`, 
 The current version supports `MNIST`, `CIFAR10`, `SVHN` and `STL-10` for semisupervised and unsupervised learning. 
 `ACDC`, `Promise12`, `WMH` and so on are supported as segmentation counterpart.
 
+Very happy to get this project advancing consistently.
+
 Several projects are rooted from this repo, including: 
 
 + DeepClustering implemented for 
@@ -38,9 +40,12 @@ Several papers have been implemented based on this framework. I store them in th
 ---
 ### Installation
 ```bash
-git clone current repo  
+git clone https://github.com/jizongFox/deep-clustering-toolbox.git
 cd deep-clustering-toolbox  
-python setup install / develop.
+python setup install # for those who do not want to make changes immediately.
+# or
+python setup develop # for those who want to modify the code and make the impact immediate.
+
 ```
 ### Citation
 If you feel useful for your project, please consider citing this work.

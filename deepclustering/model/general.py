@@ -4,12 +4,12 @@ from abc import ABC
 from typing import *
 
 import torch
-from deepclustering import ModelMode
-from deepclustering.arch import get_arch, PlaceholderNet
 from torch import Tensor
 from torch import nn
 from torch.optim import lr_scheduler
 
+from deepclustering import ModelMode
+from deepclustering.arch import get_arch, PlaceholderNet
 from .. import optim
 
 
