@@ -1,13 +1,14 @@
 # this is to compare experimental data cross different folders
 import argparse
 from itertools import repeat
+from pathlib import Path
 from pprint import pprint
 from typing import List, Dict
 
 import pandas as pd
-from pathlib import Path
-from deepclustering.utils import str2bool
+
 from deepclustering.utils import merge_dict
+from deepclustering.utils import str2bool
 
 
 def arg_parser() -> argparse.Namespace:
@@ -71,6 +72,14 @@ def extract_path_info(file_paths: List[Path]) -> List[List[str]]:
 
     path_begin: int = (pd.DataFrame(parents_path).nunique(axis=0) > 1).values.argmax()
     return {str(p): {f"feature_{i}": _p for i, _p in enumerate(split_path(str(p))[path_begin:])} for p in file_paths}
+
+
+def call_from_cmd():
+    import sys, subprocess
+    calling_folder = str(subprocess.check_output("pwd", shell=True))
+    sys.path.insert(0, calling_folder)
+    args = arg_parser()
+    main(args)
 
 
 if __name__ == '__main__':

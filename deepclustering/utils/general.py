@@ -348,6 +348,23 @@ merge_dict = dict_merge
 filter_dict = dict_filter
 
 
+class Vectorize:
+    r"""
+    this class calls the np.vectorize with a mapping dict, in order to solve local memory share issue.
+    """
+
+    def __init__(self, mapping_dict: Dict[int, int]) -> None:
+        super().__init__()
+        self._mapping_dict = mapping_dict
+        self._mapping_module = np.vectorize(lambda x:self._mapping_dict.get(x,0))
+
+    def __call__(self, np_tensor: np.ndarray):
+        return self._mapping_module(np_tensor)
+
+    def __repr__(self):
+        return f"mapping_dict = {self._mapping_dict}"
+
+
 def extract_from_big_dict(big_dict, keys) -> dict:
     """ Get a small dictionary with key in `keys` and value
         in big dict. If the key doesn't exist, give None.

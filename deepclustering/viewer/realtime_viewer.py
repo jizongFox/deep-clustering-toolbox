@@ -164,13 +164,12 @@ class multi_slice_viewer(PLTViewer):
         ax.set_title(f"plane = {ax.index}")
 
 
-def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor) -> None:
+def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour=False) -> None:
     try:
         import matplotlib
-
         matplotlib.use("tkagg")
-    except Exception as e:
-        print(e)
+    except:
+        pass
 
     def process_mouse_wheel(event):
         fig = event.canvas.figure

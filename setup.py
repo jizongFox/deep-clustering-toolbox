@@ -7,6 +7,13 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="deepclustering",
+    entry_points={
+        'console_scripts': [
+            "viewer=deepclustering.viewer.Viewer:main",
+            "clip_screencapture=deepclustering.postprocessing.clip_images:call_from_cmd",
+            "report=deepclustering.postprocessing.report2:call_from_cmd"
+        ],
+    },
     version="1.0.0",
     packages=find_packages(),
     url="https://github.com/jizongFox/deep-clustering-toolbox",
@@ -41,9 +48,5 @@ setup(
         "pyyaml",
         "termcolor"
     ],
-    entry_points = {
-        "console_script":[
-            "viewer=deepclustering.viewer.Viewer:main",
-        ]
-    },
+
 )
