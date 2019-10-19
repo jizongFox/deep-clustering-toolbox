@@ -4,12 +4,13 @@ from abc import ABC
 from typing import *
 
 import torch
+from deepclustering import ModelMode
+from deepclustering.arch import get_arch, PlaceholderNet
+from deepclustering.utils import simplex
 from torch import Tensor
 from torch import nn
 from torch.optim import lr_scheduler
 
-from deepclustering import ModelMode
-from deepclustering.arch import get_arch, PlaceholderNet
 from .. import optim
 
 
@@ -140,8 +141,13 @@ class Model(ABC):
     def train(self):
         self.torchnet.train()
 
-    def __call__(self, *args, **kwargs):
-        return self.torchnet(*args, **kwargs)
+    def __call__(self, force_simplex=False, *args, **kwargs):
+        torch_logits = self.torchnet(*args, **kwargs)
+        if force_simplex:
+            assert not simplex(torch_logits,
+                               1), "torchnet output is already a simplex, no need to impose `torch_logits`"
+            return F.softmax(torch_logits, 1)
+        return torch_logits
 
     def apply(self, *args, **kwargs):
         self.torchnet.apply(*args, **kwargs)

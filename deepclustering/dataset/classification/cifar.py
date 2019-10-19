@@ -153,7 +153,7 @@ class CIFAR10(data.Dataset):
         import tarfile
 
         if self._check_integrity():
-            # print('Files already downloaded and verified')
+            print('Files already downloaded and verified')
             return
 
         download_url(self.url, self.root, self.filename, self.tgz_md5)
