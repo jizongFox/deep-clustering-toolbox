@@ -1,10 +1,13 @@
 from __future__ import print_function
-from .vision import VisionDataset
-from PIL import Image
+
 import os
 import os.path
+
 import numpy as np
+from PIL import Image
+
 from .utils import download_url, check_integrity
+from .vision import VisionDataset
 
 
 class SVHN(VisionDataset):
@@ -51,7 +54,7 @@ class SVHN(VisionDataset):
     }
 
     def __init__(
-        self, root, split="train", transform=None, target_transform=None, download=False
+            self, root, split="train", transform=None, target_transform=None, download=False
     ):
         super(SVHN, self).__init__(root)
         self.transform = transform
@@ -97,6 +100,8 @@ class SVHN(VisionDataset):
         np.place(self.labels, self.labels == 10, 0)
         self.data = np.transpose(self.data, (3, 2, 0, 1))
 
+        self.debug: bool = os.environ.get("PYDEBUG") == "1"
+
     def __getitem__(self, index):
         """
         Args:
@@ -120,6 +125,8 @@ class SVHN(VisionDataset):
         return img, target
 
     def __len__(self):
+        if self.debug:
+            return int(len(self.data) / 50)
         return len(self.data)
 
     def _check_integrity(self):

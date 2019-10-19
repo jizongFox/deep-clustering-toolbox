@@ -89,7 +89,7 @@ class SemiDataSetInterface(object):
         train_set, val_set = self._init_train_val_sets()
         labeled_index, unlabeled_index = _draw_indices(train_set, self.labeled_sample_num, seed=self.seed,
                                                        verbose=self.verbose)
-        #
+        # todo: to verify if here the dcp is necessary
         labeled_set = Subset(dcp(train_set), labeled_index)
 
         unlabeled_set = Subset(dcp(train_set), unlabeled_index)
@@ -180,7 +180,6 @@ class SemiDataSetInterface(object):
 
         labeled_set, unlabeled_set, val_set = self._init_labeled_unlabled_val_sets()
         target_transform_list = repeat(target_transform)
-
         labeled_sets = _override_transforms(labeled_set, labeled_transforms, target_transform_list)
         unlabeled_sets = _override_transforms(unlabeled_set, unlabeled_transforms, target_transform_list)
         val_sets = _override_transforms(val_set, val_transforms, target_transform_list)

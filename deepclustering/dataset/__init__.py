@@ -10,3 +10,7 @@ from .classification.stl10_helper import (
     default_stl10_img_transform,
     STL10DatasetInterface,
 )
+from .classification.svhn_helper import (
+    SVHNClusteringDatasetInterface,
+    svhn_naive_transform, svhn_strong_transform
+)
