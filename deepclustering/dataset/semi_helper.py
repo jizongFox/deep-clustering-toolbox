@@ -91,7 +91,6 @@ class SemiDataSetInterface(object):
                                                        verbose=self.verbose)
         # todo: to verify if here the dcp is necessary
         labeled_set = Subset(dcp(train_set), labeled_index)
-
         unlabeled_set = Subset(dcp(train_set), unlabeled_index)
 
         del train_set
@@ -147,7 +146,7 @@ class SemiDataSetInterface(object):
             labeled_transform: Callable[[Image.Image], Tensor],
             unlabeled_transform: Callable[[Image.Image], Tensor],
             val_transform: Callable[[Image.Image], Tensor],
-            target_transform: Callable[[Image.Image], Tensor] = None
+            target_transform: Callable[[Tensor], Tensor] = None
     ) -> Tuple[DataLoader, DataLoader, DataLoader]:
         labeled_set, unlabeled_set, val_set = self._create_semi_supervised_datasets(
             labeled_transform,
@@ -175,7 +174,8 @@ class SemiDataSetInterface(object):
     ) -> Tuple[DataLoader, DataLoader, DataLoader]:
 
         def _override_transforms(dataset, img_transform_list, target_transform_list):
-            return [self.override_transforms(dataset, img_trans, target_trans) for img_trans, target_trans in
+            # here deep copying the datasets are needed.
+            return [self.override_transforms(dcp(dataset), img_trans, target_trans) for img_trans, target_trans in
                     zip(img_transform_list, target_transform_list)]
 
         labeled_set, unlabeled_set, val_set = self._init_labeled_unlabled_val_sets()
