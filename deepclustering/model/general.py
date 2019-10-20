@@ -141,7 +141,8 @@ class Model(ABC):
     def train(self):
         self.torchnet.train()
 
-    def __call__(self, force_simplex=False, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
+        force_simplex = kwargs.pop("force_simplex", None)
         torch_logits = self.torchnet(*args, **kwargs)
         if force_simplex:
             assert not simplex(torch_logits,
