@@ -8,10 +8,10 @@ from functools import reduce
 from typing import List, Callable, Tuple
 
 import PIL
-from deepclustering.augment import pil_augment
 from torch.utils.data import Dataset
 from torchvision import transforms
 
+from deepclustering.augment import pil_augment
 from .svhn import SVHN
 from ..clustering_helper import ClusterDatasetInterface
 from ..semi_helper import SemiDataSetInterface
@@ -28,7 +28,7 @@ class SVHNSemiSupervisedDatasetInterface(SemiDataSetInterface):
                          unlabeled_batch_size, val_batch_size, shuffle, num_workers, pin_memory, drop_last, verbose)
 
     def _init_train_val_sets(self) -> Tuple[Dataset, Dataset]:
-        train_set = self.DataClass(self.data_root, split="train",download=True, )
+        train_set = self.DataClass(self.data_root, split="train", download=True, )
         val_set = self.DataClass(self.data_root, split="test", download=True, )
         return train_set, val_set
 

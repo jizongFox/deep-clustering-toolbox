@@ -4,11 +4,11 @@ from itertools import repeat
 from typing import Tuple, Callable, List, Type
 
 from PIL import Image
-from deepclustering.decorator import FixRandomSeed
 from numpy.random import choice
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader, Subset
 
+from deepclustering.decorator import FixRandomSeed
 from ..dataloader.dataset import CombineDataset
 
 
@@ -148,21 +148,23 @@ class SemiDataSetInterface(object):
             val_transform: Callable[[Image.Image], Tensor],
             target_transform: Callable[[Tensor], Tensor] = None
     ) -> Tuple[DataLoader, DataLoader, DataLoader]:
+        _dataloader_params = dcp(self.dataloader_params)
+
         labeled_set, unlabeled_set, val_set = self._create_semi_supervised_datasets(
             labeled_transform,
             unlabeled_transform,
             val_transform,
             target_transform)
         if self._if_use_indiv_bz:
-            self.dataloader_params.update({"batch_size": self.batch_params.get("labeled_batch_size")})
-        labeled_loader = DataLoader(labeled_set, **self.dataloader_params)
+            _dataloader_params.update({"batch_size": self.batch_params.get("labeled_batch_size")})
+        labeled_loader = DataLoader(labeled_set, **_dataloader_params)
         if self._if_use_indiv_bz:
-            self.dataloader_params.update({"batch_size": self.batch_params.get("unlabeled_batch_size")})
-        unlabeled_loader = DataLoader(unlabeled_set, **self.dataloader_params)
-        self.dataloader_params.update({"shuffle": False})
+            _dataloader_params.update({"batch_size": self.batch_params.get("unlabeled_batch_size")})
+        unlabeled_loader = DataLoader(unlabeled_set, **_dataloader_params)
+        _dataloader_params.update({"shuffle": False})
         if self._if_use_indiv_bz:
-            self.dataloader_params.update({"batch_size": self.batch_params.get("val_batch_size")})
-        val_loader = DataLoader(val_set, **self.dataloader_params)
+            _dataloader_params.update({"batch_size": self.batch_params.get("val_batch_size")})
+        val_loader = DataLoader(val_set, **_dataloader_params)
         return labeled_loader, unlabeled_loader, val_loader
 
     def SemiSupervisedParallelDataLoaders(
@@ -172,6 +174,7 @@ class SemiDataSetInterface(object):
             val_transforms: List[Callable[[Image.Image], Tensor]],
             target_transform: Callable[[Tensor], Tensor] = None
     ) -> Tuple[DataLoader, DataLoader, DataLoader]:
+        _dataloader_params = dcp(self.dataloader_params)
 
         def _override_transforms(dataset, img_transform_list, target_transform_list):
             # here deep copying the datasets are needed.
@@ -187,10 +190,10 @@ class SemiDataSetInterface(object):
         labeled_set = CombineDataset(*labeled_sets)
         unlabeled_set = CombineDataset(*unlabeled_sets)
         val_set = CombineDataset(*val_sets)
-        labeled_loader = DataLoader(labeled_set, **self.dataloader_params)
-        unlabeled_loader = DataLoader(unlabeled_set, **self.dataloader_params)
-        self.dataloader_params.update({"shuffle": False})
-        val_loader = DataLoader(val_set, **self.dataloader_params)
+        labeled_loader = DataLoader(labeled_set, **_dataloader_params)
+        unlabeled_loader = DataLoader(unlabeled_set, **_dataloader_params)
+        _dataloader_params.update({"shuffle": False})
+        val_loader = DataLoader(val_set, **_dataloader_params)
         return labeled_loader, unlabeled_loader, val_loader
 
 
