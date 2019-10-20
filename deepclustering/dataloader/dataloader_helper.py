@@ -80,7 +80,8 @@ class background:
 class DataIter(object):
     def __init__(self, dataloader: Union[DataLoader, List[Any]]) -> None:
         super().__init__()
-        self.dataloader = dcopy(dataloader)
+        # there should have no deep copy. since we only use the iterator of the dataloader, each iterator, it generates new objects
+        self.dataloader = dataloader
         self.iter_dataloader = iter(dataloader)
         self.cache = None
 

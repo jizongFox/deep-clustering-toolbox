@@ -197,5 +197,4 @@ class SemiDataSetInterface(object):
         return labeled_loader, unlabeled_loader, val_loader
 
 
-class unzipParallelData(object):
-    pass
+
