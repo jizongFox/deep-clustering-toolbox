@@ -56,7 +56,7 @@ class Perturbation_Loss(nn.Module):
     Input should be the simplex
     """
 
-    def __init__(self, distance_func: nn.Module = KL_div(reduce=True)):
+    def __init__(self, distance_func: nn.Module = KL_div()):
         super().__init__()
         self.distance_func = distance_func
 

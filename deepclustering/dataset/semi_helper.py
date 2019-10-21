@@ -4,11 +4,11 @@ from itertools import repeat
 from typing import Tuple, Callable, List, Type
 
 from PIL import Image
+from deepclustering.decorator import FixRandomSeed
 from numpy.random import choice
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader, Subset
 
-from deepclustering.decorator import FixRandomSeed
 from ..dataloader.dataset import CombineDataset
 
 
@@ -22,6 +22,7 @@ def _draw_indices(dataset: Dataset, labeled_sample_num: int, verbose: bool = Tru
     :param seed: random seed to draw indices
     :return: labeled indices and unlabeled indices
     """
+    # todo add more rubost split method to enable fairness split of dataset
     total_num = len(dataset)
     assert total_num >= labeled_sample_num, f"`labeled_sample_num={labeled_sample_num} should be smaller than totoal_num={total_num}.`"
     with FixRandomSeed(seed):
@@ -195,6 +196,3 @@ class SemiDataSetInterface(object):
         _dataloader_params.update({"shuffle": False})
         val_loader = DataLoader(val_set, **_dataloader_params)
         return labeled_loader, unlabeled_loader, val_loader
-
-
-
