@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-PYDEBUG=1 python -O swa_main.py Config=config.yaml Trainer.max_epoch=10
-PYDEBUG=1 python -O swa_main.py Config=config_swa.yaml Trainer.max_epoch=10
+python -O swa_main.py Config=config.yaml Trainer.max_epoch=2000 Arch.name=wideresnet Trainer.save_dir=cifar/benchmark/wideresnet
+python -O swa_main.py Config=config.yaml Trainer.max_epoch=2000 Arch.name=largeconvnet Trainer.save_dir=cifar/benchmark/largeconvnet

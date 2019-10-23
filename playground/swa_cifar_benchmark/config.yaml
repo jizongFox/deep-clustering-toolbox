@@ -9,11 +9,11 @@ Optim:
 
 Scheduler:
   name: MultiStepLR
-  milestones: [50,100]
+  milestones: [500,1000]
   gamma: 0.1
 
 DataLoader:
-  batch_size: 128
+  batch_size: 32
   shuffle: true
   num_workers: 16
   drop_last: false
