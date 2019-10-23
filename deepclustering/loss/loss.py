@@ -63,12 +63,13 @@ class SimplexCrossEntropyLoss(nn.Module):
         self._reduction = reduction
         self._eps = eps
 
-    def forward(self, prob: Tensor, target: Tensor) -> Tensor:
-        assert not target.requires_grad
-        assert prob.requires_grad
-        assert prob.shape == target.shape
-        assert simplex(prob)
-        assert simplex(target)
+    def forward(self, prob: Tensor, target: Tensor, **kwargs) -> Tensor:
+        if not kwargs.get("disable_assert"):
+            assert not target.requires_grad
+            assert prob.requires_grad
+            assert prob.shape == target.shape
+            assert simplex(prob)
+            assert simplex(target)
         b, c, *_ = target.shape
         ce_loss = (-target * torch.log(prob)).sum(1)
         if self._reduction == "mean":
@@ -98,12 +99,13 @@ class KL_div(nn.Module):
         self._eps = eps
         self._reduction = reduction
 
-    def forward(self, prob: Tensor, target: Tensor) -> Tensor:
-        assert not target.requires_grad
-        assert prob.requires_grad
-        assert prob.shape == target.shape
-        assert simplex(prob)
-        assert simplex(target)
+    def forward(self, prob: Tensor, target: Tensor, **kwargs) -> Tensor:
+        if not kwargs.get("disable_assert"):
+            assert not target.requires_grad
+            assert prob.requires_grad
+            assert prob.shape == target.shape
+            assert simplex(prob)
+            assert simplex(target)
         b, c, *_ = target.shape
         kl = (-target * torch.log((prob + self._eps) / (target + self._eps))).sum(1)
         if self._reduction == "mean":
@@ -122,14 +124,14 @@ class KL_div_2D(KL_div):
     def __init__(self, eps=1e-16):
         super().__init__("none", eps)
 
-    def forward(self, p_prob: Tensor, y_prob: Tensor):
+    def forward(self, p_prob: Tensor, y_prob: Tensor, **kwargs):
         """
         :param p_probs:
         :param y_prob: the Y_logit is like that for cross-entropy
         :return: 2D map?
         """
         b, c, h, w = p_prob.shape
-        kl_map = super().forward(p_prob, y_prob)
+        kl_map = super().forward(p_prob, y_prob, **kwargs)
         assert kl_map.shape == torch.Size([b, h, w])
         return kl_map
 
