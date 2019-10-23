@@ -368,3 +368,17 @@ class RandomVerticalFlip(object):
 
     def __repr__(self):
         return self.__class__.__name__ + "(p={})".format(self.p)
+
+
+class GaussianNoise(object):
+    def __init__(self, std=0.15) -> None:
+        super().__init__()
+        self._std = std
+
+    def __call__(self, img: T) -> T:
+        if isinstance(img, torch.Tensor):
+            noise = torch.randn_like(img) * self._std
+        else:
+            noise = np.random.randn(*img.shape) * self._std
+
+        return img + noise
