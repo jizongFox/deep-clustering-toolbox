@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 from deepclustering import DATA_PATH
+from deepclustering.dataloader.dataset import random_split
 from deepclustering.dataset.classification.cifar import CIFAR10
 from deepclustering.manager import ConfigManger
 from deepclustering.model import Model
@@ -35,7 +36,10 @@ transform_test = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
-train_loader = DataLoader(CIFAR10(root=DATA_PATH, transform=transform_train, train=True), **config["DataLoader"])
+# here you may want to have different labeled/unlabeled/val sets for semi supervised learning.
+train_set = CIFAR10(root=DATA_PATH, transform=transform_train, train=True)
+labeled_set, _, _ = random_split(train_set, [4000, 41000, 5000])
+train_loader = DataLoader(labeled_set, **config["DataLoader"])
 val_loader = DataLoader(CIFAR10(root=DATA_PATH, transform=transform_test, train=False), **config["DataLoader"])
 
 Trainer = {"sgd": SGDTrainer, "swa": SWATrainer}.get(config["Trainer"].get("name").lower())

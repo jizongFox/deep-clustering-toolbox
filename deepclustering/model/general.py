@@ -4,13 +4,13 @@ from abc import ABC
 from typing import *
 
 import torch
-from deepclustering import ModelMode
-from deepclustering.arch import get_arch, PlaceholderNet
-from deepclustering.utils import simplex
 from torch import Tensor
 from torch import nn
 from torch.optim import lr_scheduler
 
+from deepclustering import ModelMode
+from deepclustering.arch import get_arch, PlaceholderNet
+from deepclustering.utils import simplex
 from .. import optim
 
 
@@ -180,3 +180,6 @@ class Model(ABC):
         model.load_state_dict(state_dict=state_dict)
         model.to(torch.device("cpu"))
         return model
+
+    def get_lr(self):
+        return self.scheduler.get_lr()
