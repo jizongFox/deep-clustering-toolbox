@@ -9,12 +9,12 @@ The current version supports `MNIST`, `CIFAR10`, `SVHN` and `STL-10` for semisup
 #### Features:
 >- Automatic checkpoint management adapting to various settings
 >- Automatic meter recording and experimental status plotting using matplotlib and threads
->- Various build-in loss functions and help tricks frequently used in PyTorch Framework
->- Various post-processing tools such as Viewer for Medical image segmentations, multislice_viwers for real-time debug 
+>- Various build-in loss functions and help tricks and assert statements frequently used in PyTorch Framework, such as `disable_tracking_bn`, `ema`, `vat`, etc.
+>- Various post-processing tools such as Viewer for Medical image segmentations, multislice_viwers for 3D dataset real-time debug 
 and report script for experimental summaries.
 >- Extendable modules for rapid development.
 
-Several projects are rooted from this repo, including: 
+#### Several projects are benefited from this scalable framework, builing top on this, including: 
 
 + DeepClustering implemented for 
 >- `Invariant Information Clustering for Unsupervised Image Classification and Segmentation`, 
@@ -31,6 +31,9 @@ Several projects are rooted from this repo, including:
 >- [`Deep Co-Training for Semi-Supervised Image Segmentation`](https://arxiv.org/abs/1903.11233)
 + Discretely-constrained CNN for
 >- [`Discretely-constrained deep network for weakly-supervised segmentation`](https://github.com/jizongFox/Discretly-constrained-CNN/).
+
+
+They are examples how to develop research framework with the assistance of our proposed `deep-clustering-toolbox`.
 ___
 ### Playground
 
