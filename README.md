@@ -6,7 +6,13 @@ This repo contains the base code for a deep learning framework using `PyTorch`, 
 The current version supports `MNIST`, `CIFAR10`, `SVHN` and `STL-10` for semisupervised and unsupervised learning. 
 `ACDC`, `Promise12`, `WMH` and so on are supported as segmentation counterpart.
 
-Very happy to get this project advancing consistently.
+#### Features:
+>- Automatic checkpoint management adapting to various settings
+>- Automatic meter recording and experimental status plotting using matplotlib and threads
+>- Various build-in loss functions and help tricks frequently used in PyTorch Framework
+>- Various post-processing tools such as Viewer for Medical image segmentations, multislice_viwers for real-time debug 
+and report script for experimental summaries.
+>- Extendable modules for rapid development.
 
 Several projects are rooted from this repo, including: 
 
