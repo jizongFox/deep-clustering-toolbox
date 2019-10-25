@@ -1,4 +1,5 @@
-# deep-clustering-toolbox: PyTorch Vision toolbox not only for clustering
+# deep-clustering-toolbox 
+#### PyTorch Vision toolbox not only for deep-clustering
 ### Introduction
 
 This repo contains the base code for a deep learning framework using `PyTorch`, to benchmark algorithms for various dataset. 
