@@ -10,6 +10,6 @@ typing==3.6.4
 pathlib2==2.3.3
 behave==1.2.6
 tqdm==4.31.1
-Pillow==6.0.0
+Pillow==6.2.0
 skimage==0.0
 scikit_learn==0.20.3
