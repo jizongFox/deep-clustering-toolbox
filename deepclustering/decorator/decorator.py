@@ -8,6 +8,7 @@ from functools import wraps
 from threading import Thread
 
 import numpy as np
+from torch import nn
 from torch.multiprocessing import Process
 
 
@@ -21,7 +22,12 @@ def export(fn):
     return fn
 
 
+def _extract_bn_modules(model):
+    return [m for m in model.modules() if isinstance(m, nn.BatchNorm2d)]
+
+
 # in order to deal with BN tracking problem.
+# this only works for PyTorch<=1.1.0
 @contextlib.contextmanager
 def _disable_tracking_bn_stats(model):
     def switch_attr(m):
@@ -34,6 +40,24 @@ def _disable_tracking_bn_stats(model):
     yield
     # let the track_running_stats to be inverse
     model.apply(switch_attr)
+
+
+class _disable_tracking_bn_stats_pytoch_el_1_1_0:
+    """
+    This is to deal with the bug linked with track_statistic_bn=False, see: https://github.com/perrying/realistic-ssl-evaluation-pytorch/issues/3
+    """
+
+    def __init__(self, model):
+        self.bn_modules = _extract_bn_modules(model)
+        self.moments = [m.momentum for m in self.bn_modules]
+
+    def __enter__(self):
+        for m in self.bn_modules:
+            m.momentum = 0
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for module, momentum in zip(self.bn_modules, self.moments):
+            module.momentum = momentum
 
 
 # in order to count execution time
