@@ -12,7 +12,7 @@ from .. import ModelMode, PROJECT_PATH
 from ..decorator import lazy_load_checkpoint
 from ..meters import MeterInterface
 from ..model import Model
-from ..utils import flatten_dict, _warnings, dict_filter
+from ..utils import flatten_dict, _warnings, dict_filter, set_environment
 from ..writer import SummaryWriter, DrawCSV2
 
 
@@ -57,8 +57,10 @@ class _Trainer(ABC):
         if config:
             self.config = dcopy(config)
             self.config.pop("Config", None)  # delete the Config attribute
-            with open(self.save_dir / "config.yaml", "w") as outfile:  # type: ignore
+            with open(str(self.save_dir / "config.yaml"), "w") as outfile:  # type: ignore
                 yaml.dump(self.config, outfile, default_flow_style=False)
+            # set environment variable:
+            set_environment(config.get("Environment"))
 
         self.writer = SummaryWriter(str(self.save_dir))
         # todo: try to override the DrawCSV

@@ -51,6 +51,14 @@ def set_nicer(nice) -> None:
         print(f"Process priority has been changed to {nice}.")
 
 
+def set_environment(environment_dict: Dict[str, str] = None) -> None:
+    if environment_dict:
+        import os
+        for k, v in environment_dict.items():
+            os.environ[k] = str(v)
+            print(f"setting environment {k}:{v}")
+
+
 # reproducibility
 def fix_all_seed(seed):
     random.seed(seed)
@@ -356,7 +364,7 @@ class Vectorize:
     def __init__(self, mapping_dict: Dict[int, int]) -> None:
         super().__init__()
         self._mapping_dict = mapping_dict
-        self._mapping_module = np.vectorize(lambda x:self._mapping_dict.get(x,0))
+        self._mapping_module = np.vectorize(lambda x: self._mapping_dict.get(x, 0))
 
     def __call__(self, np_tensor: np.ndarray):
         return self._mapping_module(np_tensor)
