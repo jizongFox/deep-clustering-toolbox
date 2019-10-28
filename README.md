@@ -7,6 +7,7 @@ The current version supports `MNIST`, `CIFAR10`, `SVHN` and `STL-10` for semisup
 `ACDC`, `Promise12`, `WMH` and so on are supported as segmentation counterpart.
 
 #### Features:
+>- Powerful cmd parser using `yaml` module, providing flexible input formats without predefined argparser.
 >- Automatic checkpoint management adapting to various settings
 >- Automatic meter recording and experimental status plotting using matplotlib and threads
 >- Various build-in loss functions and help tricks and assert statements frequently used in PyTorch Framework, such as `disable_tracking_bn`, `ema`, `vat`, etc.
