@@ -35,7 +35,7 @@ setup(
         "pandas",
         "easydict",
         "pathlib2",
-        "matplotlib",
+        "matplotlib==3.0.3",
         "typing_inspect",
         "tqdm==4.32.2",
         "pytest==4.4.0",

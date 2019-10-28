@@ -54,14 +54,14 @@ class MedicalImageSegmentationDataset(Dataset):
         self.verbose = verbose
         if self.verbose:
             print(f"->> Building {self.name}:\t")
-        self.imgs, self.filenames = self.make_dataset(self.root_dir, self.mode, self.subfolders, verbose=verbose)
+        self.filenames = self.make_dataset(self.root_dir, self.mode, self.subfolders, verbose=verbose)
         self.debug = os.environ.get("PYDEBUG", "0") == "1"
         self.set_patient_pattern(patient_pattern)
 
     def __len__(self) -> int:
         if self.debug:
-            return int(len(self.imgs[self.subfolders[0]]) / 10)
-        return int(len(self.imgs[self.subfolders[0]]))
+            return int(len(self.filenames[self.subfolders[0]]) / 10)
+        return int(len(self.filenames[self.subfolders[0]]))
 
     def __getitem__(self, index) -> Tuple[List[Tensor], str]:
         img_list, filename_list = self._getitem_index(index)
@@ -74,7 +74,7 @@ class MedicalImageSegmentationDataset(Dataset):
         return img_list, filename
 
     def _getitem_index(self, index):
-        img_list = [Image.open(self.imgs[subfolder][index]) for subfolder in self.subfolders]
+        img_list = [Image.open(self.filenames[subfolder][index]) for subfolder in self.subfolders]
         filename_list = [self.filenames[subfolder][index] for subfolder in self.subfolders]
         return img_list, filename_list
 
@@ -90,7 +90,7 @@ class MedicalImageSegmentationDataset(Dataset):
     def get_patient_list(self):
         if not hasattr(self, "_re_pattern"):
             raise RuntimeError("Calling `get_patient_list` before setting `set_patient_pattern`")
-        return sorted(list(set([self._re_pattern.search(path).group(0) for path in self.imgs["img"]])))
+        return sorted(list(set([self._re_pattern.search(path).group(0) for path in self.filenames["img"]])))
 
     @classmethod
     def make_dataset(cls, root: str, mode: str, subfolders: List[str], verbose=True) -> Dict[str, List[str]]:
