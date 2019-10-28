@@ -7,7 +7,7 @@ import torch
 import yaml
 from torch import Tensor
 from torch.utils.data import DataLoader
-
+import os
 from .. import ModelMode, PROJECT_PATH
 from ..decorator import lazy_load_checkpoint
 from ..meters import MeterInterface
@@ -51,6 +51,8 @@ class _Trainer(ABC):
         self.best_score: float = -1
         self._start_epoch = 0  # whether 0 or loaded from the checkpoint.
         self.device = torch.device(device)
+        # debug flag for `Trainer`
+        self._debug = bool(os.environ.get("PYDEBUG") == "1")
 
         if config:
             self.config = dcopy(config)
