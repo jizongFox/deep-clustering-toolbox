@@ -1,6 +1,8 @@
 __all__ = ["lazy_load_checkpoint"]
 import functools
-from copy import deepcopy as dcp
+import os
+
+from termcolor import colored
 
 
 def lazy_load_checkpoint(func):
@@ -21,7 +23,16 @@ def lazy_load_checkpoint(func):
         # reset the checkpoint_path
         self.checkpoint = _checkpoint_path
         if self.checkpoint:
-            self.load_checkpoint_from_path(self.checkpoint)
-        self.to(self.device)
+            if os.environ.get("FORCE_LOAD_CHECKPOINT") == "1":
+                try:
+                    self.load_checkpoint_from_path(self.checkpoint)
+                except Exception as e:
+                    print(colored(
+                        f"!!!Loading checkpoint {self.checkpoint} failed with {e}."
+                        f"\nDue to global environment variable `FORCE_LOAD_CHECKPOINT`=`1`, continue to train from scratch!)",
+                        "red"))
+            else:
+                self.load_checkpoint_from_path(self.checkpoint)
+            self.to(self.device)
 
     return wrapped_init_
