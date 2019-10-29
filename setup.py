@@ -38,7 +38,6 @@ setup(
         "matplotlib==3.0.3",
         "typing_inspect",
         "tqdm==4.32.2",
-        "pytest==4.4.0",
         "py==1.8.0",
         "pytest-remotedata==0.3.1",
         "tensorboardX",

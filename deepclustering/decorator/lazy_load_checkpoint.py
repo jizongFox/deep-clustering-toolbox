@@ -33,6 +33,6 @@ def lazy_load_checkpoint(func):
                         "red"))
             else:
                 self.load_checkpoint_from_path(self.checkpoint)
-            self.to(self.device)
+        self.to(self.device)
 
     return wrapped_init_
