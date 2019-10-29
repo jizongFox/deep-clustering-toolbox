@@ -46,7 +46,8 @@ setup(
         "opencv-python",
         "medpy",
         "pyyaml",
-        "termcolor"
+        "termcolor",
+        "gpuqueue"
     ],
 
 )
