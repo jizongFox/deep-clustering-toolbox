@@ -5,6 +5,8 @@ from pathlib import Path
 DATA_PATH = str(Path(__file__).parents[1] / ".data")
 PROJECT_PATH = str(Path(__file__).parents[1])
 Path(DATA_PATH).mkdir(parents=True, exist_ok=True)
+CC_wrapper_path = str(Path(PROJECT_PATH) / "deepclustering/utils/CC_wrapper.sh")
+LC_wrapper_path = str(Path(PROJECT_PATH) / "deepclustering/utils/LOCAL_wrapper.sh")
 
 
 class ModelMode(Enum):
