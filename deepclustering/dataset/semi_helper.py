@@ -1,3 +1,5 @@
+# This file is the abstract class for semi-supervised learning for classification.
+# It might not be applicable for semi-supervised segmentation where you have groups of images defined by their natures
 from abc import abstractmethod
 from copy import deepcopy as dcp
 from itertools import repeat
