@@ -18,3 +18,5 @@ script/runs/
 **/.mypy_cache/
 .DS_Store
 **/*.pyc
+build/
+dist/
