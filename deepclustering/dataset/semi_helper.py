@@ -5,40 +5,56 @@ from copy import deepcopy as dcp
 from itertools import repeat
 from typing import Tuple, Callable, List, Type
 
+import numpy as np
 from PIL import Image
-from numpy.random import choice
+from deepclustering.dataloader.dataset import CombineDataset
+from deepclustering.decorator import FixRandomSeed
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader, Subset
 
-from deepclustering.decorator import FixRandomSeed
-from ..dataloader.dataset import CombineDataset
 
-
-def _draw_indices(dataset: Dataset, labeled_sample_num: int, verbose: bool = True, seed: int = 1) \
-        -> Tuple[List[int], List[int]]:
+def _draw_indices(targets: np.ndarray, labeled_sample_num: int, class_nums: int = 10, validation_num: int = 5000,
+                  verbose: bool = True, seed: int = 1) \
+        -> Tuple[List[int], List[int], List[int]]:
     """
     draw indices for labeled and unlabeled dataset separations.
-    :param dataset: `torch.utils.data.Dataset`-like dataset, used to split into labeled and unlabeled dataset.
+    :param targets: `torch.utils.data.Dataset.targets`-like numpy ndarray with all labels, used to split into labeled, unlabeled and validation dataset.
     :param labeled_sample_num: labeled sample number
+    :param class_nums: num of classes in the target.
+    :param validation_num: num of validation set, usually we split the big training set into `labeled`, `unlabeled`, `validation` sets, the `test` set is taken directly from the big test set.
     :param verbose: whether to print information while running.
     :param seed: random seed to draw indices
     :return: labeled indices and unlabeled indices
     """
     # todo add more rubost split method to enable fairness split of dataset, and validation set.
-    total_num = len(dataset)
-    targets = dataset.targets
-    assert total_num >= labeled_sample_num, f"`labeled_sample_num={labeled_sample_num} should be smaller than totoal_num={total_num}.`"
+    labeled_sample_per_class = int(labeled_sample_num / class_nums)
+    validation_sample_per_class = int(validation_num / class_nums) if class_nums else 0
+    targets = np.array(targets)
+    train_labeled_idxs: List[int] = []
+    train_unlabeled_idxs: List[int] = []
+    val_idxs: List[int] = []
     with FixRandomSeed(seed):
-        # only fix numpy and random pkgs
-        labeled_indices = sorted(choice(list(range(total_num)), labeled_sample_num, replace=False))
-    unlabeled_indices = sorted(list(set(range(total_num)) - set(labeled_indices)))
+        for i in range(class_nums):
+            idxs = np.where(targets == i)[0]
+            np.random.shuffle(idxs)
+            train_labeled_idxs.extend(idxs[:labeled_sample_per_class])
+            train_unlabeled_idxs.extend(idxs[labeled_sample_per_class:-validation_sample_per_class])
+            val_idxs.extend(idxs[-validation_sample_per_class:])
+        np.random.shuffle(train_labeled_idxs)
+        np.random.shuffle(train_unlabeled_idxs)
+        np.random.shuffle(val_idxs)
     if verbose:
-        print(f">>>Generating {len(labeled_indices)} labeled data and {len(unlabeled_indices)} unlabeled data.")
-    assert labeled_indices.__len__() + unlabeled_indices.__len__() == total_num, f"{1} split wrong."
-    return labeled_indices, unlabeled_indices
+        print(
+            f">>>Generating {len(train_labeled_idxs)} labeled data, {len(train_unlabeled_idxs)} unlabeled data, and {len(val_idxs)} validation data.")
+    assert train_labeled_idxs.__len__() + train_unlabeled_idxs.__len__() + len(val_idxs) == len(
+        targets), f"{1} split wrong."
+    return train_labeled_idxs, train_unlabeled_idxs, val_idxs
 
 
-class SemiDataSetInterface(object):
+class SemiDataSetInterface:
+    """
+    Semi supervised dataloader creator interface
+    """
 
     def __init__(self,
                  DataClass: Type[Dataset],
@@ -84,21 +100,23 @@ class SemiDataSetInterface(object):
             "drop_last": drop_last
         }
 
-    def _init_labeled_unlabled_val_sets(self) -> Tuple[Subset, Subset, Dataset]:  # type: ignore
+    def _init_labeled_unlabled_val_and_test_sets(self) -> Tuple[Subset, Subset, Subset, Dataset]:  # type: ignore
         """
         :param args: unknown args
         :param kwargs: unknown kwargs
         :return: Tuple of dataset, Labeled Dataset, Unlabeled Dataset, Val Dataset
         """
-        train_set, val_set = self._init_train_val_sets()
-        labeled_index, unlabeled_index = _draw_indices(train_set, self.labeled_sample_num, seed=self.seed,
-                                                       verbose=self.verbose)
+        train_set, test_set = self._init_train_test_sets()
+        labeled_index, unlabeled_index, val_index = _draw_indices(train_set.targets, self.labeled_sample_num,
+                                                                  class_nums=10, validation_num=5000, seed=self.seed,
+                                                                  verbose=self.verbose)
         # todo: to verify if here the dcp is necessary
         labeled_set = Subset(dcp(train_set), labeled_index)
         unlabeled_set = Subset(dcp(train_set), unlabeled_index)
+        val_set = Subset(dcp(train_set), val_index)
 
         del train_set
-        return labeled_set, unlabeled_set, val_set
+        return labeled_set, unlabeled_set, val_set, test_set
 
     @staticmethod
     def _use_individual_batch_size(batch_size, l_batch_size, un_batch_size, val_batch_size, verbose):
@@ -118,7 +136,7 @@ class SemiDataSetInterface(object):
                 f"unlabeled_batch_size={un_batch_size}, val_batch_size={val_batch_size}.")
 
     @abstractmethod
-    def _init_train_val_sets(self) -> Tuple[Dataset, Dataset]:
+    def _init_train_test_sets(self) -> Tuple[Dataset, Dataset]:
         raise NotImplementedError("train and test set initialization must be override")
 
     def _create_semi_supervised_datasets(
@@ -126,13 +144,15 @@ class SemiDataSetInterface(object):
             labeled_transform: Callable[[Image.Image], Tensor],
             unlabeled_transform: Callable[[Image.Image], Tensor],
             val_transform: Callable[[Image.Image], Tensor],
+            test_transform: Callable[[Image.Image], Tensor],
             target_transform: Callable[[Tensor], Tensor] = None
-    ) -> Tuple[Subset, Subset, Dataset]:
-        labeled_set, unlabeled_set, val_set = self._init_labeled_unlabled_val_sets()
+    ) -> Tuple[Subset, Subset, Subset, Dataset]:
+        labeled_set, unlabeled_set, val_set, test_set = self._init_labeled_unlabled_val_and_test_sets()
         labeled_set = self.override_transforms(labeled_set, labeled_transform, target_transform)
         unlabeled_set = self.override_transforms(unlabeled_set, unlabeled_transform, target_transform)
         val_set = self.override_transforms(val_set, val_transform, target_transform)
-        return labeled_set, unlabeled_set, val_set
+        test_set = self.override_transforms(test_set, test_transform, target_transform)
+        return labeled_set, unlabeled_set, val_set, test_set
 
     @staticmethod
     def override_transforms(dataset, img_transform, target_transform):
@@ -150,34 +170,41 @@ class SemiDataSetInterface(object):
             labeled_transform: Callable[[Image.Image], Tensor],
             unlabeled_transform: Callable[[Image.Image], Tensor],
             val_transform: Callable[[Image.Image], Tensor],
+            test_transform: Callable[[Image.Image], Tensor],
             target_transform: Callable[[Tensor], Tensor] = None
-    ) -> Tuple[DataLoader, DataLoader, DataLoader]:
+    ) -> Tuple[DataLoader, DataLoader, DataLoader, DataLoader]:
         _dataloader_params = dcp(self.dataloader_params)
 
-        labeled_set, unlabeled_set, val_set = self._create_semi_supervised_datasets(
-            labeled_transform,
-            unlabeled_transform,
-            val_transform,
-            target_transform)
+        labeled_set, unlabeled_set, val_set, test_set = self._create_semi_supervised_datasets(
+            labeled_transform=labeled_transform,
+            unlabeled_transform=unlabeled_transform,
+            val_transform=val_transform,
+            test_transform=test_transform,
+            target_transform=target_transform
+        )
         if self._if_use_indiv_bz:
             _dataloader_params.update({"batch_size": self.batch_params.get("labeled_batch_size")})
         labeled_loader = DataLoader(labeled_set, **_dataloader_params)
         if self._if_use_indiv_bz:
             _dataloader_params.update({"batch_size": self.batch_params.get("unlabeled_batch_size")})
         unlabeled_loader = DataLoader(unlabeled_set, **_dataloader_params)
-        _dataloader_params.update({"shuffle": False})
+        _dataloader_params.update({"shuffle": False, "drop_last": False})
         if self._if_use_indiv_bz:
             _dataloader_params.update({"batch_size": self.batch_params.get("val_batch_size")})
         val_loader = DataLoader(val_set, **_dataloader_params)
-        return labeled_loader, unlabeled_loader, val_loader
+        test_loader = DataLoader(test_set, **_dataloader_params)
+        del _dataloader_params
+        return labeled_loader, unlabeled_loader, val_loader, test_loader
 
     def SemiSupervisedParallelDataLoaders(
             self,
             labeled_transforms: List[Callable[[Image.Image], Tensor]],
             unlabeled_transforms: List[Callable[[Image.Image], Tensor]],
             val_transforms: List[Callable[[Image.Image], Tensor]],
+            test_transforms: List[Callable[[Image.Image], Tensor]],
             target_transform: Callable[[Tensor], Tensor] = None
-    ) -> Tuple[DataLoader, DataLoader, DataLoader]:
+    ) -> Tuple[DataLoader, DataLoader, DataLoader, DataLoader]:
+
         _dataloader_params = dcp(self.dataloader_params)
 
         def _override_transforms(dataset, img_transform_list, target_transform_list):
@@ -185,17 +212,26 @@ class SemiDataSetInterface(object):
             return [self.override_transforms(dcp(dataset), img_trans, target_trans) for img_trans, target_trans in
                     zip(img_transform_list, target_transform_list)]
 
-        labeled_set, unlabeled_set, val_set = self._init_labeled_unlabled_val_sets()
+        labeled_set, unlabeled_set, val_set, test_set = self._init_labeled_unlabled_val_and_test_sets()
         target_transform_list = repeat(target_transform)
         labeled_sets = _override_transforms(labeled_set, labeled_transforms, target_transform_list)
         unlabeled_sets = _override_transforms(unlabeled_set, unlabeled_transforms, target_transform_list)
         val_sets = _override_transforms(val_set, val_transforms, target_transform_list)
+        test_sets = _override_transforms(test_set, test_transforms, target_transform_list)
 
         labeled_set = CombineDataset(*labeled_sets)
         unlabeled_set = CombineDataset(*unlabeled_sets)
         val_set = CombineDataset(*val_sets)
+        test_set = CombineDataset(*test_sets)
+        if self._if_use_indiv_bz:
+            _dataloader_params.update({"batch_size": self.batch_params.get("labeled_batch_size")})
         labeled_loader = DataLoader(labeled_set, **_dataloader_params)
+        if self._if_use_indiv_bz:
+            _dataloader_params.update({"batch_size": self.batch_params.get("unlabeled_batch_size")})
         unlabeled_loader = DataLoader(unlabeled_set, **_dataloader_params)
-        _dataloader_params.update({"shuffle": False})
+        _dataloader_params.update({"shuffle": False, "drop_last": False})
+        if self._if_use_indiv_bz:
+            _dataloader_params.update({"batch_size": self.batch_params.get("val_batch_size")})
         val_loader = DataLoader(val_set, **_dataloader_params)
-        return labeled_loader, unlabeled_loader, val_loader
+        test_loader = DataLoader(test_set, **_dataloader_params)
+        return labeled_loader, unlabeled_loader, val_loader, test_loader
