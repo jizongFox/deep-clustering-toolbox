@@ -1,13 +1,14 @@
-# This file is the abstract class for semi-supervised learning for classification.
-# It might not be applicable for semi-supervised segmentation where you have groups of images defined by their natures
+__all__ = ["SemiDataSetInterface", "MedicalDatasetSemiInterface"]
 from abc import abstractmethod
 from copy import deepcopy as dcp
 from itertools import repeat
-from typing import Tuple, Callable, List, Type
+from typing import Tuple, Callable, List, Type, Dict, Union
 
 import numpy as np
 from PIL import Image
+from deepclustering.augment import SequentialWrapper
 from deepclustering.dataloader.dataset import CombineDataset
+from deepclustering.dataset.segmentation import MedicalImageSegmentationDataset, PatientSampler
 from deepclustering.decorator import FixRandomSeed
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader, Subset
@@ -235,3 +236,142 @@ class SemiDataSetInterface:
         val_loader = DataLoader(val_set, **_dataloader_params)
         test_loader = DataLoader(test_set, **_dataloader_params)
         return labeled_loader, unlabeled_loader, val_loader, test_loader
+
+
+class MedicalDatasetSemiInterface:
+    """
+    Semi-supervised interface for datasets using `MedicalImageSegmentationDataset`
+    """
+
+    def __init__(
+            self,
+            DataClass: Type[MedicalImageSegmentationDataset],
+            root_dir: str,
+            labeled_data_ratio: float,
+            unlabeled_data_ratio: float,
+            seed: int = 0,
+            verbose: bool = True
+    ) -> None:
+        super().__init__()
+        self.DataClass = DataClass
+        self.root_dir = root_dir
+        assert (labeled_data_ratio + unlabeled_data_ratio) <= 1, \
+            f"`labeled_data_ratio` + `unlabeled_data_ratio` should be less than 1.0, given {labeled_data_ratio + unlabeled_data_ratio}"
+        self.labeled_ratio = labeled_data_ratio
+        self.unlabeled_ratio = unlabeled_data_ratio
+        self.val_ratio = 1 - (labeled_data_ratio + unlabeled_data_ratio)
+        self.seed = seed
+        self.verbose = verbose
+
+    def compile_dataloader_params(
+            self, batch_size: int = 1, labeled_batch_size: int = None, unlabeled_batch_size: int = None,
+            val_batch_size: int = None, shuffle: bool = False, num_workers: int = 1, pin_memory: bool = True,
+            drop_last=False
+    ):
+        self._if_use_indiv_bz: bool = self._use_individual_batch_size(
+            batch_size, labeled_batch_size, unlabeled_batch_size, val_batch_size, self.verbose
+        )
+        if self._if_use_indiv_bz:
+            self.batch_params = {
+                "labeled_batch_size": labeled_batch_size,
+                "unlabeled_batch_size": unlabeled_batch_size,
+                "val_batch_size": val_batch_size
+            }
+        self.dataloader_params = {
+            "batch_size": batch_size,
+            "shuffle": shuffle,
+            "num_workers": num_workers,
+            "pin_memory": pin_memory,
+            "drop_last": drop_last
+        }
+
+    def SemiSupervisedDataLoaders(
+            self,
+            labeled_transform: SequentialWrapper = None,
+            unlabeled_transform: SequentialWrapper = None,
+            val_transform: SequentialWrapper = None,
+            group_labeled=False,
+            group_unlabeled=False,
+            group_val=True,
+    ) -> Tuple[DataLoader, DataLoader, DataLoader]:
+
+        _dataloader_params = dcp(self.dataloader_params)
+        labeled_set, unlabeled_set, val_set = self._create_semi_supervised_datasets(
+            labeled_transform=labeled_transform,
+            unlabeled_transform=unlabeled_transform,
+            val_transform=val_transform,
+        )
+        # labeled_dataloader
+        if self._if_use_indiv_bz:
+            _dataloader_params.update({"batch_size": self.batch_params.get("labeled_batch_size")})
+        labeled_loader = DataLoader(labeled_set, **_dataloader_params) if not group_labeled else \
+            self._grouped_dataloader(labeled_set, **_dataloader_params)
+
+        # unlabeled_dataloader
+        if self._if_use_indiv_bz:
+            _dataloader_params.update({"batch_size": self.batch_params.get("unlabeled_batch_size")})
+        unlabeled_loader = DataLoader(unlabeled_set, **_dataloader_params) if not group_unlabeled else \
+            self._grouped_dataloader(unlabeled_set, **_dataloader_params)
+
+        # val_dataloader
+        _dataloader_params.update({"shuffle": False, "drop_last": False})
+        if self._if_use_indiv_bz:
+            _dataloader_params.update({"batch_size": self.batch_params.get("val_batch_size")})
+        val_loader = DataLoader(val_set, **_dataloader_params) if not group_val else \
+            self._grouped_dataloader(val_set, **_dataloader_params)
+        del _dataloader_params
+        return labeled_loader, unlabeled_loader, val_loader
+
+    @staticmethod
+    def _use_individual_batch_size(batch_size, l_batch_size, un_batch_size, val_batch_size, verbose) -> bool:
+        if isinstance(l_batch_size, int) and isinstance(un_batch_size, int) and isinstance(val_batch_size, int):
+            assert l_batch_size >= 1 and un_batch_size >= 1 and val_batch_size >= 1, "batch_size should be greater than 1."
+            if verbose:
+                print(
+                    f"Using labeled_batch_size={l_batch_size}, unlabeled_batch_size={un_batch_size}, val_batch_size={val_batch_size}")
+            return True
+        elif isinstance(batch_size, int) and batch_size >= 1:
+            if verbose:
+                print(f"Using all same batch size of {batch_size}")
+            return False
+        else:
+            raise ValueError(
+                f"batch_size setting error, given batch_size={batch_size}, labeled_batch_size={l_batch_size}, "
+                f"unlabeled_batch_size={un_batch_size}, val_batch_size={val_batch_size}.")
+
+    def _create_semi_supervised_datasets(
+            self,
+            labeled_transform: SequentialWrapper = None,
+            unlabeled_transform: SequentialWrapper = None,
+            val_transform: SequentialWrapper = None,
+    ) -> Tuple[MedicalImageSegmentationDataset, MedicalImageSegmentationDataset, MedicalImageSegmentationDataset]:
+        raise NotImplementedError
+
+    def _grouped_dataloader(
+            self, dataset: MedicalImageSegmentationDataset,
+            **dataloader_params: Dict[str, Union[int, float, bool]]
+    ) -> DataLoader:
+        """
+        return a dataloader that requires to be grouped based on the reg of patient's pattern.
+        :param dataset:
+        :param shuffle:
+        :return:
+        """
+        dataloader_params = dcp(dataloader_params)
+        batch_sampler = PatientSampler(
+            dataset=dataset,
+            grp_regex=dataset._re_pattern,
+            shuffle=dataloader_params.get("shuffle", False),
+            verbose=self.verbose
+        )
+        # having a batch_sampler cannot accept batch_size > 1
+        dataloader_params["batch_size"] = 1
+        dataloader_params["shuffle"] = False
+        dataloader_params["drop_last"] = False
+        return DataLoader(dataset, batch_sampler=batch_sampler, **dataloader_params)
+
+    @staticmethod
+    def override_transforms(dataset: MedicalImageSegmentationDataset, transform: SequentialWrapper):
+        assert isinstance(dataset, MedicalImageSegmentationDataset)
+        dataset.transform = transform
+        return dataset

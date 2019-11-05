@@ -1,6 +1,6 @@
 __all__ = ["FixRandomSeed", "SequentialWrapper"]
 import random
-from typing import Callable, List, Union
+from typing import Callable, List, Union, Tuple
 
 import numpy as np
 import torch
@@ -35,7 +35,7 @@ class SequentialWrapper:
             self,
             img_transform: Callable = None,
             target_transform: Callable = None,
-            if_is_target: List[bool] = [],
+            if_is_target: Union[List[bool], Tuple[bool, ...]] = [],
     ) -> None:
         super().__init__()
         self.img_transform = img_transform if img_transform is not None else Identity()

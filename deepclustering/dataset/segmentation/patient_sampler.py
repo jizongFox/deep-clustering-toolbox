@@ -1,13 +1,14 @@
-__all__ = ["PatientSampler"]
+__all__ = ["PatientSampler", "SubMedicalDatasetBasedOnIndex"]
 import random
 import re
 from itertools import repeat
 from pathlib import Path
 from typing import List, Pattern, Dict, Callable, Match
 
+import numpy as np
+from deepclustering.utils import id_, map_
 from torch.utils.data.sampler import Sampler
 
-from deepclustering.utils import id_, map_
 from .medicalSegmentationDataset import MedicalImageSegmentationDataset
 
 
@@ -47,10 +48,24 @@ class PatientSampler(Sampler):
         return iter(shuffled)
 
 
-class ExtractPatientCut:
+def SubMedicalDatasetBasedOnIndex(
+        dataset: MedicalImageSegmentationDataset,
+        patient_list) -> MedicalImageSegmentationDataset:
     """
     This class divide a list of file path to some different groups in order to split the dataset based on p_pattern string.
     """
+    import re
+    def _is_matched(str_path: str, patient_list: List) -> bool:
+        patterns = [re.compile(p) for p in patient_list]
+        for pattern in patterns:
+            if pattern.search(str_path):
+                return True
+        return False
 
-    def __init__(self, p_pattern: str = None) -> None:
-        super().__init__()
+    from copy import deepcopy as dcp
+    assert isinstance(patient_list, (tuple, list)) and patient_list.__len__() >= 1
+    dataset = dcp(dataset)
+    patient_img_list = dataset.filenames["img"]
+    sub_patient_index = [_is_matched(f, patient_list) for f in patient_img_list]
+    dataset.filenames = {k: np.array(v)[np.array(sub_patient_index)].tolist() for k, v in dataset.filenames.items()}
+    return dataset

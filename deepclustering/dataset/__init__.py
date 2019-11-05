@@ -14,4 +14,5 @@ from .classification.svhn_helper import (
     SVHNClusteringDatasetInterface,
     svhn_naive_transform, svhn_strong_transform
 )
-from .segmentation import (MedicalImageSegmentationDataset, MedicalImageSegmentationDatasetWithMetaInfo, PatientSampler)
+from .segmentation import (MedicalImageSegmentationDataset, MedicalImageSegmentationDatasetWithMetaInfo, PatientSampler,
+                           SubMedicalDatasetBasedOnIndex)
