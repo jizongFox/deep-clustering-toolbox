@@ -4,9 +4,10 @@ from typing import List, Tuple
 from sklearn.model_selection import train_test_split
 
 from deepclustering.augment import SequentialWrapper
-from deepclustering.dataset.segmentation import MedicalImageSegmentationDataset, SubMedicalDatasetBasedOnIndex
-from ..semi_helper import MedicalDatasetSemiInterface
-from ... import DATA_PATH
+from deepclustering.dataset.segmentation.medicalSegmentationDataset import MedicalImageSegmentationDataset
+from deepclustering.dataset.segmentation.patient_sampler import SubMedicalDatasetBasedOnIndex
+from deepclustering.dataset.semi_helper import MedicalDatasetSemiInterface
+from deepclustering import DATA_PATH
 
 
 class ACDCDataset(MedicalImageSegmentationDataset):

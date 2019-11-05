@@ -6,12 +6,13 @@ from typing import Tuple, Callable, List, Type, Dict, Union
 
 import numpy as np
 from PIL import Image
+from torch import Tensor
+from torch.utils.data import Dataset, DataLoader, Subset
+
 from deepclustering.augment import SequentialWrapper
 from deepclustering.dataloader.dataset import CombineDataset
 from deepclustering.dataset.segmentation import MedicalImageSegmentationDataset, PatientSampler
 from deepclustering.decorator import FixRandomSeed
-from torch import Tensor
-from torch.utils.data import Dataset, DataLoader, Subset
 
 
 def _draw_indices(targets: np.ndarray, labeled_sample_num: int, class_nums: int = 10, validation_num: int = 5000,
@@ -287,9 +288,9 @@ class MedicalDatasetSemiInterface:
 
     def SemiSupervisedDataLoaders(
             self,
-            labeled_transform: SequentialWrapper = None,
-            unlabeled_transform: SequentialWrapper = None,
-            val_transform: SequentialWrapper = None,
+            labeled_transform: SequentialWrapper,
+            unlabeled_transform: SequentialWrapper,
+            val_transform: SequentialWrapper,
             group_labeled=False,
             group_unlabeled=False,
             group_val=True,
@@ -297,10 +298,13 @@ class MedicalDatasetSemiInterface:
 
         _dataloader_params = dcp(self.dataloader_params)
         labeled_set, unlabeled_set, val_set = self._create_semi_supervised_datasets(
-            labeled_transform=labeled_transform,
-            unlabeled_transform=unlabeled_transform,
-            val_transform=val_transform,
+            labeled_transform=None,
+            unlabeled_transform=None,
+            val_transform=None,
         )
+        labeled_set = self.override_transforms(labeled_set, labeled_transform)
+        unlabeled_set = self.override_transforms(unlabeled_set, unlabeled_transform)
+        val_set = self.override_transforms(val_set, val_transform)
         # labeled_dataloader
         if self._if_use_indiv_bz:
             _dataloader_params.update({"batch_size": self.batch_params.get("labeled_batch_size")})

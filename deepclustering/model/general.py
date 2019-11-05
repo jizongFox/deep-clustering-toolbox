@@ -6,6 +6,7 @@ from typing import *
 import torch
 from torch import Tensor
 from torch import nn
+from torch.nn import functional as F
 from torch.optim import lr_scheduler
 
 from deepclustering import ModelMode
