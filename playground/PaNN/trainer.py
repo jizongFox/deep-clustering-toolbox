@@ -79,6 +79,7 @@ class SemiSegTrainer(_Trainer):
             report_dict = self._training_report_dict
             _max_iter.set_postfix(report_dict)
         print(f"Training Epoch {epoch}: {nice_dict(report_dict)}")
+        self.writer.add_scalar_with_tag("train", report_dict, global_step=epoch)
 
     def _trainer_specific_loss(self, unlab_img: Tensor, **kwargs) -> Tensor:
         return torch.tensor(0, dtype=torch.float32, device=self.device)
@@ -103,6 +104,7 @@ class SemiSegTrainer(_Trainer):
             report_dict = self._eval_report_dict
             _val_loader.set_postfix(report_dict)
         print(f"Validating Epoch {epoch}: {nice_dict(report_dict)}")
+        self.writer.add_scalar_with_tag(tag="eval", tag_scalar_dict=report_dict, global_step=epoch)
         return self.METERINTERFACE["valbdice"].value()[0][0].item()
 
     @property
