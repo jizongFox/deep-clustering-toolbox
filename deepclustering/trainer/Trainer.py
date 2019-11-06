@@ -105,6 +105,7 @@ class _Trainer(ABC):
             SUMMARY.to_csv(self.save_dir / self.wholemeter_filename)
             self.drawer.draw(SUMMARY)
             self.save_checkpoint(self.state_dict(), epoch, current_score)
+        self.writer.close()
 
     def to(self, device):
         self.model.to(device=device)

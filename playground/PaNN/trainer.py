@@ -30,6 +30,7 @@ class SemiSegTrainer(_Trainer):
 
     def __init_meters__(self) -> List[Union[str, List[str]]]:
         meter_config = {
+            "lr": AverageValueMeter(),
             "trloss": AverageValueMeter(),
             "trdice": SliceDiceMeter(C=self.model.arch_dict["num_classes"], report_axises=self.axis),
             "valloss": AverageValueMeter(),
@@ -38,7 +39,8 @@ class SemiSegTrainer(_Trainer):
         }
         self.METERINTERFACE = MeterInterface(meter_config)
         return ["trloss_mean", ["trdice_DSC1", "trdice_DSC2", "trdice_DSC3"], "valloss_mean",
-                ["valdice_DSC1", "valdice_DSC2", "valdice_DSC3"], ["valbdice_DSC1", "valbdice_DSC2", "valbdice_DSC3"]]
+                ["valdice_DSC1", "valdice_DSC2", "valdice_DSC3"], ["valbdice_DSC1", "valbdice_DSC2", "valbdice_DSC3"],
+                "lr_mean"]
 
     def start_training(self):
         for epoch in range(self._start_epoch, self.max_epoch):
@@ -52,6 +54,7 @@ class SemiSegTrainer(_Trainer):
             SUMMARY.to_csv(self.save_dir / self.wholemeter_filename)
             self.drawer.draw(SUMMARY)
             self.save_checkpoint(self.state_dict(), epoch, current_score)
+        self.writer.close()
 
     def _train_loop(self, labeled_loader: DataLoader = None, unlabeled_loader: DataLoader = None, epoch: int = 0,
                     mode=ModelMode.TRAIN, *args, **kwargs):
@@ -60,6 +63,7 @@ class SemiSegTrainer(_Trainer):
         unlabeled_loader = DataIter(unlabeled_loader)
         _max_iter = tqdm_(range(self.max_iter))
         _max_iter.set_description(f"Training Epoch {epoch}")
+        self.METERINTERFACE["lr"].add(self.model.get_lr()[0])
         for batch_num, ((lab_img, lab_gt), lab_path), \
             ((unlab_img, _), unlab_path) in zip(_max_iter, labeled_loader, unlabeled_loader):
             lab_img, lab_gt = lab_img.to(self.device), lab_gt.to(self.device)

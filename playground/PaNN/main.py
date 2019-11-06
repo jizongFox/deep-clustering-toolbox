@@ -2,12 +2,16 @@ from deepclustering.augment import SequentialWrapper, pil_augment
 from deepclustering.dataset.acdc_dataloader import ACDCSemiInterface
 from deepclustering.manager import ConfigManger
 from deepclustering.model import Model
+from deepclustering.utils import fix_all_seed
 from playground.PaNN.trainer import SemiSegTrainer
 
 config = ConfigManger(DEFAULT_CONFIG_PATH="config.yaml", integrality_check=True, verbose=True).merged_config
 
-data_handler = ACDCSemiInterface(labeled_data_ratio=0.2, unlabeled_data_ratio=0.8)
-data_handler.compile_dataloader_params(labeled_batch_size=8, unlabeled_batch_size=16, val_batch_size=1, shuffle=True)
+fix_all_seed(config.get("Seed", 0))
+
+data_handler = ACDCSemiInterface(labeled_data_ratio=0.99, unlabeled_data_ratio=0.01)
+data_handler.compile_dataloader_params(labeled_batch_size=4, unlabeled_batch_size=8, val_batch_size=1, shuffle=True,
+                                       num_workers=2)
 # transformations
 train_transforms = SequentialWrapper(
     img_transform=pil_augment.Compose([
