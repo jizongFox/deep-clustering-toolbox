@@ -17,9 +17,9 @@ declare -a StringArray=(
 "python -OO  main.py Optim.name=AdaBound   Trainer.save_dir=${save_dir}/ADABOUD    Trainer.max_epoch=${max_epoch}"
 "python -OO  main.py Optim.name=AdaBoundW   Trainer.save_dir=${save_dir}/ADABOUDW  Trainer.max_epoch=${max_epoch}"
 "python -OO  main.py Optim.name=SGD Optim.momentum=0.9   Trainer.save_dir=${save_dir}/SGD_m  Trainer.max_epoch=${max_epoch}"
-"python -OO  main.py Optim.name=SGD Trainer.save_dir=${save_dir}/SGD_m  Trainer.max_epoch=${max_epoch}"
+"python -OO  main.py Optim.name=SGD Trainer.save_dir=${save_dir}/SGD  Trainer.max_epoch=${max_epoch}"
 )
-gpuqueue "${StringArray[@]}" --available_gpus 0
+#gpuqueue "${StringArray[@]}" --available_gpus 0
 
 for cmd in "${StringArray[@]}"
 do

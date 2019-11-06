@@ -114,7 +114,8 @@ class SemiSegTrainer(_Trainer):
     @property
     def _training_report_dict(self):
         return flatten_dict({"tra_loss": self.METERINTERFACE["trloss"].summary()["mean"],
-                             "": self.METERINTERFACE["trdice"].summary()}, sep="_")
+                             "": self.METERINTERFACE["trdice"].summary(),
+                             "lr": self.METERINTERFACE["lr"].summary()["mean"]}, sep="_")
 
     @property
     def _eval_report_dict(self):

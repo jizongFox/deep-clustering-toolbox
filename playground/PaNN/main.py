@@ -32,11 +32,11 @@ train_transforms = SequentialWrapper(
 )
 val_transform = SequentialWrapper(
     img_transform=pil_augment.Compose([
-        pil_augment.Resize((224, 224)),
+        pil_augment.CenterCrop((224, 224)),
         pil_augment.ToTensor()
     ]),
     target_transform=pil_augment.Compose([
-        pil_augment.Resize((224, 224)),
+        pil_augment.CenterCrop((224, 224)),
         pil_augment.ToLabel()
     ]),
     if_is_target=(False, True)
