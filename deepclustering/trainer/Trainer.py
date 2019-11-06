@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
 from pathlib import Path
@@ -7,7 +8,7 @@ import torch
 import yaml
 from torch import Tensor
 from torch.utils.data import DataLoader
-import os
+
 from .. import ModelMode, PROJECT_PATH
 from ..decorator import lazy_load_checkpoint
 from ..meters import MeterInterface
@@ -120,14 +121,7 @@ class _Trainer(ABC):
         _warnings(args, kwargs)
 
     @abstractmethod
-    def _eval_loop(
-            self,
-            val_loader: DataLoader = None,
-            epoch: int = 0,
-            mode=ModelMode.EVAL,
-            *args,
-            **kwargs
-    ) -> float:
+    def _eval_loop(self, val_loader: DataLoader = None, epoch: int = 0, mode=ModelMode.EVAL, *args, **kwargs) -> float:
         # warning control
         _warnings(args, kwargs)
 

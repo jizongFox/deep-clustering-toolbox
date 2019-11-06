@@ -2,7 +2,7 @@ Arch:
   name: enet
   num_classes: 4
 Optim:
-  name: Adam
+  name: RAdam
   lr: 0.001
   weight_decay: 0.0001
 Scheduler:

@@ -25,7 +25,7 @@ def toOneHot(pred_logit, mask):
 class _DiceMeter(Metric):
     def __init__(self, call_function, report_axises=None, C=4) -> None:
         super().__init__()
-        assert report_axises is None or isinstance(report_axises, list)
+        assert report_axises is None or isinstance(report_axises, (list,tuple))
         self.diceCall = call_function
         self.report_axis = (
             report_axises if report_axises is not None else list(range(C))

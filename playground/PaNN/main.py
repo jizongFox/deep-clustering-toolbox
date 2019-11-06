@@ -2,7 +2,7 @@ from deepclustering.augment import SequentialWrapper, pil_augment
 from deepclustering.dataset.acdc_dataloader import ACDCSemiInterface
 from deepclustering.manager import ConfigManger
 from deepclustering.model import Model
-from playground.PaNN.trainer import SemiTrainer
+from playground.PaNN.trainer import SemiSegTrainer
 
 config = ConfigManger(DEFAULT_CONFIG_PATH="config.yaml", integrality_check=True, verbose=True).merged_config
 
@@ -50,7 +50,8 @@ model = Model(
     optim_dict=config["Optim"],
     scheduler_dict=config["Scheduler"]
 )
-trainer = SemiTrainer(model=model, labeled_loader=labeled_loader, unlabeled_loader=unlabeled_loader,
-                      val_loader=val_loader,
-                      config=config,
-                      **config["Trainer"])
+trainer = SemiSegTrainer(model=model, labeled_loader=labeled_loader, unlabeled_loader=unlabeled_loader,
+                         val_loader=val_loader,
+                         config=config,
+                         **config["Trainer"])
+trainer.start_training()
