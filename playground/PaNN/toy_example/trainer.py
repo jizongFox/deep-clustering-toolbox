@@ -1,7 +1,7 @@
 from typing import *
 
 import torch
-from torch import Tensor
+from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
 from deepclustering import ModelMode
@@ -10,7 +10,7 @@ from deepclustering.loss import KL_div, simplex, Entropy
 from deepclustering.meters import AverageValueMeter, MeterInterface, ConfusionMatrix
 from deepclustering.model import Model, ZeroGradientBackwardStep
 from deepclustering.trainer import _Trainer
-from deepclustering.utils import class2one_hot, tqdm_, flatten_dict, nice_dict
+from deepclustering.utils import class2one_hot, tqdm_, flatten_dict, nice_dict, filter_dict
 
 
 class SemiTrainer(_Trainer):
@@ -159,4 +159,88 @@ class SemiEntropyTrainer(SemiTrainer):
             "marginal": self.METERINTERFACE["marginal"].summary()["mean"],
             "centropy": self.METERINTERFACE["centropy"].summary()["mean"]
         })
+        return filter_dict(report_dict)
+
+
+class SemiPrimalDualTrainer(SemiEntropyTrainer):
+    @lazy_load_checkpoint
+    def __init__(self, model: Model, labeled_loader: DataLoader, unlabeled_loader: DataLoader, val_loader: DataLoader,
+                 max_epoch: int = 100, save_dir: str = "base", checkpoint_path: str = None, device="cpu",
+                 config: dict = None, max_iter: int = 100, prior: Tensor = None, use_centropy=False, **kwargs) -> None:
+        super().__init__(model, labeled_loader, unlabeled_loader, val_loader, max_epoch, save_dir, checkpoint_path,
+                         device, config, max_iter, prior, use_centropy, **kwargs)
+        self.mu = nn.Parameter(-1.0 / self.prior)  # initialize mu = - 1 / prior
+
+    def __init_meters__(self) -> List[Union[str, List[str]]]:
+        columns = super().__init_meters__()
+        self.METERINTERFACE.register_new_meter("residual", AverageValueMeter())
+        columns.append("residual_mean")
+        return columns
+
+    def _trainer_specific_loss(self, unlab_img: Tensor, **kwargs) -> Tensor:
+        unlab_img = unlab_img.to(self.device)
+        unlabeled_preds = self.model(unlab_img)
+        assert simplex(unlabeled_preds, 1)
+        marginal = unlabeled_preds.mean(0)
+        lagrangian = (self.prior * (marginal * self.mu.detach() + 1 + (-self.mu.detach()).log())).sum()
+        if self.use_centropy:
+            centropy = self.entropy(unlabeled_preds)
+            self.METERINTERFACE["centropy"].add(centropy.item())
+            return lagrangian + centropy
+        return lagrangian
+
+    def _update_mu(self, unlab_img: Tensor):
+        if self.mu.grad is not None:
+            self.mu.grad.zero_()
+        unlab_img = unlab_img.to(self.device)
+        unlabeled_preds = self.model(unlab_img).detach()
+        assert simplex(unlabeled_preds, 1)
+        marginal = unlabeled_preds.mean(0)
+        lagrangian = (self.prior * (marginal * self.mu + 1 + (-self.mu).log())).sum()
+        lagrangian.backward()
+        with torch.no_grad():
+            self.mu += self.mu.grad
+            self.METERINTERFACE["residual"].add(self.mu.grad.abs().sum().item())
+            self.mu.grad.zero_()
+
+            # to quantify:
+            marginal_loss = self.kl_criterion(marginal.unsqueeze(0), self.prior.unsqueeze(0), disable_assert=True)
+            self.METERINTERFACE["marginal"].add(marginal_loss.item())
+
+    def _train_loop(self, labeled_loader: DataLoader = None, unlabeled_loader: DataLoader = None, epoch: int = 0,
+                    mode=ModelMode.TRAIN, *args, **kwargs):
+        self.model.set_mode(mode)
+        _max_iter = tqdm_(range(self.max_iter))
+        _max_iter.set_description(f"Training Epoch {epoch}")
+        self.METERINTERFACE["lr"].add(self.model.get_lr()[0])
+        for batch_num, (lab_img, lab_gt), \
+            (unlab_img, _) in zip(_max_iter, labeled_loader, unlabeled_loader):
+            lab_img, lab_gt = lab_img.to(self.device), lab_gt.to(self.device)
+            lab_preds = self.model(lab_img)
+            sup_loss = self.kl_criterion(
+                lab_preds,
+                class2one_hot(
+                    lab_gt,
+                    C=self.model.torchnet.num_classes
+                ).float()
+            )
+            reg_loss = self._trainer_specific_loss(unlab_img)
+            self.METERINTERFACE["traloss"].add(sup_loss.item())
+            self.METERINTERFACE["traconf"].add(lab_preds.max(1)[1], lab_gt)
+
+            with ZeroGradientBackwardStep(sup_loss + reg_loss, self.model) as total_loss:
+                total_loss.backward()
+
+            self._update_mu(unlab_img)
+            report_dict = self._training_report_dict
+            _max_iter.set_postfix(report_dict)
+        print(f"Training Epoch {epoch}: {nice_dict(report_dict)}")
+        self.writer.add_scalar_with_tag("train", report_dict, global_step=epoch)
+
+    @property
+    def _training_report_dict(self):
+        report_dict = super()._training_report_dict
+        report_dict.update(
+            {"residual": self.METERINTERFACE["residual"].summary()["mean"]}
+        )
         return report_dict

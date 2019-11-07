@@ -6,6 +6,7 @@ from pathlib import Path
 from torchvision import transforms
 
 from deepclustering.model import Model
+
 sys.path.insert(0, str(Path(__file__).absolute().parents[1]))
 
 try:
@@ -13,9 +14,9 @@ try:
 except ImportError:
     from toy_example.utils import SimpleNet, get_prior_from_dataset
 try:
-    from .trainer import SemiTrainer, SemiEntropyTrainer
+    from .trainer import SemiTrainer, SemiEntropyTrainer, SemiPrimalDualTrainer
 except ImportError:
-    from toy_example.trainer import SemiTrainer, SemiEntropyTrainer
+    from toy_example.trainer import SemiTrainer, SemiEntropyTrainer, SemiPrimalDualTrainer
 try:
     from .dataset import get_mnist_dataloaders
 except ImportError:
@@ -69,8 +70,10 @@ with warnings.catch_warnings():
 
 # trainer part
 Trainer = {"SemiTrainer": SemiTrainer,
-           "SemiEntropyTrainer": SemiEntropyTrainer}.get(config["Trainer"]["name"])
+           "SemiEntropyTrainer": SemiEntropyTrainer,
+           "SemiPrimalDualTrainer": SemiPrimalDualTrainer}.get(config["Trainer"]["name"])
+assert Trainer
 
 trainer = Trainer(model, labeled_loader, unlabeled_loader, val_loader, device="cuda", prior=prior,
-                             **{k: v for k, v in config["Trainer"].items() if k != "name"})
+                  **{k: v for k, v in config["Trainer"].items() if k != "name"})
 trainer.start_training()
