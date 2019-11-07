@@ -7,8 +7,8 @@ source $CC_WRAPPER_PATH # enable wrapper
 source $LC_WRAPPER_PATH # enable local_wrapper
 source $JA_WRAPPER_PATH
 
-save_dir=pann/primal-dual
-max_epoch=2
+save_dir=pann/primal-dual_update_mu_by_RADAM
+max_epoch=200
 time=8
 account=def-chdesa
 FORCE_LOAD_CHECKPOINT=1
@@ -22,7 +22,7 @@ declare -a StringArray=(
 "FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python   toy_example.py  Trainer.save_dir=${save_dir}/PrimalDual_CEntropy  Trainer.name=SemiPrimalDualTrainer Trainer.use_centropy=True Trainer.max_epoch=${max_epoch}  "
 
 )
-gpuqueue "${StringArray[@]}" --available_gpus 1 1 1 1 1
+gpuqueue "${StringArray[@]}" --available_gpus 0 1 1 1 1
 
 #for cmd in "${StringArray[@]}"
 #do
