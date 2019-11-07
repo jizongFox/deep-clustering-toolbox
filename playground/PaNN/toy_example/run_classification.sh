@@ -14,11 +14,11 @@ account=def-chdesa
 FORCE_LOAD_CHECKPOINT=1
 
 declare -a StringArray=(
-"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python -OO  toy_example.py  Trainer.save_dir=${save_dir}/baseline  Trainer.name=SemiTrainer Trainer.max_epoch=${max_epoch} Trainer.checkpoint_path=../../../runs/${save_dir}/baseline "
-"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python -OO  toy_example.py  Trainer.save_dir=${save_dir}/Entropy  Trainer.name=SemiEntropyTrainer Trainer.max_epoch=${max_epoch} Trainer.checkpoint_path=../../../runs/${save_dir}/Entropy "
-"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python -OO  toy_example.py  Trainer.save_dir=${save_dir}/Entropy_CEntropy  Trainer.name=SemiEntropyTrainer Trainer.use_centropy=True Trainer.max_epoch=${max_epoch} Trainer.checkpoint_path=../../../runs/${save_dir}/Entropy_CEntropy "
+"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python   toy_example.py  Trainer.save_dir=${save_dir}/baseline  Trainer.name=SemiTrainer Trainer.max_epoch=${max_epoch} Trainer.checkpoint_path=../../../runs/${save_dir}/baseline "
+"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python   toy_example.py  Trainer.save_dir=${save_dir}/Entropy  Trainer.name=SemiEntropyTrainer Trainer.max_epoch=${max_epoch} Trainer.checkpoint_path=../../../runs/${save_dir}/Entropy "
+"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python   toy_example.py  Trainer.save_dir=${save_dir}/Entropy_CEntropy  Trainer.name=SemiEntropyTrainer Trainer.use_centropy=True Trainer.max_epoch=${max_epoch} Trainer.checkpoint_path=../../../runs/${save_dir}/Entropy_CEntropy "
 )
-gpuqueue "${StringArray[@]}" --available_gpus 0 1
+gpuqueue "${StringArray[@]}" --available_gpus 1 1 1
 
 #for cmd in "${StringArray[@]}"
 #do

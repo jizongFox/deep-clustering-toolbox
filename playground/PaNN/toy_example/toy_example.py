@@ -6,8 +6,7 @@ from pathlib import Path
 from torchvision import transforms
 
 from deepclustering.model import Model
-
-sys.path.insert(0, str(Path(__file__).parents[1]))
+sys.path.insert(0, str(Path(__file__).absolute().parents[1]))
 
 try:
     from .utils import get_prior_from_dataset, SimpleNet
@@ -39,7 +38,7 @@ unlabeled_class_sample_nums = {
 }
 dataloader_params = {
     "batch_size": 64,
-    "num_workers": 1,
+    "num_workers": 0,
     "drop_last": True,
     "pin_memory": True
 }
@@ -72,6 +71,6 @@ with warnings.catch_warnings():
 Trainer = {"SemiTrainer": SemiTrainer,
            "SemiEntropyTrainer": SemiEntropyTrainer}.get(config["Trainer"]["name"])
 
-trainer = SemiEntropyTrainer(model, labeled_loader, unlabeled_loader, val_loader, device="cuda", prior=prior,
-                             max_epoch=100, **{k: v for k, v in config["Trainer"].items() if k != "name"})
+trainer = Trainer(model, labeled_loader, unlabeled_loader, val_loader, device="cuda", prior=prior,
+                             **{k: v for k, v in config["Trainer"].items() if k != "name"})
 trainer.start_training()
