@@ -9,6 +9,7 @@ from deepclustering.decorator import lazy_load_checkpoint
 from deepclustering.loss import KL_div, simplex, Entropy
 from deepclustering.meters import AverageValueMeter, MeterInterface, ConfusionMatrix
 from deepclustering.model import Model, ZeroGradientBackwardStep
+from deepclustering.optim import RAdam
 from deepclustering.trainer import _Trainer
 from deepclustering.utils import class2one_hot, tqdm_, flatten_dict, nice_dict, filter_dict
 
@@ -170,6 +171,7 @@ class SemiPrimalDualTrainer(SemiEntropyTrainer):
         super().__init__(model, labeled_loader, unlabeled_loader, val_loader, max_epoch, save_dir, checkpoint_path,
                          device, config, max_iter, prior, use_centropy, **kwargs)
         self.mu = nn.Parameter(-1.0 / self.prior)  # initialize mu = - 1 / prior
+        self.mu_optim = RAdam((self.mu,), lr=1e-4, betas=(0.5, 0.999))
 
     def __init_meters__(self) -> List[Union[str, List[str]]]:
         columns = super().__init_meters__()
@@ -190,19 +192,18 @@ class SemiPrimalDualTrainer(SemiEntropyTrainer):
         return lagrangian
 
     def _update_mu(self, unlab_img: Tensor):
-        if self.mu.grad is not None:
-            self.mu.grad.zero_()
+        self.mu_optim.zero_grad()
         unlab_img = unlab_img.to(self.device)
         unlabeled_preds = self.model(unlab_img).detach()
         assert simplex(unlabeled_preds, 1)
         marginal = unlabeled_preds.mean(0)
         lagrangian = (self.prior * (marginal * self.mu + 1 + (-self.mu).log())).sum()
         lagrangian.backward()
+        self.mu_optim.step()
+
         with torch.no_grad():
             self.mu += self.mu.grad
             self.METERINTERFACE["residual"].add(self.mu.grad.abs().sum().item())
-            self.mu.grad.zero_()
-
             # to quantify:
             marginal_loss = self.kl_criterion(marginal.unsqueeze(0), self.prior.unsqueeze(0), disable_assert=True)
             self.METERINTERFACE["marginal"].add(marginal_loss.item())

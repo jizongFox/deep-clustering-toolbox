@@ -62,7 +62,7 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore")
     net = SimpleNet(1, len(unlabeled_class_sample_nums))
     optim = RAdam(net.parameters(), lr=1e-4, weight_decay=1e-4)
-    scheduler = MultiStepLR(optim, milestones=[50], gamma=0.1)
+    scheduler = MultiStepLR(optim, milestones=[100, 150], gamma=0.2)
     model = Model()
     model.torchnet = net
     model.optimizer = optim
@@ -74,6 +74,6 @@ Trainer = {"SemiTrainer": SemiTrainer,
            "SemiPrimalDualTrainer": SemiPrimalDualTrainer}.get(config["Trainer"]["name"])
 assert Trainer
 
-trainer = Trainer(model, labeled_loader, unlabeled_loader, val_loader, device="cuda", prior=prior,
+trainer = Trainer(model, labeled_loader, unlabeled_loader, val_loader, device="cuda", prior=prior, max_iter=512,
                   **{k: v for k, v in config["Trainer"].items() if k != "name"})
 trainer.start_training()
