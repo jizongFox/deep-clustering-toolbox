@@ -17,3 +17,12 @@ The Interesting solution in the paper would be to use the `primal-dual gradient`
 
 ---
 
+
+
+---
+### We tested different optimizers in this segmentation task, including `Adam`, `RAdam`, and `AdaBound`.
+
+training loss:
+<img src="./.figures/train_loss.png" alt="training curve for segmentation using CE" style="zoom:10%;" />
+validation dice:
+<img src="./.figures/3D_dice.png" alt="validation_dice" style="zoom:10%;" />
