@@ -120,7 +120,8 @@ class SemiSegTrainer(_Trainer):
     @property
     def _eval_report_dict(self):
         return flatten_dict(
-            {"val_loss": self.METERINTERFACE["valloss"].summary()["mean"],
-             "": self.METERINTERFACE["valdice"].summary(),
-             "b": self.METERINTERFACE["valbdice"].summary()
-             }, sep="")
+            {
+                "val_loss": self.METERINTERFACE["valloss"].summary()["mean"],
+                "": self.METERINTERFACE["valdice"].summary(),
+                "b": self.METERINTERFACE["valbdice"].summary()
+            }, sep="")
