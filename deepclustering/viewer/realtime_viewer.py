@@ -57,7 +57,6 @@ class multi_slice_viewer(PLTViewer):
     ) -> None:
         try:
             import matplotlib
-
             matplotlib.use("qt5agg")
         except Exception as e:
             print(e)
@@ -167,9 +166,9 @@ class multi_slice_viewer(PLTViewer):
 def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour=False) -> None:
     try:
         import matplotlib
-        matplotlib.use("tkagg")
-    except:
-        pass
+        matplotlib.use("tkagg", force=True)
+    except Exception as e:
+        print(e)
 
     def process_mouse_wheel(event):
         fig = event.canvas.figure
