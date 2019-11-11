@@ -1,3 +1,4 @@
+from .acdc_dataloader import ACDCSemiInterface, ACDCDataset
 from .classification.cifar_helper import (
     default_cifar10_img_transform,
     Cifar10ClusteringDatasetInterface,
@@ -14,4 +15,5 @@ from .classification.svhn_helper import (
     SVHNClusteringDatasetInterface,
     svhn_naive_transform, svhn_strong_transform
 )
-from .segmentation import (MedicalImageSegmentationDataset, MedicalImageSegmentationDatasetWithMetaInfo, PatientSampler)
+from .segmentation import (MedicalImageSegmentationDataset, MedicalImageSegmentationDatasetWithMetaInfo, PatientSampler,
+                           SubMedicalDatasetBasedOnIndex)

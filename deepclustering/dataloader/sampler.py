@@ -1,3 +1,6 @@
+import random
+from collections import Iterator
+
 import torch
 from torch._six import int_classes as _int_classes
 
@@ -210,3 +213,30 @@ class BatchSampler(Sampler):
             return len(self.sampler) // self.batch_size
         else:
             return (len(self.sampler) + self.batch_size - 1) // self.batch_size
+
+
+class InfiniteRandomIterator(Iterator):
+    def __init__(self, data_source):
+        self.data_source = data_source
+        self.iterator = iter(random.choice(torch.randperm(len(self.data_source)).tolist()))
+
+    def __next__(self):
+        try:
+            idx = next(self.iterator)
+        except StopIteration:
+            self.iterator = iter(random.choice(torch.randperm(len(self.data_source)).tolist()))
+            idx = next(self.iterator)
+
+        return idx
+
+
+class InfiniteRandomSampler(Sampler):
+    def __init__(self, data_source):
+        super().__init__(data_source)
+        self.data_source = data_source
+
+    def __iter__(self):
+        return InfiniteRandomIterator(self.data_source)
+
+    def __len__(self):
+        return len(self.data_source)

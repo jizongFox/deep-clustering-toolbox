@@ -1,0 +1,17 @@
+Arch:
+  name: unet_bn
+  num_classes: 4
+Optim:
+  name: RAdam
+  lr: 0.001
+  weight_decay: 0.0001
+
+Scheduler:
+  name: StepLR
+  step_size: 75
+  gamma: 0.25
+
+Trainer:
+  save_dir: pann
+  device: cuda
+  max_iter: 256

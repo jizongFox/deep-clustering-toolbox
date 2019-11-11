@@ -4,13 +4,14 @@ from abc import ABC
 from typing import *
 
 import torch
-from torch import Tensor
-from torch import nn
-from torch.optim import lr_scheduler
-
 from deepclustering import ModelMode
 from deepclustering.arch import get_arch, PlaceholderNet
 from deepclustering.utils import simplex
+from torch import Tensor
+from torch import nn
+from torch.nn import functional as F
+from torch.optim import lr_scheduler
+
 from .. import optim
 
 
@@ -43,6 +44,7 @@ class Model(ABC):
         self.arch_dict = arch_dict
         self.optim_dict = optim_dict
         self.scheduler_dict = scheduler_dict
+        self.use_warmup_scheduler: bool = scheduler_dict.get("warmup")
         self.torchnet, self.optimizer, self.scheduler = self._setup()
         self.to(device=torch.device("cpu"))
         self.is_apex: bool = False
@@ -84,7 +86,14 @@ class Model(ABC):
             self.scheduler_name = self.scheduler_dict["name"]
             self.scheduler_params = {k: v for k, v in self.scheduler_dict.items() if k != "name"}
             scheduler = getattr(lr_scheduler, self.scheduler_name) \
-                (optimizer, **self.scheduler_params)
+                (optimizer, **{k: v for k, v in self.scheduler_params.items() if k != "warmup"})
+            if self.use_warmup_scheduler:
+                from ..schedulers import GradualWarmupScheduler
+                scheduler = GradualWarmupScheduler(
+                    optimizer=optimizer,
+                    **self.scheduler_params["warmup"],
+                    after_scheduler=scheduler
+                )
         else:
             warnings.warn(f"scheduler is a constant placeholder, to override.", RuntimeWarning)
             self.scheduler_name = None

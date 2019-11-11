@@ -45,7 +45,7 @@ Several papers have been implemented based on this framework. I store them in th
 >- [`MINE: Mutual Information Neural Estimation`](https://arxiv.org/abs/1801.04062)
 >- [`Averaging Weights Leads to Wider Optima and Better Generalization`](https://arxiv.org/pdf/1803.05407.pdf)
 >- [`THERE ARE MANY CONSISTENT EXPLANATIONS OF UNLABELED DATA: WHY YOU SHOULD AVERAGE`](https://arxiv.org/pdf/1806.05594.pdf)
-
+>- [`Prior-aware Neural Network for Partially-Supervised Multi-Organ Segmentation`](https://arxiv.org/abs/1904.06346)
 
 
 ---

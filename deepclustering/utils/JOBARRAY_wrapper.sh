@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 echo "account name: rrg-mpederso, def-mpederso, and def-chdesa"
 
-CC_wrapper(){
+JA_wrapper(){
     hour=$1
     account=$2
     command=$3
     mem=$4
+    n_job=$5
     module load python/3.6
     source $HOME/torchenv36/bin/activate
     module load scipy-stack
@@ -13,6 +14,7 @@ CC_wrapper(){
     echo ${command} > tmp.sh
     sed -i '1i\#!/bin/bash' tmp.sh
     sbatch  --job-name="${command}" \
+     --array=1-${n_job}%1 \
      --nodes=1  \
      --gres=gpu:1 \
      --cpus-per-task=6  \
@@ -24,3 +26,4 @@ CC_wrapper(){
     ./tmp.sh
     rm -rf ./tmp.sh
 }
+#!/usr/bin/env bash

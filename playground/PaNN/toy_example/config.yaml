@@ -1,0 +1,6 @@
+Trainer:
+  max_iter: 512
+  device: cuda
+  max_epoch: 200
+
+Seed:  10
