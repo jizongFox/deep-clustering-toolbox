@@ -192,3 +192,6 @@ class Model(ABC):
 
     def get_lr(self):
         return self.scheduler.get_lr()
+
+    def parameters(self):
+        return self.torchnet.parameters()
