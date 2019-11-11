@@ -10,7 +10,7 @@ scheduler = GradualWarmupScheduler(Optim, multiplier=100, total_epoch=700, after
 lrs = []
 for i in range(2300):
     lrs.append(scheduler.get_lr()[0])
-    scheduler.step(i)
+    scheduler.step()
 import matplotlib.pyplot as plt
 
 plt.plot(range(2300), lrs)
@@ -28,7 +28,7 @@ scheduler.load_state_dict(scheduler_dict)
 lrs = []
 for i in range(2300, 4300):
     lrs.append(scheduler.get_lr()[0])
-    scheduler.step(i)
+    scheduler.step()
 import matplotlib.pyplot as plt
 
 plt.plot(range(2300, 4300), lrs)

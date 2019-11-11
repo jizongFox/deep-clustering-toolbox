@@ -44,10 +44,10 @@ class Model(ABC):
         self.arch_dict = arch_dict
         self.optim_dict = optim_dict
         self.scheduler_dict = scheduler_dict
+        self.use_warmup_scheduler: bool = scheduler_dict.get("warmup")
         self.torchnet, self.optimizer, self.scheduler = self._setup()
         self.to(device=torch.device("cpu"))
         self.is_apex: bool = False
-        self.use_warmup_scheduler: bool = scheduler_dict.get("warmup")
 
     def _setup(self) -> Tuple[nn.Module, optim.SGD, torch.optim.lr_scheduler.LambdaLR]:
         """
@@ -86,12 +86,12 @@ class Model(ABC):
             self.scheduler_name = self.scheduler_dict["name"]
             self.scheduler_params = {k: v for k, v in self.scheduler_dict.items() if k != "name"}
             scheduler = getattr(lr_scheduler, self.scheduler_name) \
-                (optimizer, **self.scheduler_params)
+                (optimizer, **{k: v for k, v in self.scheduler_params.items() if k != "warmup"})
             if self.use_warmup_scheduler:
                 from ..schedulers import GradualWarmupScheduler
-                self.scheduler = GradualWarmupScheduler(
+                scheduler = GradualWarmupScheduler(
                     optimizer=optimizer,
-                    **self.scheduler_dict,
+                    **self.scheduler_params["warmup"],
                     after_scheduler=scheduler
                 )
         else:

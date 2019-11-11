@@ -16,6 +16,17 @@ See my [paper](https://arxiv.org/abs/1910.01665) for a reference.
 The Interesting solution in the paper would be to use the `primal-dual gradient` method. This folder reproduce this kind of optimization for semi-supervised learning with ACDC dataset to understand the advantage of the proposed method.
 
 ---
+#### using directly entropy method:
+<img src="./.figures/baseline_entropy.png" alt="using directly entropy method" style="zoom:10%;" />
+#### using Primal-dual method:
+<img src="./.figures/Primal-dual_Entropy.png" alt="using PD method" style="zoom:10%;" />
+We can see that PD can significantly improve the val acc for `sup_loss + reg_loss` where `reg_loss` is kl(q_fix|mean(p))
+----
+#### We added a conditional entropy term.
+<img src="./.figures/entropy_centropy.png" alt="using directly entropy method" style="zoom:10%;" />
+#### using Primal-dual method:
+<img src="./.figures/Primal-dual_centropy.png" alt="using PD method" style="zoom:10%;" />
+We can see the Entropy -CEntropy gives more stability and convergence speed.
 
 
 
