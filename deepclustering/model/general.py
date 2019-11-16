@@ -44,7 +44,7 @@ class Model(ABC):
         self.arch_dict = arch_dict
         self.optim_dict = optim_dict
         self.scheduler_dict = scheduler_dict
-        self.use_warmup_scheduler: bool = scheduler_dict.get("warmup")
+        self.use_warmup_scheduler: bool = scheduler_dict.get("warmup") if scheduler_dict is not None else None
         self.torchnet, self.optimizer, self.scheduler = self._setup()
         self.to(device=torch.device("cpu"))
         self.is_apex: bool = False

@@ -14,9 +14,9 @@ try:
 except ImportError:
     from toy_example.utils import SimpleNet, get_prior_from_dataset
 try:
-    from .trainer import SemiTrainer, SemiEntropyTrainer, SemiPrimalDualTrainer
+    from .trainer import SemiTrainer, SemiEntropyTrainer, SemiPrimalDualTrainer, SemiWeightedIICTrainer
 except ImportError:
-    from toy_example.trainer import SemiTrainer, SemiEntropyTrainer, SemiPrimalDualTrainer
+    from toy_example.trainer import SemiTrainer, SemiEntropyTrainer, SemiPrimalDualTrainer, SemiWeightedIICTrainer
 try:
     from .dataset import get_mnist_dataloaders
 except ImportError:
@@ -39,9 +39,9 @@ unlabeled_class_sample_nums = {
 }
 dataloader_params = {
     "batch_size": 64,
-    "num_workers": 0,
+    "num_workers": 2,
     "drop_last": True,
-    "pin_memory": True
+    "pin_memory": True,
 }
 train_transform = transforms.Compose([
     transforms.ToTensor()
@@ -63,8 +63,8 @@ fix_all_seed(int(config.get("Seed", 0)))
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore")
     net = SimpleNet(1, len(unlabeled_class_sample_nums))
-    optim = RAdam(net.parameters(), lr=1e-4, weight_decay=1e-4)
-    scheduler = MultiStepLR(optim, milestones=[100, 150], gamma=0.2)
+    optim = RAdam(net.parameters(), lr=1e-3, weight_decay=1e-4)
+    scheduler = MultiStepLR(optim, milestones=[50, 80], gamma=0.1)
     model = Model()
     model.torchnet = net
     model.optimizer = optim
@@ -73,9 +73,11 @@ with warnings.catch_warnings():
 # trainer part
 Trainer = {"SemiTrainer": SemiTrainer,
            "SemiEntropyTrainer": SemiEntropyTrainer,
-           "SemiPrimalDualTrainer": SemiPrimalDualTrainer}.get(config["Trainer"]["name"])
+           "SemiPrimalDualTrainer": SemiPrimalDualTrainer,
+           "SemiWeightedIICTrainer": SemiWeightedIICTrainer}.get(config["Trainer"]["name"])
 assert Trainer
 
-trainer = Trainer(model, labeled_loader, unlabeled_loader, val_loader, prior=prior,
+trainer = Trainer(model, labeled_loader, unlabeled_loader, val_loader,
+                  prior=prior if config["Trainer"].get("use_prior") else None,
                   config=config, **{k: v for k, v in config["Trainer"].items() if k != "name"})
 trainer.start_training()

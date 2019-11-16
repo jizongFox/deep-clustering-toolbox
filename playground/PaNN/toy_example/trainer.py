@@ -12,6 +12,7 @@ from deepclustering.model import Model, ZeroGradientBackwardStep
 from deepclustering.optim import RAdam
 from deepclustering.trainer import _Trainer
 from deepclustering.utils import class2one_hot, tqdm_, flatten_dict, nice_dict, filter_dict
+from .augment import AffineTensorTransform
 
 
 class SemiTrainer(_Trainer):
@@ -59,7 +60,7 @@ class SemiTrainer(_Trainer):
         _max_iter.set_description(f"Training Epoch {epoch}")
         self.METERINTERFACE["lr"].add(self.model.get_lr()[0])
         for batch_num, (lab_img, lab_gt), \
-            (unlab_img, _) in zip(_max_iter, labeled_loader, unlabeled_loader):
+            (unlab_img, unlab_gt) in zip(_max_iter, labeled_loader, unlabeled_loader):
             lab_img, lab_gt = lab_img.to(self.device), lab_gt.to(self.device)
             lab_preds = self.model(lab_img)
             sup_loss = self.kl_criterion(
@@ -69,7 +70,7 @@ class SemiTrainer(_Trainer):
                     C=self.model.torchnet.num_classes
                 ).float()
             )
-            reg_loss = self._trainer_specific_loss(unlab_img)
+            reg_loss = self._trainer_specific_loss(unlab_img, unlab_gt)
             self.METERINTERFACE["traloss"].add(sup_loss.item())
             self.METERINTERFACE["traconf"].add(lab_preds.max(1)[1], lab_gt)
 
@@ -80,7 +81,7 @@ class SemiTrainer(_Trainer):
         print(f"Training Epoch {epoch}: {nice_dict(report_dict)}")
         self.writer.add_scalar_with_tag("train", report_dict, global_step=epoch)
 
-    def _trainer_specific_loss(self, unlab_img: Tensor, **kwargs) -> Tensor:
+    def _trainer_specific_loss(self, unlab_img: Tensor, unlab_gt: Tensor, **kwargs) -> Tensor:
         return torch.tensor(0, dtype=torch.float32, device=self.device)
 
     def _eval_loop(self, val_loader: DataLoader = None, epoch: int = 0, mode=ModelMode.EVAL, *args, **kwargs) -> float:
@@ -245,3 +246,118 @@ class SemiPrimalDualTrainer(SemiEntropyTrainer):
             {"residual": self.METERINTERFACE["residual"].summary()["mean"]}
         )
         return report_dict
+
+
+class WeightedEntropy(nn.Module):
+    r"""General Entropy interface
+
+    the definition of Entropy is - \sum p(xi) log (p(xi))
+
+    reduction (string, optional): Specifies the reduction to apply to the output:
+    ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``: no reduction will be applied,
+    ``'mean'``: the sum of the output will be divided by the number of
+    elements in the output, ``'sum'``: the output will be summed.
+    """
+
+    def __init__(self, reduction="mean", eps=1e-16, weight=None):
+        super().__init__()
+        from deepclustering.loss.loss import _check_reduction_params
+        _check_reduction_params(reduction)
+        self._eps = eps
+        self._reduction = reduction
+        if weight is None:
+            self._weight = None
+        else:
+            if isinstance(weight, Tensor):
+                assert torch.allclose(weight.sum(), torch.tensor(1.0, dtype=torch.float32, device=weight.device))
+            elif isinstance(weight, list):
+                assert sum(weight) == 1
+            else:
+                raise TypeError("weight should be Tensor or list.")
+            self._weight = weight if isinstance(weight, Tensor) else Tensor(weight).float()
+
+    def forward(self, input: Tensor) -> Tensor:
+        assert input.shape.__len__() >= 2
+        b, c, *s = input.shape
+        assert simplex(input), f"Entropy input should be a simplex"
+
+        if self._weight is not None:
+            assert self._weight.shape[0] == c
+            weight_matrix = torch.zeros_like(input, dtype=input.dtype, device=input.device)
+            for i, w in enumerate(self._weight):
+                weight_matrix[:, i] = w / input[:, i].detach()
+            e = -1.0 * (input * weight_matrix).detach() * (
+                        input + self._eps).log()  # cross entropy, which is not 0 for minial
+        else:
+            e = input * (input + self._eps).log()
+        e = -1.0 * e.sum(1)
+        assert e.shape == torch.Size([b, *s])
+        if self._reduction == "mean":
+            return e.mean()
+        elif self._reduction == "sum":
+            return e.sum()
+        else:
+            return e
+
+
+class WeightedIIC:
+
+    def __init__(self, weight=None) -> None:
+        super().__init__()
+        self.weighted_entropy = WeightedEntropy(weight=weight)
+        from deepclustering.loss.IID_losses import compute_joint
+        self.compute_joint = compute_joint
+
+    def __call__(self, x_out1: Tensor, x_out2: Tensor):
+        assert simplex(x_out1) and simplex(x_out2)
+        joint_distr = self.compute_joint(x_out1, x_out2)
+        mi = self.weighted_entropy(joint_distr.sum(0).unsqueeze(0)) + (
+                    joint_distr * (joint_distr / joint_distr.sum(1, keepdim=True)).log()).sum()
+        return mi * -1.0
+
+
+class SemiWeightedIICTrainer(SemiTrainer):
+
+    @lazy_load_checkpoint
+    def __init__(self, model: Model, labeled_loader: DataLoader, unlabeled_loader: DataLoader, val_loader: DataLoader,
+                 max_epoch: int = 100, save_dir: str = "base", checkpoint_path: str = None, device="cpu",
+                 config: dict = None, max_iter: int = 100, prior=None, **kwargs) -> None:
+        super().__init__(model, labeled_loader, unlabeled_loader, val_loader, max_epoch, save_dir, checkpoint_path,
+                         device, config, max_iter, **kwargs)
+        self.prior = prior
+        self.weighted_iic_criterion = WeightedIIC(weight=prior)
+        self.affine_transform = AffineTensorTransform(min_rot=0, max_rot=15, min_scale=.8, max_scale=1.2, )
+
+    def __init_meters__(self) -> List[Union[str, List[str]]]:
+        columns = super().__init_meters__()
+        self.METERINTERFACE.register_new_meter("marginal", AverageValueMeter())
+        self.METERINTERFACE.register_new_meter("mi", AverageValueMeter())
+        self.METERINTERFACE.register_new_meter("unl_acc", ConfusionMatrix(5))
+        columns.extend(["marginal_mean", "mi_mean"])
+        return columns
+
+    def _trainer_specific_loss(self, unlab_img: Tensor, unlab_gt: Tensor, **kwargs) -> Tensor:
+        unlab_img = unlab_img.to(self.device)
+        unlab_img_tf, _ = self.affine_transform(unlab_img)
+        all_preds = self.model(torch.cat([unlab_img, unlab_img_tf], dim=0))
+        unlabel_pred, unlabel_pred_tf = torch.chunk(all_preds, 2)
+        assert simplex(unlabel_pred) and simplex(unlabel_pred_tf)
+        mi = self.weighted_iic_criterion(unlabel_pred, unlabel_pred_tf)
+        # mi, _ = IIDLoss(lamb=1)(unlabel_pred, unlabel_pred_tf)
+        self.METERINTERFACE["mi"].add(-mi.item())
+        self.METERINTERFACE["unl_acc"].add(unlabel_pred.max(1)[1], unlab_gt)
+        marginal = unlabel_pred.mean(0)
+        if self.prior is not None:
+            marginal_loss = self.kl_criterion(marginal.unsqueeze(0), self.prior.unsqueeze(0).to(self.device))
+            self.METERINTERFACE["marginal"].add(marginal_loss.item())
+        return mi
+
+    @property
+    def _training_report_dict(self):
+        report_dict = super()._training_report_dict
+        report_dict.update({
+            "unl_acc": self.METERINTERFACE["unl_acc"].summary()["acc"],
+            "mi": self.METERINTERFACE["mi"].summary()["mean"],
+            "marginal": self.METERINTERFACE["marginal"].summary()["mean"]
+        })
+        return filter_dict(report_dict)
