@@ -14,9 +14,11 @@ try:
 except ImportError:
     from toy_example.utils import SimpleNet, get_prior_from_dataset
 try:
-    from .trainer import SemiTrainer, SemiEntropyTrainer, SemiPrimalDualTrainer, SemiWeightedIICTrainer
+    from .trainer import SemiTrainer, SemiEntropyTrainer, SemiPrimalDualTrainer, SemiWeightedIICTrainer, \
+        SemiUDATrainer
 except ImportError:
-    from toy_example.trainer import SemiTrainer, SemiEntropyTrainer, SemiPrimalDualTrainer, SemiWeightedIICTrainer
+    from toy_example.trainer import SemiTrainer, SemiEntropyTrainer, SemiPrimalDualTrainer, SemiWeightedIICTrainer, \
+        SemiUDATrainer
 try:
     from .dataset import get_mnist_dataloaders
 except ImportError:
@@ -39,7 +41,7 @@ unlabeled_class_sample_nums = {
 }
 dataloader_params = {
     "batch_size": 64,
-    "num_workers": 2,
+    "num_workers": 1,
     "drop_last": True,
     "pin_memory": True,
 }
@@ -71,10 +73,13 @@ with warnings.catch_warnings():
     model.scheduler = scheduler
 
 # trainer part
-Trainer = {"SemiTrainer": SemiTrainer,
-           "SemiEntropyTrainer": SemiEntropyTrainer,
-           "SemiPrimalDualTrainer": SemiPrimalDualTrainer,
-           "SemiWeightedIICTrainer": SemiWeightedIICTrainer}.get(config["Trainer"]["name"])
+Trainer = {
+    "SemiTrainer": SemiTrainer,
+    "SemiEntropyTrainer": SemiEntropyTrainer,
+    "SemiPrimalDualTrainer": SemiPrimalDualTrainer,
+    "SemiWeightedIICTrainer": SemiWeightedIICTrainer,
+    "SemiUDATrainer": SemiUDATrainer
+}.get(config["Trainer"]["name"])
 assert Trainer
 
 trainer = Trainer(model, labeled_loader, unlabeled_loader, val_loader,

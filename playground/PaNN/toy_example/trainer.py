@@ -287,7 +287,7 @@ class WeightedEntropy(nn.Module):
             for i, w in enumerate(self._weight):
                 weight_matrix[:, i] = w / input[:, i].detach()
             e = -1.0 * (input * weight_matrix).detach() * (
-                        input + self._eps).log()  # cross entropy, which is not 0 for minial
+                    input + self._eps).log()  # cross entropy, which is not 0 for minial
         else:
             e = input * (input + self._eps).log()
         e = -1.0 * e.sum(1)
@@ -312,7 +312,7 @@ class WeightedIIC:
         assert simplex(x_out1) and simplex(x_out2)
         joint_distr = self.compute_joint(x_out1, x_out2)
         mi = self.weighted_entropy(joint_distr.sum(0).unsqueeze(0)) + (
-                    joint_distr * (joint_distr / joint_distr.sum(1, keepdim=True)).log()).sum()
+                joint_distr * (joint_distr / joint_distr.sum(1, keepdim=True)).log()).sum()
         return mi * -1.0
 
 
@@ -358,6 +358,50 @@ class SemiWeightedIICTrainer(SemiTrainer):
         report_dict.update({
             "unl_acc": self.METERINTERFACE["unl_acc"].summary()["acc"],
             "mi": self.METERINTERFACE["mi"].summary()["mean"],
+            "marginal": self.METERINTERFACE["marginal"].summary()["mean"]
+        })
+        return filter_dict(report_dict)
+
+
+class SemiUDATrainer(SemiTrainer):
+
+    def __init__(self, model: Model, labeled_loader: DataLoader, unlabeled_loader: DataLoader, val_loader: DataLoader,
+                 max_epoch: int = 100, save_dir: str = "base", checkpoint_path: str = None, device="cpu",
+                 config: dict = None, max_iter: int = 100, prior=None, **kwargs) -> None:
+        super().__init__(model, labeled_loader, unlabeled_loader, val_loader, max_epoch, save_dir, checkpoint_path,
+                         device, config, max_iter, **kwargs)
+        self.prior = prior
+        self.affine_transform = AffineTensorTransform(min_rot=0, max_rot=15, min_scale=.8, max_scale=1.2, )
+
+    def __init_meters__(self) -> List[Union[str, List[str]]]:
+        columns = super().__init_meters__()
+        self.METERINTERFACE.register_new_meter("uda_reg", AverageValueMeter())
+        self.METERINTERFACE.register_new_meter("marginal", AverageValueMeter())
+        self.METERINTERFACE.register_new_meter("unl_acc", ConfusionMatrix(5))
+        columns.extend(["uda_reg_mean", "marginal_mean"])
+        return columns
+
+    def _trainer_specific_loss(self, unlab_img: Tensor, unlab_gt: Tensor, **kwargs) -> Tensor:
+        unlab_img = unlab_img.to(self.device)
+        unlab_img_tf, _ = self.affine_transform(unlab_img)
+        all_preds = self.model(torch.cat([unlab_img, unlab_img_tf], dim=0))
+        unlabel_pred, unlabel_pred_tf = torch.chunk(all_preds, 2)
+        assert simplex(unlabel_pred) and simplex(unlabel_pred_tf)
+        reg = self.kl_criterion(unlabel_pred_tf, unlabel_pred.detach())
+        self.METERINTERFACE["uda_reg"].add(reg.item())
+        self.METERINTERFACE["unl_acc"].add(unlabel_pred.max(1)[1], unlab_gt)
+        if self.prior is not None:
+            marginal = unlabel_pred.mean(0)
+            marginal_loss = self.kl_criterion(marginal.unsqueeze(0), self.prior.unsqueeze(0).to(self.device))
+            self.METERINTERFACE["marginal"].add(marginal_loss.item())
+            return reg + marginal_loss
+        return reg
+    @property
+    def _training_report_dict(self):
+        report_dict = super()._training_report_dict
+        report_dict.update({
+            "unl_acc": self.METERINTERFACE["unl_acc"].summary()["acc"],
+            "uda_reg": self.METERINTERFACE["uda_reg"].summary()["mean"],
             "marginal": self.METERINTERFACE["marginal"].summary()["mean"]
         })
         return filter_dict(report_dict)
