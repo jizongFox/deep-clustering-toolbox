@@ -93,6 +93,7 @@ class SVHN(VisionDataset):
         # the conversion from the numpy array
         # the squeeze is needed to obtain a 1D tensor
         self.labels = loaded_mat["y"].astype(np.int64).squeeze()
+        self.targets = self.labels
 
         # the svhn dataset assigns the class label "10" to the digit 0
         # this makes it inconsistent with several loss functions

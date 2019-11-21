@@ -83,6 +83,6 @@ Trainer = {
 assert Trainer
 
 trainer = Trainer(model, labeled_loader, unlabeled_loader, val_loader,
-                  prior=prior if config["Trainer"].get("use_prior") else None,
+                  prior=prior if config["Trainer"].get("use_prior") == True else None,
                   config=config, **{k: v for k, v in config["Trainer"].items() if k != "name"})
 trainer.start_training()
