@@ -198,16 +198,14 @@ class SemiPrimalDualTrainer(SemiEntropyTrainer):
         unlabeled_preds = self.model(unlab_img).detach()
         assert simplex(unlabeled_preds, 1)
         marginal = unlabeled_preds.mean(0)
-        lagrangian = (self.prior * (marginal * self.mu + 1 + (-self.mu).log())).sum()
+        lagrangian = -1 * (self.prior * (marginal * self.mu + 1 + (-self.mu).log())).sum()
         lagrangian.backward()
         self.mu_optim.step()
 
-        with torch.no_grad():
-            self.mu += self.mu.grad
-            self.METERINTERFACE["residual"].add(self.mu.grad.abs().sum().item())
-            # to quantify:
-            marginal_loss = self.kl_criterion(marginal.unsqueeze(0), self.prior.unsqueeze(0), disable_assert=True)
-            self.METERINTERFACE["marginal"].add(marginal_loss.item())
+        self.METERINTERFACE["residual"].add(self.mu.grad.abs().sum().item())
+        # to quantify:
+        marginal_loss = self.kl_criterion(marginal.unsqueeze(0), self.prior.unsqueeze(0), disable_assert=True)
+        self.METERINTERFACE["marginal"].add(marginal_loss.item())
 
     def _train_loop(self, labeled_loader: DataLoader = None, unlabeled_loader: DataLoader = None, epoch: int = 0,
                     mode=ModelMode.TRAIN, *args, **kwargs):
@@ -396,6 +394,7 @@ class SemiUDATrainer(SemiTrainer):
             self.METERINTERFACE["marginal"].add(marginal_loss.item())
             return reg + marginal_loss
         return reg
+
     @property
     def _training_report_dict(self):
         report_dict = super()._training_report_dict
