@@ -65,8 +65,8 @@ fix_all_seed(int(config.get("Seed", 0)))
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore")
     net = SimpleNet(1, len(unlabeled_class_sample_nums))
-    optim = RAdam(net.parameters(), lr=1e-3, weight_decay=1e-4)
-    scheduler = MultiStepLR(optim, milestones=[50, 80], gamma=0.1)
+    optim = RAdam(net.parameters(), lr=1e-4, weight_decay=1e-4)
+    scheduler = MultiStepLR(optim, milestones=[50, 80], gamma=0.2)
     model = Model()
     model.torchnet = net
     model.optimizer = optim
@@ -82,7 +82,6 @@ Trainer = {
 }.get(config["Trainer"]["name"])
 assert Trainer
 
-trainer = Trainer(model, labeled_loader, unlabeled_loader, val_loader,
-                  prior=prior if config["Trainer"].get("use_prior") == True else None,
-                  config=config, **{k: v for k, v in config["Trainer"].items() if k != "name"})
+trainer = Trainer(model, labeled_loader, unlabeled_loader, val_loader, prior=prior, config=config,
+                  **{k: v for k, v in config["Trainer"].items() if k != "name"})
 trainer.start_training()

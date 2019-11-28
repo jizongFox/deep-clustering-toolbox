@@ -16,6 +16,9 @@ from .augment import AffineTensorTransform
 
 
 class SemiTrainer(_Trainer):
+    """
+    This trainer is to impose supervised training.
+    """
 
     @lazy_load_checkpoint
     def __init__(self, model: Model, labeled_loader: DataLoader, unlabeled_loader: DataLoader, val_loader: DataLoader,
@@ -64,11 +67,7 @@ class SemiTrainer(_Trainer):
             lab_img, lab_gt = lab_img.to(self.device), lab_gt.to(self.device)
             lab_preds = self.model(lab_img)
             sup_loss = self.kl_criterion(
-                lab_preds,
-                class2one_hot(
-                    lab_gt,
-                    C=self.model.torchnet.num_classes
-                ).float()
+                lab_preds, class2one_hot(lab_gt, C=self.model.torchnet.num_classes).float()
             )
             reg_loss = self._trainer_specific_loss(unlab_img, unlab_gt)
             self.METERINTERFACE["traloss"].add(sup_loss.item())
@@ -92,13 +91,7 @@ class SemiTrainer(_Trainer):
             val_img, val_gt = val_img.to(self.device), val_gt.to(self.device)
             val_preds = self.model(val_img)
             val_loss = self.kl_criterion(
-                val_preds,
-                class2one_hot(
-                    val_gt,
-                    C=self.model.torchnet.num_classes
-                ).float(),
-                disable_assert=True
-            )
+                val_preds, class2one_hot(val_gt, C=self.model.torchnet.num_classes).float(), disable_assert=True)
             self.METERINTERFACE["valloss"].add(val_loss.item())
             self.METERINTERFACE["valconf"].add(val_preds.max(1)[1], val_gt)
             report_dict = self._eval_report_dict
@@ -122,16 +115,27 @@ class SemiTrainer(_Trainer):
 
 
 class SemiEntropyTrainer(SemiTrainer):
+    """
+    This trainer impose the KL between the average and the prior.
+    By default, we apply conditional entropy minimization with a very small coefficient (0.1)
+    """
 
     @lazy_load_checkpoint
     def __init__(self, model: Model, labeled_loader: DataLoader, unlabeled_loader: DataLoader, val_loader: DataLoader,
                  max_epoch: int = 100, save_dir: str = "base", checkpoint_path: str = None, device="cpu",
-                 config: dict = None, max_iter: int = 100, prior: Tensor = None, use_centropy=False, **kwargs) -> None:
+                 config: dict = None, max_iter: int = 100, prior: Tensor = None, inverse_kl=False, **kwargs) -> None:
+        """
+        :param prior: the predefined prior, must provide as a tensor
+        :param inverse_kl:
+        :param kwargs:
+        """
         super().__init__(model, labeled_loader, unlabeled_loader, val_loader, max_epoch, save_dir, checkpoint_path,
                          device, config, max_iter, **kwargs)
+        assert isinstance(prior, Tensor), prior
+        assert simplex(prior, 0), f"`prior` provided must be simplex."
         self.prior = prior.to(self.device)
-        self.use_centropy = use_centropy
         self.entropy = Entropy()
+        self.inverse_kl = inverse_kl
 
     def __init_meters__(self) -> List[Union[str, List[str]]]:
         columns = super().__init_meters__()
@@ -140,18 +144,20 @@ class SemiEntropyTrainer(SemiTrainer):
         columns.extend(["marginal_mean", "centropy_mean"])
         return columns
 
-    def _trainer_specific_loss(self, unlab_img: Tensor, **kwargs) -> Tensor:
+    def _trainer_specific_loss(self, unlab_img: Tensor, *args, **kwargs) -> Tensor:
         unlab_img = unlab_img.to(self.device)
         unlabeled_preds = self.model(unlab_img)
         assert simplex(unlabeled_preds, 1)
         marginal = unlabeled_preds.mean(0)
-        marginal_loss = self.kl_criterion(marginal.unsqueeze(0), self.prior.unsqueeze(0))
-        self.METERINTERFACE["marginal"].add(marginal_loss.item())
-        if self.use_centropy:
-            centropy = self.entropy(unlabeled_preds)
-            marginal_loss += centropy
-            self.METERINTERFACE["centropy"].add(centropy.item())
+        if not self.inverse_kl:
+            marginal_loss = self.kl_criterion(marginal.unsqueeze(0), self.prior.unsqueeze(0))
+        else:
+            marginal_loss = self.kl_criterion(self.prior.unsqueeze(0), marginal.unsqueeze(0), disable_assert=True)
 
+        self.METERINTERFACE["marginal"].add(marginal_loss.item())
+        centropy = self.entropy(unlabeled_preds)
+        marginal_loss += centropy * 0.1
+        self.METERINTERFACE["centropy"].add(centropy.item())
         return marginal_loss
 
     @property
@@ -165,12 +171,16 @@ class SemiEntropyTrainer(SemiTrainer):
 
 
 class SemiPrimalDualTrainer(SemiEntropyTrainer):
-    @lazy_load_checkpoint
+    """
+    This trainer is to impose the Primal-dual Method.
+    Conditional entropy minimization is included as in the previous case.
+    """
+
     def __init__(self, model: Model, labeled_loader: DataLoader, unlabeled_loader: DataLoader, val_loader: DataLoader,
                  max_epoch: int = 100, save_dir: str = "base", checkpoint_path: str = None, device="cpu",
-                 config: dict = None, max_iter: int = 100, prior: Tensor = None, use_centropy=False, **kwargs) -> None:
+                 config: dict = None, max_iter: int = 100, prior: Tensor = None, inverse_kl=False, **kwargs) -> None:
         super().__init__(model, labeled_loader, unlabeled_loader, val_loader, max_epoch, save_dir, checkpoint_path,
-                         device, config, max_iter, prior, use_centropy, **kwargs)
+                         device, config, max_iter, prior, inverse_kl, **kwargs)
         self.mu = nn.Parameter(-1.0 / self.prior)  # initialize mu = - 1 / prior
         self.mu_optim = RAdam((self.mu,), lr=1e-4, betas=(0.5, 0.999))
 
@@ -186,10 +196,9 @@ class SemiPrimalDualTrainer(SemiEntropyTrainer):
         assert simplex(unlabeled_preds, 1)
         marginal = unlabeled_preds.mean(0)
         lagrangian = (self.prior * (marginal * self.mu.detach() + 1 + (-self.mu.detach()).log())).sum()
-        if self.use_centropy:
-            centropy = self.entropy(unlabeled_preds)
-            self.METERINTERFACE["centropy"].add(centropy.item())
-            return lagrangian + centropy
+        centropy = self.entropy(unlabeled_preds)
+        self.METERINTERFACE["centropy"].add(centropy.item())
+        lagrangian += centropy * 0.1
         return lagrangian
 
     def _update_mu(self, unlab_img: Tensor):
@@ -198,6 +207,7 @@ class SemiPrimalDualTrainer(SemiEntropyTrainer):
         unlabeled_preds = self.model(unlab_img).detach()
         assert simplex(unlabeled_preds, 1)
         marginal = unlabeled_preds.mean(0)
+        # to increase the lagrangian..
         lagrangian = -1 * (self.prior * (marginal * self.mu + 1 + (-self.mu).log())).sum()
         lagrangian.backward()
         self.mu_optim.step()
@@ -218,11 +228,7 @@ class SemiPrimalDualTrainer(SemiEntropyTrainer):
             lab_img, lab_gt = lab_img.to(self.device), lab_gt.to(self.device)
             lab_preds = self.model(lab_img)
             sup_loss = self.kl_criterion(
-                lab_preds,
-                class2one_hot(
-                    lab_gt,
-                    C=self.model.torchnet.num_classes
-                ).float()
+                lab_preds, class2one_hot(lab_gt, C=self.model.torchnet.num_classes).float()
             )
             reg_loss = self._trainer_specific_loss(unlab_img)
             self.METERINTERFACE["traloss"].add(sup_loss.item())
