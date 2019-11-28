@@ -8,7 +8,7 @@ source $LC_WRAPPER_PATH # enable local_wrapper
 source $JA_WRAPPER_PATH
 seed=$1
 
-save_dir=pann/primal-dual_update_mu_by_RADAM/seed_${seed}
+save_dir=pann/1127/primal-dual_update_mu_by_RADAM/seed_${seed}
 max_epoch=200
 time=8
 account=def-chdesa
@@ -16,12 +16,12 @@ FORCE_LOAD_CHECKPOINT=1
 
 declare -a StringArray=(
 "FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python   toy_example.py  Trainer.save_dir=${save_dir}/baseline  Trainer.name=SemiTrainer Trainer.max_epoch=${max_epoch} Seed=${seed} "
-"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python   toy_example.py  Trainer.save_dir=${save_dir}/Entropy  Trainer.name=SemiEntropyTrainer Trainer.max_epoch=${max_epoch} Seed=${seed}  "
-"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python   toy_example.py  Trainer.save_dir=${save_dir}/Entropy_CEntropy  Trainer.name=SemiEntropyTrainer Trainer.use_centropy=True Trainer.max_epoch=${max_epoch} Seed=${seed}  "
-"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python   toy_example.py  Trainer.save_dir=${save_dir}/PrimalDual  Trainer.name=SemiPrimalDualTrainer Trainer.max_epoch=${max_epoch} Seed=${seed}  "
-"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python   toy_example.py  Trainer.save_dir=${save_dir}/PrimalDual_CEntropy  Trainer.name=SemiPrimalDualTrainer Trainer.use_centropy=True Trainer.max_epoch=${max_epoch} Seed=${seed}  "
-
+"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python   toy_example.py  Trainer.save_dir=${save_dir}/Entropy  Trainer.name=SemiEntropyTrainer Trainer.max_epoch=${max_epoch}  Seed=${seed} "
+"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python   toy_example.py  Trainer.save_dir=${save_dir}/Entropy_kl_inverse  Trainer.name=SemiEntropyTrainer Trainer.max_epoch=${max_epoch} Trainer.inverse_kl=True  Seed=${seed}"
+"FORCE_LOAD_CHECKPOINT=${FORCE_LOAD_CHECKPOINT} python   toy_example.py  Trainer.save_dir=${save_dir}/PrimalDual  Trainer.name=SemiPrimalDualTrainer Trainer.max_epoch=${max_epoch}    Seed=${seed} "
 )
+
+
 gpuqueue "${StringArray[@]}" --available_gpus 0
 
 #for cmd in "${StringArray[@]}"
