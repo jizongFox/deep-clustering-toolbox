@@ -26,6 +26,7 @@ def arg_parser() -> argparse.Namespace:
                              'if given, high_better must have the same size as classes.',
                         default=True)
     parser.add_argument('--save_dir', type=str, help='save summary dir.', required=True)
+    parser.add_argument('--save_filename',type=str, help='save summary name', default="summary.csv")
     args = parser.parse_args()
     if isinstance(args.high_better, list):
         assert len(args.high_better) == len(args.classes), f"high_better must correspond to classes, " \
@@ -51,7 +52,7 @@ def main(args: argparse.Namespace):
 
     table = pd.DataFrame(merge_dict(path_features, values)).T
     print(table)
-    table.to_csv(Path(args.save_dir, 'summary.csv'))
+    table.to_csv(Path(args.save_dir, args.save_filename))
 
 
 extract_value = lambda file_path, class_name, is_high: pd.read_csv(file_path)[class_name].max() if is_high else \
