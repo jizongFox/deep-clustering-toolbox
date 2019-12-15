@@ -15,7 +15,7 @@ setup(
         ]
     },
     version="1.0.0",
-    packages=find_packages(),
+    packages=find_packages(exclude=["script", "test", "playground"]),
     url="https://github.com/jizongFox/deep-clustering-toolbox",
     license="MIT    ",
     author="Jizong Peng",
@@ -48,4 +48,5 @@ setup(
         "termcolor",
         "gpuqueue",
     ],
+    dependency_links=['https://github.com/ETS-Research-Repositories/Config-Parser-battery.git']
 )
