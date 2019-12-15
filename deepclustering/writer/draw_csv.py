@@ -22,12 +22,12 @@ class DrawCSV(object):
     """
 
     def __init__(
-            self,
-            columns_to_draw=None,
-            save_dir=None,
-            save_name="plot.png",
-            csv_name="wholeMeter.csv",
-            figsize=[10, 15],
+        self,
+        columns_to_draw=None,
+        save_dir=None,
+        save_name="plot.png",
+        csv_name="wholeMeter.csv",
+        figsize=[10, 15],
     ) -> None:
         super().__init__()
         warnings.warn(
@@ -89,12 +89,12 @@ class DrawCSV(object):
 
 class DrawCSV2(object):
     def __init__(
-            self,
-            columns_to_draw=None,
-            save_dir=None,
-            save_name="plot.png",
-            csv_name="wholeMeter.csv",
-            figsize=[10, 15],
+        self,
+        columns_to_draw=None,
+        save_dir=None,
+        save_name="plot.png",
+        csv_name="wholeMeter.csv",
+        figsize=[10, 15],
     ) -> None:
         super().__init__()
         if columns_to_draw is not None and not isinstance(columns_to_draw, list):
@@ -121,9 +121,11 @@ class DrawCSV2(object):
         plt.savefig(str(self.save_dir) + f"/{self.save_name}")
         plt.close(fig)
 
-
     def _draw_single(self, ax, data_frame: pd.DataFrame, column_name: str):
-        ax.plot(pd.Series(data_frame[column_name]).fillna(limit=5, method='ffill'), label=column_name)
+        ax.plot(
+            pd.Series(data_frame[column_name]).fillna(limit=5, method="ffill"),
+            label=column_name,
+        )
         ax.legend()
         ax.grid()
         ax.set_title(
@@ -133,7 +135,7 @@ class DrawCSV2(object):
 
     def _draw_mulitple(self, ax, data_frame: pd.DataFrame, column_names: List[str]):
         for k in column_names:
-            ax.plot(pd.Series(data_frame[k]).fillna(limit=5, method='ffill'), label=k)
+            ax.plot(pd.Series(data_frame[k]).fillna(limit=5, method="ffill"), label=k)
             # ax.plot(data_frame[k], label=k)
         ax.legend()
         ax.grid()

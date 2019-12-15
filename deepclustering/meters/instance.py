@@ -3,8 +3,8 @@ from .metric import Metric
 
 # this meter is to show the instance value, instead of print.
 
-class InstanceValue(Metric):
 
+class InstanceValue(Metric):
     def __init__(self) -> None:
         super().__init__()
         self.instance_value = None

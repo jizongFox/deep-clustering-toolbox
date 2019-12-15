@@ -13,23 +13,35 @@ from .medicalSegmentationDataset import MedicalImageSegmentationDataset
 
 
 class PatientSampler(Sampler):
-    def __init__(self, dataset: MedicalImageSegmentationDataset, grp_regex: str, shuffle=False, verbose=True) -> None:
+    def __init__(
+        self,
+        dataset: MedicalImageSegmentationDataset,
+        grp_regex: str,
+        shuffle=False,
+        verbose=True,
+    ) -> None:
         filenames: List[str] = dataset.filenames[dataset.subfolders[0]]
         self.grp_regex = grp_regex
         self.shuffle: bool = shuffle
-        self.shuffle_fn: Callable = (lambda x: random.sample(x, len(x))) if self.shuffle else id_
+        self.shuffle_fn: Callable = (
+            lambda x: random.sample(x, len(x))
+        ) if self.shuffle else id_
         if verbose:
             print(f"Grouping using {self.grp_regex} regex")
         grouping_regex: Pattern = re.compile(self.grp_regex)
 
-        stems: List[str] = [Path(filename).stem for filename in filenames]  # avoid matching the extension
+        stems: List[str] = [
+            Path(filename).stem for filename in filenames
+        ]  # avoid matching the extension
         matches: List[Match] = map_(grouping_regex.match, stems)
         patients: List[str] = [match.group(0) for match in matches]
 
         unique_patients: List[str] = list(set(patients))
         assert len(unique_patients) < len(filenames)
         if verbose:
-            print(f"Found {len(unique_patients)} unique patients out of {len(filenames)} images")
+            print(
+                f"Found {len(unique_patients)} unique patients out of {len(filenames)} images"
+            )
         self.idx_map: Dict[str, List[int]] = dict(zip(unique_patients, repeat(None)))
         for i, patient in enumerate(patients):
             if not self.idx_map[patient]:
@@ -49,12 +61,13 @@ class PatientSampler(Sampler):
 
 
 def SubMedicalDatasetBasedOnIndex(
-        dataset: MedicalImageSegmentationDataset,
-        patient_list) -> MedicalImageSegmentationDataset:
+    dataset: MedicalImageSegmentationDataset, patient_list
+) -> MedicalImageSegmentationDataset:
     """
     This class divide a list of file path to some different groups in order to split the dataset based on p_pattern string.
     """
     import re
+
     def _is_matched(str_path: str, patient_list: List) -> bool:
         patterns = [re.compile(p) for p in patient_list]
         for pattern in patterns:
@@ -63,9 +76,13 @@ def SubMedicalDatasetBasedOnIndex(
         return False
 
     from copy import deepcopy as dcp
+
     assert isinstance(patient_list, (tuple, list)) and patient_list.__len__() >= 1
     dataset = dcp(dataset)
     patient_img_list = dataset.filenames["img"]
     sub_patient_index = [_is_matched(f, patient_list) for f in patient_img_list]
-    dataset.filenames = {k: np.array(v)[np.array(sub_patient_index)].tolist() for k, v in dataset.filenames.items()}
+    dataset.filenames = {
+        k: np.array(v)[np.array(sub_patient_index)].tolist()
+        for k, v in dataset.filenames.items()
+    }
     return dataset

@@ -8,11 +8,11 @@ README = (HERE / "README.md").read_text()
 setup(
     name="deepclustering",
     entry_points={
-        'console_scripts': [
+        "console_scripts": [
             "viewer=deepclustering.viewer.Viewer:main",
             "clip_screencapture=deepclustering.postprocessing.clip_images:call_from_cmd",
-            "report=deepclustering.postprocessing.report2:call_from_cmd"
-        ],
+            "report=deepclustering.postprocessing.report2:call_from_cmd",
+        ]
     },
     version="1.0.0",
     packages=find_packages(),
@@ -46,7 +46,6 @@ setup(
         "medpy",
         "pyyaml",
         "termcolor",
-        "gpuqueue"
+        "gpuqueue",
     ],
-
 )

@@ -22,7 +22,7 @@ from deepclustering.loss.IID_losses import IIDLoss
 from deepclustering.manager import ConfigManger
 from deepclustering.meters import MeterInterface, AverageValueMeter
 from deepclustering.model import Model
-from deepclustering.trainer.Trainer import _Trainer
+from deepclustering.trainer.trainer import _Trainer
 from deepclustering.utils import tqdm_, simplex, tqdm, flatten_dict, dict_filter
 from deepclustering.utils.VAT import VATLoss_Multihead
 from deepclustering.utils.classification.assignment_mapping import (

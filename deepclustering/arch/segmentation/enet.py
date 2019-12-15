@@ -58,16 +58,16 @@ class BottleNeck(nn.Module):
     """
 
     def __init__(
-            self,
-            input_channels=None,
-            output_channels=None,
-            regularlizer_prob=0.1,
-            downsampling=False,
-            upsampling=False,
-            dilated=False,
-            dilation_rate=None,
-            asymmetric=False,
-            use_relu=False,
+        self,
+        input_channels=None,
+        output_channels=None,
+        regularlizer_prob=0.1,
+        downsampling=False,
+        upsampling=False,
+        dilated=False,
+        dilation_rate=None,
+        asymmetric=False,
+        use_relu=False,
     ):
         super(BottleNeck, self).__init__()
         self.input_channels = input_channels
@@ -198,7 +198,9 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         layers = []
         layers.append(InitialBlock(input_dim))
-        layers.append(BottleNeck(13 + input_dim, 64, regularlizer_prob=0.01, downsampling=True))
+        layers.append(
+            BottleNeck(13 + input_dim, 64, regularlizer_prob=0.01, downsampling=True)
+        )
         for i in range(4):
             layers.append(BottleNeck(64, 64, regularlizer_prob=0.01))
 

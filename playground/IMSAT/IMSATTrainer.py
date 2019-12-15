@@ -11,10 +11,13 @@ from deepclustering import PROJECT_PATH
 from deepclustering.loss.IMSAT_loss import Perturbation_Loss, MultualInformaton_IMSAT
 from deepclustering.meters import AverageValueMeter, MeterInterface
 from deepclustering.model import Model
-from deepclustering.trainer.Trainer import _Trainer
+from deepclustering.trainer.trainer import _Trainer
 from deepclustering.utils import tqdm_, simplex, assert_list
 from deepclustering.utils.VAT import VATLoss_Multihead
-from deepclustering.utils.classification.assignment_mapping import hungarian_match, flat_acc
+from deepclustering.utils.classification.assignment_mapping import (
+    hungarian_match,
+    flat_acc,
+)
 
 
 class IMSATTrainer(_Trainer):
@@ -23,15 +26,15 @@ class IMSATTrainer(_Trainer):
     """
 
     def __init__(
-            self,
-            model: Model,
-            train_loader: DataLoader,
-            val_loader: DataLoader,
-            max_epoch: int = 1,
-            save_dir: str = "./runs/IMSAT",
-            checkpoint_path: str = None,
-            device="cpu",
-            config: dict = None,
+        self,
+        model: Model,
+        train_loader: DataLoader,
+        val_loader: DataLoader,
+        max_epoch: int = 1,
+        save_dir: str = "./runs/IMSAT",
+        checkpoint_path: str = None,
+        device="cpu",
+        config: dict = None,
     ) -> None:
         super().__init__(
             model,
@@ -57,21 +60,22 @@ class IMSATTrainer(_Trainer):
             "train_mi_loss": AverageValueMeter(),
             "val_avg_acc": AverageValueMeter(),
             "val_best_acc": AverageValueMeter(),
-            "val_worst_acc": AverageValueMeter()
+            "val_worst_acc": AverageValueMeter(),
         }
         self.METERINTERFACE = MeterInterface(METER_CONFIG)
-        return ["train_mi_loss_mean", "train_sat_loss_mean", "train_adv_loss_mean",
-                ["val_avg_acc_mean",
-                 "val_best_acc_mean",
-                 "val_worst_acc_mean"]
-                ]
+        return [
+            "train_mi_loss_mean",
+            "train_sat_loss_mean",
+            "train_adv_loss_mean",
+            ["val_avg_acc_mean", "val_best_acc_mean", "val_worst_acc_mean"],
+        ]
 
     @property
     def _training_report_dict(self):
         report_dict = {
             "mi": self.METERINTERFACE["train_mi_loss"].summary()["mean"],
             "sat": self.METERINTERFACE["train_sat_loss"].summary()["mean"],
-            "adv": self.METERINTERFACE["train_adv_loss"].summary()['mean']
+            "adv": self.METERINTERFACE["train_adv_loss"].summary()["mean"],
         }
         return report_dict
 
@@ -80,12 +84,12 @@ class IMSATTrainer(_Trainer):
         report_dict = {
             "val_avg_acc": self.METERINTERFACE.val_avg_acc.summary()["mean"],
             "val_best_acc": self.METERINTERFACE.val_best_acc.summary()["mean"],
-            "val_worst_acc": self.METERINTERFACE.val_worst_acc.summary()["mean"]
+            "val_worst_acc": self.METERINTERFACE.val_worst_acc.summary()["mean"],
         }
         return report_dict
 
     def _train_loop(
-            self, train_loader=None, epoch=0, mode: ModelMode = ModelMode.TRAIN, **kwargs
+        self, train_loader=None, epoch=0, mode: ModelMode = ModelMode.TRAIN, **kwargs
     ):
         self.model.set_mode(mode)
         assert (
@@ -104,11 +108,16 @@ class IMSATTrainer(_Trainer):
             assert tf1_images.shape == tf2_images.shape
             tf1_pred_logit = self.model.torchnet(tf1_images)
             tf2_pred_logit = self.model.torchnet(tf2_images)
-            assert assert_list(simplex, tf1_pred_logit) and tf1_pred_logit[0].shape == tf2_pred_logit[0].shape
+            assert (
+                assert_list(simplex, tf1_pred_logit)
+                and tf1_pred_logit[0].shape == tf2_pred_logit[0].shape
+            )
 
             sat_losses = []
             ml_losses = []
-            for subhead_num, (tf1_pred, tf2_pred) in enumerate(zip(tf1_pred_logit, tf2_pred_logit)):
+            for subhead_num, (tf1_pred, tf2_pred) in enumerate(
+                zip(tf1_pred_logit, tf2_pred_logit)
+            ):
                 sat_loss = self.SAT_criterion(tf2_pred, tf1_pred.detach())
                 ml_loss, *_ = self.MI_criterion(tf1_pred)
                 # sat_losses.append(sat_loss)
@@ -120,7 +129,7 @@ class IMSATTrainer(_Trainer):
             VAT_generator = VATLoss_Multihead(eps=10)
             vat_loss, adv_tf1_images, _ = VAT_generator(self.model.torchnet, tf1_images)
 
-            batch_loss: torch.Tensor = vat_loss  - 0.1 * ml_losses
+            batch_loss: torch.Tensor = vat_loss - 0.1 * ml_losses
 
             # self.METERINTERFACE["train_sat_loss"].add(sat_losses.item())
             self.METERINTERFACE["train_mi_loss"].add(ml_losses.item())
@@ -132,11 +141,11 @@ class IMSATTrainer(_Trainer):
             train_loader_.set_postfix(report_dict)
 
     def _eval_loop(
-            self,
-            val_loader: DataLoader = None,
-            epoch: int = 0,
-            mode: ModelMode = ModelMode.EVAL,
-            **kwargs,
+        self,
+        val_loader: DataLoader = None,
+        epoch: int = 0,
+        mode: ModelMode = ModelMode.EVAL,
+        **kwargs,
     ) -> float:
         self.model.set_mode(mode)
         assert (
@@ -145,7 +154,9 @@ class IMSATTrainer(_Trainer):
         val_loader_: tqdm = tqdm_(val_loader)
         preds = torch.zeros(
             self.model.arch_dict["num_sub_heads"],
-            val_loader.dataset.__len__(), dtype=torch.long, device=self.device
+            val_loader.dataset.__len__(),
+            dtype=torch.long,
+            device=self.device,
         )
         target = torch.zeros(
             val_loader.dataset.__len__(), dtype=torch.long, device=self.device
@@ -157,7 +168,10 @@ class IMSATTrainer(_Trainer):
             images, gt, *_ = list(zip(*image_labels))
             images, gt = images[0].to(self.device), gt[0].to(self.device)
             _pred = self.model.torchnet(images)
-            assert assert_list(simplex, _pred) and _pred.__len__() == self.model.arch_dict["num_sub_heads"]
+            assert (
+                assert_list(simplex, _pred)
+                and _pred.__len__() == self.model.arch_dict["num_sub_heads"]
+            )
             bSlicer = slice(slice_done, slice_done + images.shape[0])
             for subhead in range(self.model.arch_dict["num_sub_heads"]):
                 preds[subhead][bSlicer] = _pred[subhead].max(1)[1]

@@ -5,7 +5,6 @@ from deepclustering.schedulers.customized_scheduler import RampScheduler
 
 
 class TestTrainer(TestCase):
-
     def setUp(self) -> None:
         super().setUp()
         arch_dict = {
@@ -14,11 +13,9 @@ class TestTrainer(TestCase):
             "num_channel": 1,
             "output_k_A": 50,
             "output_k_B": 10,
-            "num_sub_heads": 5
+            "num_sub_heads": 5,
         }
-        optim_dict = {
-            "name": "Adam"
-        }
+        optim_dict = {"name": "Adam"}
         scheduler_dict = {
             "name": "MultiStepLR",
             "milestones": [10, 20, 30, 40, 50, 60, 70, 80, 90],

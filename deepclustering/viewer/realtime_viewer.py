@@ -18,8 +18,8 @@ class Crop:
         H, W, *_ = slices.shape
 
         return slices[
-               self.size // 2: H - self.size // 2, self.size // 2: W - self.size // 2
-               ]
+            self.size // 2 : H - self.size // 2, self.size // 2 : W - self.size // 2
+        ]
 
 
 class Identical:
@@ -46,17 +46,18 @@ class PLTViewer(object):
 
 class multi_slice_viewer(PLTViewer):
     def __init__(
-            self,
-            img_cmap=None,
-            mask_cmp=None,
-            crop=None,
-            is_contour=True,
-            alpha=0.5,
-            up_key="j",
-            down_key="k",
+        self,
+        img_cmap=None,
+        mask_cmp=None,
+        crop=None,
+        is_contour=True,
+        alpha=0.5,
+        up_key="j",
+        down_key="k",
     ) -> None:
         try:
             import matplotlib
+
             matplotlib.use("qt5agg")
         except Exception as e:
             print(e)
@@ -72,30 +73,41 @@ class multi_slice_viewer(PLTViewer):
 
     def __call__(self, img_volume: Tensor, *gt_volumes: Tensor):
         img_volume = img_volume.squeeze()
-        assert len(img_volume.shape) in (3, 4), f"Only accept 3 or 4 dimensional data, given {len(img_volume.shape)}"
+        assert len(img_volume.shape) in (
+            3,
+            4,
+        ), f"Only accept 3 or 4 dimensional data, given {len(img_volume.shape)}"
 
         if len(gt_volumes) > 0:
             B, H, W = img_volume.shape[0:3]
             _B, *_, _H, _W = gt_volumes[0].shape
-            assert (B == _B and H == _H and W == _W), f"img.shape: {img_volume.shape} and gt_shape: {gt_volumes.shape}"
+            assert (
+                B == _B and H == _H and W == _W
+            ), f"img.shape: {img_volume.shape} and gt_shape: {gt_volumes.shape}"
         fig, axs = plt.subplots(1, max(len(gt_volumes), 1))
         if not isinstance(axs, np.ndarray):
             axs = np.array([axs])
         fig.canvas.mpl_connect("key_press_event", self.process_key)
         fig.canvas.mpl_connect("scroll_event", self.process_mouse_wheel)
 
-        for i, (ax, volume) in enumerate(zip(axs, repeat(None) if len(gt_volumes) == 0 else list(gt_volumes))):
+        for i, (ax, volume) in enumerate(
+            zip(axs, repeat(None) if len(gt_volumes) == 0 else list(gt_volumes))
+        ):
             ax.gt_volume = volume
             ax.img_volume = img_volume
             ax.index = img_volume.shape[0] // 2
             ax.imshow(self.crop_func(ax.img_volume[ax.index]), cmap=self.img_cmap)
             if volume is not None:
                 ax.con = (
-                    ax.contour(self.crop_func(ax.gt_volume[ax.index]), cmap=self.mask_cmap)
+                    ax.contour(
+                        self.crop_func(ax.gt_volume[ax.index]), cmap=self.mask_cmap
+                    )
                     if self.is_contour
-                    else ax.contourf(self.crop_func(ax.gt_volume[ax.index]),
-                                     cmap=self.mask_cmap,
-                                     alpha=self.alpha)
+                    else ax.contourf(
+                        self.crop_func(ax.gt_volume[ax.index]),
+                        cmap=self.mask_cmap,
+                        alpha=self.alpha,
+                    )
                 )
             ax.set_title(f"plane = {ax.index}")
             ax.axis("off")
@@ -163,9 +175,12 @@ class multi_slice_viewer(PLTViewer):
         ax.set_title(f"plane = {ax.index}")
 
 
-def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour=False) -> None:
+def multi_slice_viewer_debug(
+    img_volume: Tensor, *gt_volumes: Tensor, no_contour=False
+) -> None:
     try:
         import matplotlib
+
         matplotlib.use("tkagg", force=True)
     except Exception as e:
         print(e)
@@ -204,9 +219,11 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour
         if ax.gt_volume is not None:
             for con in ax.con.collections:
                 con.remove()
-        ax.index = ((ax.index + 1)
-                    if (ax.index + 1) < img_volume.shape[0]
-                    else img_volume.shape[0] - 1)
+        ax.index = (
+            (ax.index + 1)
+            if (ax.index + 1) < img_volume.shape[0]
+            else img_volume.shape[0] - 1
+        )
         ax.images[0].set_array(img_volume[ax.index])
         if ax.gt_volume is not None:
             ax.con = ax.contour(ax.gt_volume[ax.index])
@@ -220,17 +237,24 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour
         if isinstance(gt_volumn, torch.Tensor):
             gt_volumes[num] = gt_volumn.squeeze().cpu()
 
-    assert len(img_volume.shape) in (3, 4), f"Only accept 3 or 4 dimensional data, given {len(img_volume.shape)}"
+    assert len(img_volume.shape) in (
+        3,
+        4,
+    ), f"Only accept 3 or 4 dimensional data, given {len(img_volume.shape)}"
 
     if len(gt_volumes) > 0:
         B, H, W = img_volume.shape[0:3]
         _B, *_, _H, _W = gt_volumes[0].shape
-        assert (B == _B and H == _H and W == _W), f"img.shape: {img_volume.shape} and gt_shape: {gt_volumes.shape}"
+        assert (
+            B == _B and H == _H and W == _W
+        ), f"img.shape: {img_volume.shape} and gt_shape: {gt_volumes.shape}"
     fig, axs = plt.subplots(1, max(len(gt_volumes), 1))
     if not isinstance(axs, np.ndarray):
         axs = np.array([axs])
 
-    for i, (ax, volume) in enumerate(zip(axs, repeat(None) if len(gt_volumes) == 0 else list(gt_volumes))):
+    for i, (ax, volume) in enumerate(
+        zip(axs, repeat(None) if len(gt_volumes) == 0 else list(gt_volumes))
+    ):
         ax.gt_volume = volume
         ax.img_volume = img_volume
         ax.index = img_volume.shape[0] // 2

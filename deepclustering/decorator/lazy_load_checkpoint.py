@@ -34,10 +34,14 @@ def lazy_load_checkpoint(func):
     def wrapped_init_(self, *args, **kwargs):
         # check if args has "checkpoint_path" input:
         # if true, save checkpoint here and set it as None for the children method
-        _checkpoint_path_from_args, args = _extract_checkpoint_path_from_args(func, args)
+        _checkpoint_path_from_args, args = _extract_checkpoint_path_from_args(
+            func, args
+        )
         # check if kwargs has "checkpoint_path" input:
         # if true, save checkpoint here and set it as None for the children method
-        _checkpoint_path_from_kwarg, kwargs = _extract_checkpoint_path_from_kwargs(kwargs)
+        _checkpoint_path_from_kwarg, kwargs = _extract_checkpoint_path_from_kwargs(
+            kwargs
+        )
         _checkpoint_path = _checkpoint_path_from_args or _checkpoint_path_from_kwarg
 
         # perform normal __init__
@@ -50,10 +54,13 @@ def lazy_load_checkpoint(func):
                 self.load_checkpoint_from_path(self.checkpoint)
             except Exception as e:
                 if os.environ.get("FORCE_LOAD_CHECKPOINT") == "1":
-                    print(colored(
-                        f"!!!Loading checkpoint {self.checkpoint} failed with \n{e}."
-                        f"\nDue to global environment variable `FORCE_LOAD_CHECKPOINT`=`1`, continue to train from scratch!",
-                        "red"))
+                    print(
+                        colored(
+                            f"!!!Loading checkpoint {self.checkpoint} failed with \n{e}."
+                            f"\nDue to global environment variable `FORCE_LOAD_CHECKPOINT`=`1`, continue to train from scratch!",
+                            "red",
+                        )
+                    )
                 else:
                     raise e
 

@@ -6,6 +6,7 @@ from ..model import Model
 
 # I think this should be something like mixin class for multiinherent class
 
+
 class _Method(object):
     """
     This is the meta class used for Method, plugin class. It can be used as the meta class for ADMM,

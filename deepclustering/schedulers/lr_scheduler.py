@@ -11,14 +11,18 @@ class _LRScheduler(object):
         self.optimizer = optimizer
         if last_epoch == -1:
             for group in optimizer.param_groups:
-                group.setdefault('initial_lr', group['lr'])
+                group.setdefault("initial_lr", group["lr"])
             last_epoch = 0
         else:
             for i, group in enumerate(optimizer.param_groups):
-                if 'initial_lr' not in group:
-                    raise KeyError("param 'initial_lr' is not specified "
-                                   "in param_groups[{}] when resuming an optimizer".format(i))
-        self.base_lrs = list(map(lambda group: group['initial_lr'], optimizer.param_groups))
+                if "initial_lr" not in group:
+                    raise KeyError(
+                        "param 'initial_lr' is not specified "
+                        "in param_groups[{}] when resuming an optimizer".format(i)
+                    )
+        self.base_lrs = list(
+            map(lambda group: group["initial_lr"], optimizer.param_groups)
+        )
         self.step(last_epoch)
 
     def state_dict(self):
@@ -27,7 +31,9 @@ class _LRScheduler(object):
         It contains an entry for every variable in self.__dict__ which
         is not the optimizer.
         """
-        return {key: value for key, value in self.__dict__.items() if key != 'optimizer'}
+        return {
+            key: value for key, value in self.__dict__.items() if key != "optimizer"
+        }
 
     def load_state_dict(self, state_dict):
         """Loads the schedulers state.
@@ -46,7 +52,7 @@ class _LRScheduler(object):
             epoch = self.last_epoch + 1
         self.last_epoch = epoch
         for param_group, lr in zip(self.optimizer.param_groups, self.get_lr()):
-            param_group['lr'] = lr
+            param_group["lr"] = lr
 
 
 class LambdaLR(_LRScheduler):
@@ -77,8 +83,11 @@ class LambdaLR(_LRScheduler):
             self.lr_lambdas = [lr_lambda] * len(optimizer.param_groups)
         else:
             if len(lr_lambda) != len(optimizer.param_groups):
-                raise ValueError("Expected {} lr_lambdas, but got {}".format(
-                    len(optimizer.param_groups), len(lr_lambda)))
+                raise ValueError(
+                    "Expected {} lr_lambdas, but got {}".format(
+                        len(optimizer.param_groups), len(lr_lambda)
+                    )
+                )
             self.lr_lambdas = list(lr_lambda)
         self.last_epoch = last_epoch
         super(LambdaLR, self).__init__(optimizer, last_epoch)
@@ -91,12 +100,16 @@ class LambdaLR(_LRScheduler):
         The learning rate lambda functions will only be saved if they are callable objects
         and not if they are functions or lambdas.
         """
-        state_dict = {key: value for key, value in self.__dict__.items() if key not in ('optimizer', 'lr_lambdas')}
-        state_dict['lr_lambdas'] = [None] * len(self.lr_lambdas)
+        state_dict = {
+            key: value
+            for key, value in self.__dict__.items()
+            if key not in ("optimizer", "lr_lambdas")
+        }
+        state_dict["lr_lambdas"] = [None] * len(self.lr_lambdas)
 
         for idx, fn in enumerate(self.lr_lambdas):
             if not isinstance(fn, types.FunctionType):
-                state_dict['lr_lambdas'][idx] = fn.__dict__.copy()
+                state_dict["lr_lambdas"][idx] = fn.__dict__.copy()
 
         return state_dict
 
@@ -107,7 +120,7 @@ class LambdaLR(_LRScheduler):
             state_dict (dict): scheduler state. Should be an object returned
                 from a call to :meth:`state_dict`.
         """
-        lr_lambdas = state_dict.pop('lr_lambdas')
+        lr_lambdas = state_dict.pop("lr_lambdas")
         self.__dict__.update(state_dict)
 
         for idx, fn in enumerate(lr_lambdas):
@@ -115,8 +128,10 @@ class LambdaLR(_LRScheduler):
                 self.lr_lambdas[idx].__dict__.update(fn)
 
     def get_lr(self):
-        return [base_lr * lmbda(self.last_epoch)
-                for lmbda, base_lr in zip(self.lr_lambdas, self.base_lrs)]
+        return [
+            base_lr * lmbda(self.last_epoch)
+            for lmbda, base_lr in zip(self.lr_lambdas, self.base_lrs)
+        ]
 
 
 class StepLR(_LRScheduler):
@@ -152,9 +167,8 @@ class StepLR(_LRScheduler):
 
     def get_lr(self):
         if (self.last_epoch == 0) or (self.last_epoch % self.step_size != 0):
-            return [group['lr'] for group in self.optimizer.param_groups]
-        return [group['lr'] * self.gamma
-                for group in self.optimizer.param_groups]
+            return [group["lr"] for group in self.optimizer.param_groups]
+        return [group["lr"] * self.gamma for group in self.optimizer.param_groups]
 
 
 class MultiStepLR(_LRScheduler):
@@ -189,9 +203,11 @@ class MultiStepLR(_LRScheduler):
 
     def get_lr(self):
         if self.last_epoch not in self.milestones:
-            return [group['lr'] for group in self.optimizer.param_groups]
-        return [group['lr'] * self.gamma ** self.milestones[self.last_epoch]
-                for group in self.optimizer.param_groups]
+            return [group["lr"] for group in self.optimizer.param_groups]
+        return [
+            group["lr"] * self.gamma ** self.milestones[self.last_epoch]
+            for group in self.optimizer.param_groups
+        ]
 
 
 class ExponentialLR(_LRScheduler):
@@ -211,8 +227,7 @@ class ExponentialLR(_LRScheduler):
     def get_lr(self):
         if self.last_epoch == 0:
             return self.base_lrs
-        return [group['lr'] * self.gamma
-                for group in self.optimizer.param_groups]
+        return [group["lr"] * self.gamma for group in self.optimizer.param_groups]
 
 
 class CosineAnnealingLR(_LRScheduler):
@@ -260,14 +275,18 @@ class CosineAnnealingLR(_LRScheduler):
         if self.last_epoch == 0:
             return self.base_lrs
         elif (self.last_epoch - 1 - self.T_max) % (2 * self.T_max) == 0:
-            return [group['lr'] + (base_lr - self.eta_min) *
-                    (1 - math.cos(math.pi / self.T_max)) / 2
-                    for base_lr, group in
-                    zip(self.base_lrs, self.optimizer.param_groups)]
-        return [(1 + math.cos(math.pi * self.last_epoch / self.T_max)) /
-                (1 + math.cos(math.pi * (self.last_epoch - 1) / self.T_max)) *
-                (group['lr'] - self.eta_min) + self.eta_min
-                for group in self.optimizer.param_groups]
+            return [
+                group["lr"]
+                + (base_lr - self.eta_min) * (1 - math.cos(math.pi / self.T_max)) / 2
+                for base_lr, group in zip(self.base_lrs, self.optimizer.param_groups)
+            ]
+        return [
+            (1 + math.cos(math.pi * self.last_epoch / self.T_max))
+            / (1 + math.cos(math.pi * (self.last_epoch - 1) / self.T_max))
+            * (group["lr"] - self.eta_min)
+            + self.eta_min
+            for group in self.optimizer.param_groups
+        ]
 
 
 class ReduceLROnPlateau(object):
@@ -319,20 +338,33 @@ class ReduceLROnPlateau(object):
         >>>     scheduler.step(val_loss)
     """
 
-    def __init__(self, optimizer, mode='min', factor=0.1, patience=10,
-                 verbose=False, threshold=1e-4, threshold_mode='rel',
-                 cooldown=0, min_lr=0, eps=1e-8):
+    def __init__(
+        self,
+        optimizer,
+        mode="min",
+        factor=0.1,
+        patience=10,
+        verbose=False,
+        threshold=1e-4,
+        threshold_mode="rel",
+        cooldown=0,
+        min_lr=0,
+        eps=1e-8,
+    ):
 
         if factor >= 1.0:
-            raise ValueError('Factor should be < 1.0.')
+            raise ValueError("Factor should be < 1.0.")
         self.factor = factor
 
         self.optimizer = optimizer
 
         if isinstance(min_lr, list) or isinstance(min_lr, tuple):
             if len(min_lr) != len(optimizer.param_groups):
-                raise ValueError("expected {} min_lrs, got {}".format(
-                    len(optimizer.param_groups), len(min_lr)))
+                raise ValueError(
+                    "expected {} min_lrs, got {}".format(
+                        len(optimizer.param_groups), len(min_lr)
+                    )
+                )
             self.min_lrs = list(min_lr)
         else:
             self.min_lrs = [min_lr] * len(optimizer.param_groups)
@@ -350,8 +382,9 @@ class ReduceLROnPlateau(object):
         self.is_better = None
         self.eps = eps
         self.last_epoch = -1
-        self._init_is_better(mode=mode, threshold=threshold,
-                             threshold_mode=threshold_mode)
+        self._init_is_better(
+            mode=mode, threshold=threshold, threshold_mode=threshold_mode
+        )
         self._reset()
 
     def _reset(self):
@@ -384,40 +417,42 @@ class ReduceLROnPlateau(object):
 
     def _reduce_lr(self, epoch):
         for i, param_group in enumerate(self.optimizer.param_groups):
-            old_lr = float(param_group['lr'])
+            old_lr = float(param_group["lr"])
             new_lr = max(old_lr * self.factor, self.min_lrs[i])
             if old_lr - new_lr > self.eps:
-                param_group['lr'] = new_lr
+                param_group["lr"] = new_lr
                 if self.verbose:
-                    print('Epoch {:5d}: reducing learning rate'
-                          ' of group {} to {:.4e}.'.format(epoch, i, new_lr))
+                    print(
+                        "Epoch {:5d}: reducing learning rate"
+                        " of group {} to {:.4e}.".format(epoch, i, new_lr)
+                    )
 
     @property
     def in_cooldown(self):
         return self.cooldown_counter > 0
 
     def _cmp(self, mode, threshold_mode, threshold, a, best):
-        if mode == 'min' and threshold_mode == 'rel':
-            rel_epsilon = 1. - threshold
+        if mode == "min" and threshold_mode == "rel":
+            rel_epsilon = 1.0 - threshold
             return a < best * rel_epsilon
 
-        elif mode == 'min' and threshold_mode == 'abs':
+        elif mode == "min" and threshold_mode == "abs":
             return a < best - threshold
 
-        elif mode == 'max' and threshold_mode == 'rel':
-            rel_epsilon = threshold + 1.
+        elif mode == "max" and threshold_mode == "rel":
+            rel_epsilon = threshold + 1.0
             return a > best * rel_epsilon
 
         else:  # mode == 'max' and epsilon_mode == 'abs':
             return a > best + threshold
 
     def _init_is_better(self, mode, threshold, threshold_mode):
-        if mode not in {'min', 'max'}:
-            raise ValueError('mode ' + mode + ' is unknown!')
-        if threshold_mode not in {'rel', 'abs'}:
-            raise ValueError('threshold mode ' + threshold_mode + ' is unknown!')
+        if mode not in {"min", "max"}:
+            raise ValueError("mode " + mode + " is unknown!")
+        if threshold_mode not in {"rel", "abs"}:
+            raise ValueError("threshold mode " + threshold_mode + " is unknown!")
 
-        if mode == 'min':
+        if mode == "min":
             self.mode_worse = inf
         else:  # mode == 'max':
             self.mode_worse = -inf
@@ -425,11 +460,17 @@ class ReduceLROnPlateau(object):
         self.is_better = partial(self._cmp, mode, threshold_mode, threshold)
 
     def state_dict(self):
-        return {key: value for key, value in self.__dict__.items() if key not in {'optimizer', 'is_better'}}
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key not in {"optimizer", "is_better"}
+        }
 
     def load_state_dict(self, state_dict):
         self.__dict__.update(state_dict)
-        self._init_is_better(mode=self.mode, threshold=self.threshold, threshold_mode=self.threshold_mode)
+        self._init_is_better(
+            mode=self.mode, threshold=self.threshold, threshold_mode=self.threshold_mode
+        )
 
 
 class CyclicLR(_LRScheduler):
@@ -521,67 +562,76 @@ class CyclicLR(_LRScheduler):
     .. _bckenstler/CLR: https://github.com/bckenstler/CLR
     """
 
-    def __init__(self,
-                 optimizer,
-                 base_lr,
-                 max_lr,
-                 step_size_up=2000,
-                 step_size_down=None,
-                 mode='triangular',
-                 gamma=1.,
-                 scale_fn=None,
-                 scale_mode='cycle',
-                 cycle_momentum=True,
-                 base_momentum=0.8,
-                 max_momentum=0.9,
-                 last_epoch=-1):
+    def __init__(
+        self,
+        optimizer,
+        base_lr,
+        max_lr,
+        step_size_up=2000,
+        step_size_down=None,
+        mode="triangular",
+        gamma=1.0,
+        scale_fn=None,
+        scale_mode="cycle",
+        cycle_momentum=True,
+        base_momentum=0.8,
+        max_momentum=0.9,
+        last_epoch=-1,
+    ):
 
         self.optimizer = optimizer
 
-        base_lrs = self._format_param('base_lr', optimizer, base_lr)
+        base_lrs = self._format_param("base_lr", optimizer, base_lr)
         if last_epoch == -1:
             for lr, group in zip(base_lrs, optimizer.param_groups):
-                group['lr'] = lr
+                group["lr"] = lr
 
-        self.max_lrs = self._format_param('max_lr', optimizer, max_lr)
+        self.max_lrs = self._format_param("max_lr", optimizer, max_lr)
 
         step_size_up = float(step_size_up)
-        step_size_down = float(step_size_down) if step_size_down is not None else step_size_up
+        step_size_down = (
+            float(step_size_down) if step_size_down is not None else step_size_up
+        )
         self.total_size = step_size_up + step_size_down
         self.step_ratio = step_size_up / self.total_size
 
-        if mode not in ['triangular', 'triangular2', 'exp_range'] \
-                and scale_fn is None:
-            raise ValueError('mode is invalid and scale_fn is None')
+        if mode not in ["triangular", "triangular2", "exp_range"] and scale_fn is None:
+            raise ValueError("mode is invalid and scale_fn is None")
 
         self.mode = mode
         self.gamma = gamma
 
         if scale_fn is None:
-            if self.mode == 'triangular':
+            if self.mode == "triangular":
                 self.scale_fn = self._triangular_scale_fn
-                self.scale_mode = 'cycle'
-            elif self.mode == 'triangular2':
+                self.scale_mode = "cycle"
+            elif self.mode == "triangular2":
                 self.scale_fn = self._triangular2_scale_fn
-                self.scale_mode = 'cycle'
-            elif self.mode == 'exp_range':
+                self.scale_mode = "cycle"
+            elif self.mode == "exp_range":
                 self.scale_fn = self._exp_range_scale_fn
-                self.scale_mode = 'iterations'
+                self.scale_mode = "iterations"
         else:
             self.scale_fn = scale_fn
             self.scale_mode = scale_mode
 
         self.cycle_momentum = cycle_momentum
         if cycle_momentum:
-            if 'momentum' not in optimizer.defaults:
-                raise ValueError('optimizer must support momentum with `cycle_momentum` option enabled')
+            if "momentum" not in optimizer.defaults:
+                raise ValueError(
+                    "optimizer must support momentum with `cycle_momentum` option enabled"
+                )
 
-            base_momentums = self._format_param('base_momentum', optimizer, base_momentum)
+            base_momentums = self._format_param(
+                "base_momentum", optimizer, base_momentum
+            )
             if last_epoch == -1:
                 for momentum, group in zip(base_momentums, optimizer.param_groups):
-                    group['momentum'] = momentum
-        self.base_momentums = list(map(lambda group: group['momentum'], optimizer.param_groups))
-        self.max_momentums = self._format_param('max_momentum', optimizer, max_momentum)
+                    group["momentum"] = momentum
+        self.base_momentums = list(
+            map(lambda group: group["momentum"], optimizer.param_groups)
+        )
+        self.max_momentums = self._format_param("max_momentum", optimizer, max_momentum)
 
         super(CyclicLR, self).__init__(optimizer, last_epoch)
 
@@ -589,17 +639,20 @@ class CyclicLR(_LRScheduler):
         """Return correctly formatted lr/momentum for each param group."""
         if isinstance(param, (list, tuple)):
             if len(param) != len(optimizer.param_groups):
-                raise ValueError("expected {} values for {}, got {}".format(
-                    len(optimizer.param_groups), name, len(param)))
+                raise ValueError(
+                    "expected {} values for {}, got {}".format(
+                        len(optimizer.param_groups), name, len(param)
+                    )
+                )
             return param
         else:
             return [param] * len(optimizer.param_groups)
 
     def _triangular_scale_fn(self, x):
-        return 1.
+        return 1.0
 
     def _triangular2_scale_fn(self, x):
-        return 1 / (2. ** (x - 1))
+        return 1 / (2.0 ** (x - 1))
 
     def _exp_range_scale_fn(self, x):
         return self.gamma ** (x)
@@ -612,7 +665,7 @@ class CyclicLR(_LRScheduler):
         updating the optimizer's momentum.
         """
         cycle = math.floor(1 + self.last_epoch / self.total_size)
-        x = 1. + self.last_epoch / self.total_size - cycle
+        x = 1.0 + self.last_epoch / self.total_size - cycle
         if x <= self.step_ratio:
             scale_factor = x / self.step_ratio
         else:
@@ -621,7 +674,7 @@ class CyclicLR(_LRScheduler):
         lrs = []
         for base_lr, max_lr in zip(self.base_lrs, self.max_lrs):
             base_height = (max_lr - base_lr) * scale_factor
-            if self.scale_mode == 'cycle':
+            if self.scale_mode == "cycle":
                 lr = base_lr + base_height * self.scale_fn(cycle)
             else:
                 lr = base_lr + base_height * self.scale_fn(self.last_epoch)
@@ -629,15 +682,19 @@ class CyclicLR(_LRScheduler):
 
         if self.cycle_momentum:
             momentums = []
-            for base_momentum, max_momentum in zip(self.base_momentums, self.max_momentums):
+            for base_momentum, max_momentum in zip(
+                self.base_momentums, self.max_momentums
+            ):
                 base_height = (max_momentum - base_momentum) * scale_factor
-                if self.scale_mode == 'cycle':
+                if self.scale_mode == "cycle":
                     momentum = max_momentum - base_height * self.scale_fn(cycle)
                 else:
-                    momentum = max_momentum - base_height * self.scale_fn(self.last_epoch)
+                    momentum = max_momentum - base_height * self.scale_fn(
+                        self.last_epoch
+                    )
                 momentums.append(momentum)
             for param_group, momentum in zip(self.optimizer.param_groups, momentums):
-                param_group['momentum'] = momentum
+                param_group["momentum"] = momentum
 
         return lrs
 
@@ -682,8 +739,13 @@ class CosineAnnealingWarmRestarts(_LRScheduler):
         self.T_cur = last_epoch
 
     def get_lr(self):
-        return [self.eta_min + (base_lr - self.eta_min) * (1 + math.cos(math.pi * self.T_cur / self.T_i)) / 2
-                for base_lr in self.base_lrs]
+        return [
+            self.eta_min
+            + (base_lr - self.eta_min)
+            * (1 + math.cos(math.pi * self.T_cur / self.T_i))
+            / 2
+            for base_lr in self.base_lrs
+        ]
 
     def step(self, epoch=None):
         """Step could be called after every update, i.e. if one epoch has 10 iterations
@@ -709,12 +771,18 @@ class CosineAnnealingWarmRestarts(_LRScheduler):
                 if self.T_mult == 1:
                     self.T_cur = epoch % self.T_0
                 else:
-                    n = int(math.log((epoch / self.T_0 * (self.T_mult - 1) + 1), self.T_mult))
-                    self.T_cur = epoch - self.T_0 * (self.T_mult ** n - 1) / (self.T_mult - 1)
+                    n = int(
+                        math.log(
+                            (epoch / self.T_0 * (self.T_mult - 1) + 1), self.T_mult
+                        )
+                    )
+                    self.T_cur = epoch - self.T_0 * (self.T_mult ** n - 1) / (
+                        self.T_mult - 1
+                    )
                     self.T_i = self.T_0 * self.T_mult ** (n)
             else:
                 self.T_i = self.T_0
                 self.T_cur = epoch
         self.last_epoch = math.floor(epoch)
         for param_group, lr in zip(self.optimizer.param_groups, self.get_lr()):
-            param_group['lr'] = lr
+            param_group["lr"] = lr

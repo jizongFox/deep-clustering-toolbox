@@ -10,7 +10,9 @@ fix_all_seed(3)
 
 DEFAULT_CONFIG = "./IMSAT.yaml"
 
-merged_config = ConfigManger(DEFAULT_CONFIG_PATH=DEFAULT_CONFIG, verbose=True, integrality_check=True).config
+merged_config = ConfigManger(
+    DEFAULT_CONFIG_PATH=DEFAULT_CONFIG, verbose=True, integrality_check=True
+).config
 
 tf1 = Compose([ToTensor()])
 tf2 = Compose([RandomCrop((28, 28), padding=2), ToTensor()])
@@ -24,13 +26,7 @@ model = Model(
 
 train_loader_A = MNISTClusteringDatasetInterface(
     **merged_config["DataLoader"]
-).ParallelDataLoader(
-    tf1,
-    tf2,
-    tf2,
-    tf2,
-    tf2
-)
+).ParallelDataLoader(tf1, tf2, tf2, tf2, tf2)
 
 val_loader = MNISTClusteringDatasetInterface(
     **merged_config["DataLoader"]

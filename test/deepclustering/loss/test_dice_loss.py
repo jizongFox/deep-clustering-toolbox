@@ -37,7 +37,6 @@ class TestDiceLoss(TestCase):
         end3 = time.time()
         print(f"for method3 costed time:{end3 - end2}")
 
-
     # def test_dice_loss(self):
     #     for i in range(10):
     #         self.predict_logit = torch.randn(10, 3, 256, 256).cuda()

@@ -1,7 +1,7 @@
 from typing import List
 
 from deepclustering.model import Model
-from deepclustering.trainer.Trainer import _Trainer
+from deepclustering.trainer.trainer import _Trainer
 from torch.utils.data import DataLoader
 
 

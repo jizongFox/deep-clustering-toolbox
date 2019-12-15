@@ -13,7 +13,12 @@ from .classification.stl10_helper import (
 )
 from .classification.svhn_helper import (
     SVHNClusteringDatasetInterface,
-    svhn_naive_transform, svhn_strong_transform
+    svhn_naive_transform,
+    svhn_strong_transform,
 )
-from .segmentation import (MedicalImageSegmentationDataset, MedicalImageSegmentationDatasetWithMetaInfo, PatientSampler,
-                           SubMedicalDatasetBasedOnIndex)
+from .segmentation import (
+    MedicalImageSegmentationDataset,
+    MedicalImageSegmentationDatasetWithMetaInfo,
+    PatientSampler,
+    SubMedicalDatasetBasedOnIndex,
+)

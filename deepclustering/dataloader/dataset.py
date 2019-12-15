@@ -184,10 +184,12 @@ class ConcatDataset(Dataset):
 
     def __init__(self, datasets):
         super(ConcatDataset, self).__init__()
-        assert len(datasets) > 0, 'datasets should not be an empty iterable'
+        assert len(datasets) > 0, "datasets should not be an empty iterable"
         self.datasets = list(datasets)
         for d in self.datasets:
-            assert not isinstance(d, IterableDataset), "ConcatDataset does not support IterableDataset"
+            assert not isinstance(
+                d, IterableDataset
+            ), "ConcatDataset does not support IterableDataset"
         self.cumulative_sizes = self.cumsum(self.datasets)
 
     def __len__(self):
@@ -196,7 +198,9 @@ class ConcatDataset(Dataset):
     def __getitem__(self, idx):
         if idx < 0:
             if -idx > len(self):
-                raise ValueError("absolute value of index should not exceed dataset length")
+                raise ValueError(
+                    "absolute value of index should not exceed dataset length"
+                )
             idx = len(self) + idx
         dataset_idx = bisect.bisect_right(self.cumulative_sizes, idx)
         if dataset_idx == 0:
@@ -207,8 +211,11 @@ class ConcatDataset(Dataset):
 
     @property
     def cummulative_sizes(self):
-        warnings.warn("cummulative_sizes attribute is renamed to "
-                      "cumulative_sizes", DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "cummulative_sizes attribute is renamed to " "cumulative_sizes",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.cumulative_sizes
 
 
@@ -244,14 +251,18 @@ class ChainDataset(IterableDataset):
 
     def __iter__(self):
         for d in self.datasets:
-            assert isinstance(d, IterableDataset), "ChainDataset only supports IterableDataset"
+            assert isinstance(
+                d, IterableDataset
+            ), "ChainDataset only supports IterableDataset"
             for x in d:
                 yield x
 
     def __len__(self):
         total = 0
         for d in self.datasets:
-            assert isinstance(d, IterableDataset), "ChainDataset only supports IterableDataset"
+            assert isinstance(
+                d, IterableDataset
+            ), "ChainDataset only supports IterableDataset"
             total += len(d)
         return total
 
@@ -285,7 +296,12 @@ def random_split(dataset, lengths):
         lengths (sequence): lengths of splits to be produced
     """
     if sum(lengths) != len(dataset):
-        raise ValueError("Sum of input lengths does not equal the length of the input dataset!")
+        raise ValueError(
+            "Sum of input lengths does not equal the length of the input dataset!"
+        )
 
     indices = randperm(sum(lengths)).tolist()
-    return [Subset(dataset, indices[offset - length:offset]) for offset, length in zip(_accumulate(lengths), lengths)]
+    return [
+        Subset(dataset, indices[offset - length : offset])
+        for offset, length in zip(_accumulate(lengths), lengths)
+    ]

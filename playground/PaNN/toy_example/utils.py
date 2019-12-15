@@ -6,9 +6,16 @@ from torch.utils.data import Subset
 
 def convbnrelu_bloc(input_dim, output_dim):
     return nn.Sequential(
-        nn.Conv2d(in_channels=input_dim, out_channels=output_dim, kernel_size=3, stride=1, padding=0, bias=False),
+        nn.Conv2d(
+            in_channels=input_dim,
+            out_channels=output_dim,
+            kernel_size=3,
+            stride=1,
+            padding=0,
+            bias=False,
+        ),
         nn.BatchNorm2d(output_dim),
-        nn.ReLU(inplace=True)
+        nn.ReLU(inplace=True),
     )
 
 
@@ -34,12 +41,15 @@ class SimpleNet(nn.Module):
 
 def get_prior_from_dataset(dataset: Subset):
     import pandas as pd
+
     target = dataset.dataset.targets[dataset.indices]
     value_count = pd.Series(target).value_counts()
-    return torch.from_numpy((value_count.sort_index() / value_count.sum()).values).float()
+    return torch.from_numpy(
+        (value_count.sort_index() / value_count.sum()).values
+    ).float()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     input = torch.randn(10, 1, 28, 28)
     net = SimpleNet(1, num_classes=4)
     outoutp = net(input)

@@ -6,8 +6,13 @@ from ..utils.general import simplex, assert_list
 
 
 def _check_reduction_params(reduction):
-    assert reduction in ("mean", "sum", "none"), \
-        "reduction should be in ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``, given {}".format(reduction)
+    assert reduction in (
+        "mean",
+        "sum",
+        "none",
+    ), "reduction should be in ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``, given {}".format(
+        reduction
+    )
 
 
 class Entropy(nn.Module):
@@ -56,7 +61,6 @@ class Entropy_2D(Entropy):
 
 
 class SimplexCrossEntropyLoss(nn.Module):
-
     def __init__(self, reduction="mean", eps=1e-16) -> None:
         super().__init__()
         _check_reduction_params(reduction)
@@ -156,11 +160,17 @@ class JSD_div(nn.Module):
         self._entropy_criterion = Entropy(reduction=reduction, eps=eps)
 
     def forward(self, *input: Tensor) -> Tensor:
-        assert assert_list(lambda x: simplex(x), input), f"input tensor should be a list of simplex."
-        assert assert_list(lambda x: x.shape == input[0].shape, input), "input tensor should have the same dimension"
+        assert assert_list(
+            lambda x: simplex(x), input
+        ), f"input tensor should be a list of simplex."
+        assert assert_list(
+            lambda x: x.shape == input[0].shape, input
+        ), "input tensor should have the same dimension"
         mean_prob = sum(input) / input.__len__()
         f_term = self._entropy_criterion(mean_prob)
-        mean_entropy = sum(list(map(lambda x: self._entropy_criterion(x), input))) / len(input)
+        mean_entropy = sum(
+            list(map(lambda x: self._entropy_criterion(x), input))
+        ) / len(input)
         assert f_term.shape == mean_entropy.shape
         return f_term - mean_entropy
 

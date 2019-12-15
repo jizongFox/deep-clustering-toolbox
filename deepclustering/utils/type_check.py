@@ -82,7 +82,11 @@ def is_single_float(val):
         True if the variable is a float. Otherwise False.
 
     """
-    return isinstance(val, numbers.Real) and not is_single_integer(val) and not isinstance(val, bool)
+    return (
+        isinstance(val, numbers.Real)
+        and not is_single_integer(val)
+        and not isinstance(val, bool)
+    )
 
 
 def is_single_number(val):
@@ -211,7 +215,7 @@ def is_callable(val):
     """
     # python 3.x with x <= 2 does not support callable(), apparently
     if sys.version_info[0] == 3 and sys.version_info[1] <= 2:
-        return hasattr(val, '__call__')
+        return hasattr(val, "__call__")
     else:
         return callable(val)
 

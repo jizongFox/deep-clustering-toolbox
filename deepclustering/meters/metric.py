@@ -91,7 +91,9 @@ class MeterInterface:
         for k, v in meter_config.items():
             assert isinstance(k, str), k
             assert isinstance(v, Metric), v  # can also check the subclasses.
-        self.ind_meter_dict = (edict(meter_config) if not isinstance(meter_config, edict) else meter_config)
+        self.ind_meter_dict = (
+            edict(meter_config) if not isinstance(meter_config, edict) else meter_config
+        )
         for _, v in self.ind_meter_dict.items():
             v.reset()
         for k, v in self.ind_meter_dict.items():
@@ -136,7 +138,9 @@ class MeterInterface:
         """
         for k in self.ind_meter_dict.keys():
             self.aggregated_meter_dict[k].add(
-                self.ind_meter_dict[k].summary() if not detailed_summary else self.ind_meter_dict[k].detailed_summary()
+                self.ind_meter_dict[k].summary()
+                if not detailed_summary
+                else self.ind_meter_dict[k].detailed_summary()
             )
             self.ind_meter_dict[k].reset()
 

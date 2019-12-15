@@ -14,13 +14,13 @@ from ....utils import _warnings
 
 class IMSATNet(nn.Module):
     def __init__(
-            self,
-            in_channel: int = 784,
-            output_k_A: int = 50,
-            output_k_B: int = 10,
-            num_sub_heads: int = 5,
-            *args,
-            **kwargs
+        self,
+        in_channel: int = 784,
+        output_k_A: int = 50,
+        output_k_B: int = 10,
+        num_sub_heads: int = 5,
+        *args,
+        **kwargs
     ):
         _warnings(args, kwargs)
         super(IMSATNet, self).__init__()
@@ -37,7 +37,7 @@ class IMSATNet(nn.Module):
         self.head_A = IMSATHeader(output_k=output_k_A, num_sub_heads=num_sub_heads)
         self.head_B = IMSATHeader(output_k=output_k_B, num_sub_heads=num_sub_heads)
 
-    def forward(self, x, head='B', *args, **kwargs) -> List[torch.Tensor]:
+    def forward(self, x, head="B", *args, **kwargs) -> List[torch.Tensor]:
         """
         output gives the logit value
         :param x:
@@ -62,20 +62,17 @@ class IMSATNet(nn.Module):
 
 
 class IMSATHeader(nn.Module):
-
-    def __init__(self, output_k=10,
-                 num_sub_heads=5, ):
+    def __init__(self, output_k=10, num_sub_heads=5):
         super().__init__()
         self.output_k = output_k
         self.num_sub_heads = num_sub_heads
 
-        self.heads = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(1200, self.output_k),
-                nn.Softmax(dim=1)
-            )
-            for _ in range(self.num_sub_heads)
-        ])
+        self.heads = nn.ModuleList(
+            [
+                nn.Sequential(nn.Linear(1200, self.output_k), nn.Softmax(dim=1))
+                for _ in range(self.num_sub_heads)
+            ]
+        )
 
     def forward(self, input):
         results = []
@@ -84,8 +81,4 @@ class IMSATHeader(nn.Module):
         return results
 
 
-IMSATNet_Param = {
-    'output_k_A': 50,
-    'output_k_B': 10,
-    'num_sub_heads': 5
-}
+IMSATNet_Param = {"output_k_A": 50, "output_k_B": 10, "num_sub_heads": 5}

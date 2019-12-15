@@ -27,13 +27,13 @@ class Cifar10ClusteringDatasetInterface(ClusterDatasetInterface):
     ALLOWED_SPLIT = ["train", "val"]
 
     def __init__(
-            self,
-            data_root=DATA_PATH,
-            split_partitions: List[str] = ["train", "val"],
-            batch_size: int = 1,
-            shuffle: bool = False,
-            num_workers: int = 1,
-            pin_memory: bool = True,
+        self,
+        data_root=DATA_PATH,
+        split_partitions: List[str] = ["train", "val"],
+        batch_size: int = 1,
+        shuffle: bool = False,
+        num_workers: int = 1,
+        pin_memory: bool = True,
     ) -> None:
         super().__init__(
             CIFAR10,
@@ -46,14 +46,14 @@ class Cifar10ClusteringDatasetInterface(ClusterDatasetInterface):
         )
 
     def _creat_concatDataset(
-            self,
-            image_transform: Callable,
-            target_transform: Callable,
-            dataset_dict: dict = {},
+        self,
+        image_transform: Callable,
+        target_transform: Callable,
+        dataset_dict: dict = {},
     ):
         for split in self.split_partitions:
             assert (
-                    split in self.ALLOWED_SPLIT
+                split in self.ALLOWED_SPLIT
             ), f"Allowed split in cifar-10:{self.ALLOWED_SPLIT}, given {split}."
 
         _datasets = []
@@ -72,17 +72,40 @@ class Cifar10ClusteringDatasetInterface(ClusterDatasetInterface):
 
 
 class Cifar10SemiSupervisedDatasetInterface(SemiDataSetInterface):
-
-    def __init__(self, data_root: str = DATA_PATH, labeled_sample_num: int = 4000, seed: int = 0,
-                 batch_size: int = 10, labeled_batch_size: int = None, unlabeled_batch_size: int = None,
-                 val_batch_size: int = None, shuffle: bool = False, num_workers: int = 1, pin_memory: bool = True,
-                 drop_last=False, verbose: bool = True) -> None:
-        super().__init__(CIFAR10, data_root, labeled_sample_num, seed, batch_size, labeled_batch_size,
-                         unlabeled_batch_size, val_batch_size, shuffle, num_workers, pin_memory, drop_last, verbose)
+    def __init__(
+        self,
+        data_root: str = DATA_PATH,
+        labeled_sample_num: int = 4000,
+        seed: int = 0,
+        batch_size: int = 10,
+        labeled_batch_size: int = None,
+        unlabeled_batch_size: int = None,
+        val_batch_size: int = None,
+        shuffle: bool = False,
+        num_workers: int = 1,
+        pin_memory: bool = True,
+        drop_last=False,
+        verbose: bool = True,
+    ) -> None:
+        super().__init__(
+            CIFAR10,
+            data_root,
+            labeled_sample_num,
+            seed,
+            batch_size,
+            labeled_batch_size,
+            unlabeled_batch_size,
+            val_batch_size,
+            shuffle,
+            num_workers,
+            pin_memory,
+            drop_last,
+            verbose,
+        )
 
     def _init_train_val_sets(self) -> Tuple[Dataset, Dataset]:
-        train_set = self.DataClass(self.data_root, train=True, download=True, )
-        val_set = self.DataClass(self.data_root, train=False, download=True, )
+        train_set = self.DataClass(self.data_root, train=True, download=True)
+        val_set = self.DataClass(self.data_root, train=False, download=True)
         return train_set, val_set
 
 

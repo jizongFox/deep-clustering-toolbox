@@ -49,7 +49,7 @@ class TensorCutout(object):
     """
 
     def __init__(
-            self, min_box: int, max_box: int, pad_value: Union[int, float] = 0
+        self, min_box: int, max_box: int, pad_value: Union[int, float] = 0
     ) -> None:
         r"""
         :param min_box: minimal box size
@@ -79,7 +79,7 @@ class TensorCutout(object):
             x_c + half_box_sz,
             y_c + half_box_sz,
         )
-        r_img_tensor[:, :, box[1]: box[3], box[0]: box[2]] = 0
+        r_img_tensor[:, :, box[1] : box[3], box[0] : box[2]] = 0
         return r_img_tensor
 
 
@@ -120,14 +120,14 @@ class RandomCrop(object):
     """
 
     def __init__(
-            self,
-            size: Union[int, Tuple[int, int], List[int]],
-            padding: Union[
-                int, Tuple[int, int], Tuple[int, int, int, int], List[int]
-            ] = None,
-            pad_if_needed: bool = False,
-            fill: Union[int, float] = 0,
-            padding_mode: str = "constant",
+        self,
+        size: Union[int, Tuple[int, int], List[int]],
+        padding: Union[
+            int, Tuple[int, int], Tuple[int, int, int, int], List[int]
+        ] = None,
+        pad_if_needed: bool = False,
+        fill: Union[int, float] = 0,
+        padding_mode: str = "constant",
     ):
         if isinstance(size, numbers.Number):
             self.size: Tuple[int, int] = (int(size), int(size))
@@ -190,9 +190,15 @@ class RandomCrop(object):
         if self.pad_if_needed and r_img.shape[2] < self.size[0]:
             r_img = np.pad(
                 r_img,
-                pad_width=((0, 0), (0, 0),
-                           (int((self.size[0] - r_img.shape[2]) / 2) + 1, int((self.size[0] - r_img.shape[2]) / 2) + 1),
-                           (0, 0)),
+                pad_width=(
+                    (0, 0),
+                    (0, 0),
+                    (
+                        int((self.size[0] - r_img.shape[2]) / 2) + 1,
+                        int((self.size[0] - r_img.shape[2]) / 2) + 1,
+                    ),
+                    (0, 0),
+                ),
                 constant_values=self.fill,
                 mode=self.padding_mode,
             )
@@ -216,7 +222,7 @@ class RandomCrop(object):
         # todo: set padding as default when the size is larger than the current size.
         i, j, h, w = self.get_params(r_img, self.size)
 
-        return r_img[:, :, int(j): int(j + w), int(i): int(i + h)]
+        return r_img[:, :, int(j) : int(j + w), int(i) : int(i + h)]
 
     def __repr__(self) -> str:
         return self.__class__.__name__ + "(size={0}, padding={1})".format(
@@ -304,12 +310,12 @@ class CenterCrop(object):
         assert isinstance(img, _Tensor)
         b, c, h, w = img.shape
         assert (
-                h >= self.size[0] and w >= self.size[1]
+            h >= self.size[0] and w >= self.size[1]
         ), f"Image size {h} and {w}, given {self.size}."
         r_img = img.copy() if isinstance(img, np.ndarray) else img.clone()
         i, j, th, tw = self.get_parameter(r_img, self.size)
 
-        return r_img[:, :, i: i + th, j: j + tw]
+        return r_img[:, :, i : i + th, j : j + tw]
 
     def __repr__(self) -> str:
         return self.__class__.__name__ + "(size={0})".format(self.size)
