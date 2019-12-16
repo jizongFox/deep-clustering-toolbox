@@ -163,7 +163,7 @@ class multi_slice_viewer(PLTViewer):
         ax.set_title(f"plane = {ax.index}")
 
 
-def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour=False) -> None:
+def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour=False, block=True) -> None:
     try:
         import matplotlib
         matplotlib.use("tkagg", force=True)
@@ -242,4 +242,4 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour
 
     fig.canvas.mpl_connect("key_press_event", process_key)
     fig.canvas.mpl_connect("scroll_event", process_mouse_wheel)
-    plt.show()
+    plt.show(block=block)

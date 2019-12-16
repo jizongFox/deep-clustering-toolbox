@@ -101,11 +101,11 @@ class KL_div(nn.Module):
 
     def forward(self, prob: Tensor, target: Tensor, **kwargs) -> Tensor:
         if not kwargs.get("disable_assert"):
-            assert not target.requires_grad
-            assert prob.requires_grad
             assert prob.shape == target.shape
             assert simplex(prob)
             assert simplex(target)
+            assert not target.requires_grad
+            assert prob.requires_grad
         b, c, *_ = target.shape
         kl = (-target * torch.log((prob + self._eps) / (target + self._eps))).sum(1)
         if self._reduction == "mean":
