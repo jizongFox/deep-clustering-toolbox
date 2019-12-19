@@ -374,6 +374,7 @@ class SegNet(nn.Module):
 
 
 class PSPDec(nn.Module):
+    # fixme: moment should be very small as the default 0.1
     def __init__(self, in_features, out_features, downsize, upsize=60):
         super(PSPDec, self).__init__()
 
