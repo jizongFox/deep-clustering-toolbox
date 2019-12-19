@@ -153,6 +153,17 @@ class WaitThreadsEnd:
             if t.name == self.thread_name:
                 t.join()
 
+    def __call__(self, func):
+        @wraps(func)
+        def decorate_func(*args, **kwargs):
+            with self:
+                return func(*args, **kwargs)
+
+        return decorate_func
+
+
+wait_thread_ends = WaitThreadsEnd
+
 
 # in order to call a new process to play.
 def processed(f):
