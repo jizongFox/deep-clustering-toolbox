@@ -189,11 +189,11 @@ class UNetDec_bn(nn.Module):  # 从图片到representation
 
 
 class UNet(nn.Module):
-    def __init__(self, in_channels=1, num_classes=2):
+    def __init__(self, input_dim=1, num_classes=2):
         super(UNet, self).__init__()
         self.num_classes = num_classes
 
-        self.dec1 = UNetDec(in_channels, 64)
+        self.dec1 = UNetDec(input_dim, 64)
         self.dec2 = UNetDec(64, 128)
         self.dec3 = UNetDec(128, 256)
         self.dec4 = UNetDec(256, 512, dropout=True)
@@ -243,11 +243,11 @@ Unet_Param = {"in_channels": 1, "num_classes": 2}
 
 
 class UNet_bn(nn.Module):
-    def __init__(self, in_channels=1, num_classes=2):
+    def __init__(self, input_dim=1, num_classes=2):
         super(UNet_bn, self).__init__()
         self.num_classes = num_classes
 
-        self.dec1 = UNetDec_bn(in_channels, 64)
+        self.dec1 = UNetDec_bn(input_dim, 64)
         self.dec2 = UNetDec_bn(64, 128)
         self.dec3 = UNetDec_bn(128, 256)
         self.dec4 = UNetDec_bn(256, 512, dropout=True)

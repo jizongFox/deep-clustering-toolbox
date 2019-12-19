@@ -1,3 +1,4 @@
+import atexit
 import os
 from abc import ABC, abstractmethod
 from copy import deepcopy as dcopy
@@ -72,6 +73,7 @@ class _Trainer(ABC):
             save_name="plot.png",
             csv_name=self.wholemeter_filename,
         )
+        atexit.register(self.writer.close)
 
     @abstractmethod
     def __init_meters__(self) -> List[Union[str, List[str]]]:
