@@ -233,7 +233,7 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, input_dim, num_classes):
         super(Decoder, self).__init__()
         layers = []
         # Section 4
@@ -242,9 +242,9 @@ class Decoder(nn.Module):
         layers.append(BottleNeck(64, 64, use_relu=True))
 
         # Section 5
-        layers.append(BottleNeck(64, 14, upsampling=True, use_relu=True))
-        layers.append(BottleNeck(14, 14, use_relu=True))
-        layers.append(nn.ConvTranspose2d(14, num_classes, 2, stride=2))
+        layers.append(BottleNeck(64, 13 + input_dim, upsampling=True, use_relu=True))
+        layers.append(BottleNeck(13 + input_dim, 13 + input_dim, use_relu=True))
+        layers.append(nn.ConvTranspose2d(13 + input_dim, num_classes, 2, stride=2))
 
         self.layers = nn.ModuleList([layer for layer in layers])
 
@@ -265,7 +265,7 @@ class Enet(nn.Module):
         self.input_dim = input_dim
         self.num_classes = num_classes
         self.encoder = Encoder(input_dim, num_classes, train=False)
-        self.decoder = Decoder(num_classes)
+        self.decoder = Decoder(input_dim, num_classes)
 
     def forward(self, input):
         output, pooling_stack = self.encoder(input)
@@ -280,3 +280,9 @@ class Enet(nn.Module):
 
 
 Enet_Param = {"num_classes": 4}
+
+if __name__ == '__main__':
+    image = torch.randn(1, 3, 512, 512)
+    model = Enet(3, 2)
+    pred = model(image)
+    print(pred.shape)
