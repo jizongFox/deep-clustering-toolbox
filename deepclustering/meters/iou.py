@@ -25,6 +25,7 @@ class IoU(Metric):
 
     def __init__(self, num_classes, normalized=False, ignore_index=255):
         super().__init__()
+        self.num_classes = num_classes
         self.conf_metric = ConfusionMatrix(
             num_classes, ignore_index=ignore_index, normalized=normalized
         )
@@ -59,10 +60,10 @@ class IoU(Metric):
             0
         ), "number of targets and predicted outputs do not match"
         assert (
-            predicted.dim() == 3 or predicted.dim() == 4
+                predicted.dim() == 3 or predicted.dim() == 4
         ), "predictions must be of dimension (N, H, W) or (N, K, H, W)"
         assert (
-            target.dim() == 3 or target.dim() == 4
+                target.dim() == 3 or target.dim() == 4
         ), "targets must be of dimension (N, H, W) or (N, K, H, W)"
 
         # If the tensor is in categorical format convert it to integer format
@@ -71,7 +72,7 @@ class IoU(Metric):
         # if target.dim() == 4:
         #     _, target = target.max(1)
 
-        self.conf_metric.add(predicted.view(-1), target.view(-1))
+        self.conf_metric.add(predicted.view(-1), target.long().view(-1))
 
     def value(self):
         """Computes the IoU and mean IoU.
@@ -101,7 +102,7 @@ class IoU(Metric):
         acc = np.diag(hist).sum() / hist.sum()
         acc_cls = np.diag(hist) / hist.sum(axis=1)
         acc_cls = np.nanmean(acc_cls)
-        iu = np.diag(hist) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist))
+        iu = (np.diag(hist) + 1e-32) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist) + 1e-32)
         valid = hist.sum(axis=1) > 0  # added # 横着加
         mean_iu = np.nanmean(iu[valid])  ## gt 出现过的mean_iu
         freq = hist.sum(axis=1) / hist.sum()
@@ -116,3 +117,6 @@ class IoU(Metric):
             "Mean_IoU": np.nanmean(iu),
             "Class_IoU": torch.from_numpy(cls_iu).float(),
         }
+
+    def summary(self) -> dict:
+        return {f"{k}": v for k, v in zip(range(self.num_classes), self.value()["Class_IoU"])}
