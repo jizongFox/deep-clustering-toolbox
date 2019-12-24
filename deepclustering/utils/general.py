@@ -145,7 +145,7 @@ def uniq(a: Tensor) -> Set:
     :param a: input tensor
     :return: Set(a_npized)
     """
-    return set(torch.unique(a.cpu()).numpy())
+    return set([x.item() for x in a.unique()])
 
 
 def sset(a: Tensor, sub: Iterable) -> bool:

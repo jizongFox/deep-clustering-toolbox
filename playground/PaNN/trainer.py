@@ -11,7 +11,7 @@ from deepclustering.loss import KL_div
 from deepclustering.meters import AverageValueMeter, SliceDiceMeter, MeterInterface, BatchDiceMeter
 from deepclustering.model import Model, ZeroGradientBackwardStep
 from deepclustering.trainer import _Trainer
-from deepclustering.utils import class2one_hot, tqdm_, flatten_dict, nice_dict
+from deepclustering.utils import class2one_hot, tqdm_, flatten_dict, nice_dict, one_hot
 
 
 class SemiSegTrainer(_Trainer):
@@ -125,3 +125,12 @@ class SemiSegTrainer(_Trainer):
                 "": self.METERINTERFACE["valdice"].summary(),
                 "b": self.METERINTERFACE["valbdice"].summary()
             }, sep="")
+
+
+def dice_loss(pred, target):
+    assert pred.shape == target.shape
+    assert pred.max() <= 1 and pred.min() >= 0
+    assert one_hot(target)
+    numerator = 2 * torch.sum(pred * target)
+    denominator = torch.sum(pred + target)
+    return 1 - (numerator + 1e-10) / (denominator + 1e-10)

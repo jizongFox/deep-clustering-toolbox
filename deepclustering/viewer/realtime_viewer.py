@@ -163,7 +163,7 @@ class multi_slice_viewer(PLTViewer):
         ax.set_title(f"plane = {ax.index}")
 
 
-def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour=False, block=True) -> None:
+def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour=False, block=False) -> None:
     try:
         import matplotlib
         matplotlib.use("tkagg", force=True)
@@ -219,13 +219,13 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour
                 ax.con = ax.imshow(ax.gt_volume[ax.index], alpha=0.2, cmap="rainbow")
         ax.set_title(f"plane = {ax.index}")
 
-    img_volume = img_volume.squeeze()
+    # img_volume = img_volume.squeeze()
     gt_volumes = list(gt_volumes)
     if isinstance(img_volume, torch.Tensor):
         img_volume = img_volume.cpu()
     for num, gt_volumn in enumerate(gt_volumes):
         if isinstance(gt_volumn, torch.Tensor):
-            gt_volumes[num] = gt_volumn.squeeze().cpu()
+            gt_volumes[num] = gt_volumn.cpu()
 
     assert len(img_volume.shape) in (3, 4), f"Only accept 3 or 4 dimensional data, given {len(img_volume.shape)}"
 

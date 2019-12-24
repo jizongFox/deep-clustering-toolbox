@@ -1,5 +1,5 @@
 Arch:
-  name: unet_bn
+  name: enet
   num_classes: 4
 Optim:
   name: RAdam
