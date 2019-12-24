@@ -102,7 +102,7 @@ class IoU(Metric):
         acc = np.diag(hist).sum() / hist.sum()
         acc_cls = np.diag(hist) / hist.sum(axis=1)
         acc_cls = np.nanmean(acc_cls)
-        iu = (np.diag(hist) + 1e-32) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist) + 1e-32)
+        iu = np.diag(hist) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist))
         valid = hist.sum(axis=1) > 0  # added # 横着加
         mean_iu = np.nanmean(iu[valid])  ## gt 出现过的mean_iu
         freq = hist.sum(axis=1) / hist.sum()
