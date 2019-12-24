@@ -1,3 +1,4 @@
+import subprocess
 from enum import Enum
 from pathlib import Path
 
@@ -7,6 +8,8 @@ Path(DATA_PATH).mkdir(parents=True, exist_ok=True)
 CC_wrapper_path = str(Path(PROJECT_PATH) / "deepclustering/utils/CC_wrapper.sh")
 LC_wrapper_path = str(Path(PROJECT_PATH) / "deepclustering/utils/LOCAL_wrapper.sh")
 JA_wrapper_path = str(Path(PROJECT_PATH) / "deepclustering/utils/JOBARRAY_wrapper.sh")
+
+__git_hash__ = subprocess.check_output([f"cd {PROJECT_PATH}; git rev-parse HEAD", ], shell=True).strip().decode()
 
 
 class ModelMode(Enum):
