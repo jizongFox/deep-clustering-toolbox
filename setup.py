@@ -34,7 +34,6 @@ setup(
         "scikit-image",
         "pandas",
         "easydict",
-        "pathlib2",
         "matplotlib==3.0.3",
         "typing_inspect",
         "tqdm==4.32.2",

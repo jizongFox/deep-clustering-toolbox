@@ -37,6 +37,7 @@ _register_arch("unet", UNet)
 _register_arch("unet_bn", UNet_bn)
 _register_arch("cnet", CorstemNet)
 _register_arch("preresnet", PreResNet)
+_register_arch("epsnetv2", ESPNetv2)
 # Adding default keys here to enable automatic testing
 _register_param("clusternet5g", ClusterNet5g_Param)
 _register_param("clusternet5gtwohead", ClusterNet5gTwoHead_Param)
