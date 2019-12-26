@@ -1,4 +1,5 @@
 __all__ = ["Metric", "AggragatedMeter", "MeterInterface"]
+
 import functools
 from abc import abstractmethod
 from typing import *
@@ -158,5 +159,15 @@ class MeterInterface:
             try:
                 v.record = checkpoint[k]
             except KeyError:
-                continue
+                print(f"keyword {k} wrong, skipping")
         print(self.summary().tail())
+
+    def reset_ind_meters(self):
+        for _, v in self.ind_meter_dict.items():
+            v.reset()
+
+    def reset_all(self):
+        self.reset_ind_meters()
+        self.aggregated_meter_dict: Dict[str, AggragatedMeter] = edict(
+            {k: AggragatedMeter() for k in self.ind_meter_dict.keys()}
+        )
