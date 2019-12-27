@@ -163,7 +163,7 @@ class multi_slice_viewer(PLTViewer):
         ax.set_title(f"plane = {ax.index}")
 
 
-def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour=False, block=False) -> None:
+def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour=False, block=False, alpha=0.2) -> None:
     try:
         import matplotlib
         matplotlib.use("tkagg", force=True)
@@ -191,8 +191,11 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour
     def previous_slice(ax):
         img_volume = ax.img_volume
         if ax.gt_volume is not None:
-            for con in ax.con.collections:
-                con.remove()
+            if not no_contour:
+                for con in ax.con.collections:
+                    con.remove()
+            else:
+                ax.con.remove()
         ax.index = (ax.index - 1) if (ax.index - 1) >= 0 else 0  # wrap around using %
         ax.images[0].set_array(img_volume[ax.index])
         if ax.gt_volume is not None:
@@ -200,14 +203,17 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour
                 if not no_contour:
                     ax.con = ax.contour(ax.gt_volume[ax.index])
                 else:
-                    ax.con = ax.imshow(ax.gt_volume[ax.index], alpha=0.2, cmap="rainbow")
+                    ax.con = ax.imshow(ax.gt_volume[ax.index], alpha=alpha, cmap="rainbow")
         ax.set_title(f"plane = {ax.index}")
 
     def next_slice(ax):
         img_volume = ax.img_volume
         if ax.gt_volume is not None:
-            for con in ax.con.collections:
-                con.remove()
+            if not no_contour:
+                for con in ax.con.collections:
+                    con.remove()
+            else:
+                ax.con.remove()
         ax.index = ((ax.index + 1)
                     if (ax.index + 1) < img_volume.shape[0]
                     else img_volume.shape[0] - 1)
@@ -216,7 +222,7 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour
             if not no_contour:
                 ax.con = ax.contour(ax.gt_volume[ax.index])
             else:
-                ax.con = ax.imshow(ax.gt_volume[ax.index], alpha=0.2, cmap="rainbow")
+                ax.con = ax.imshow(ax.gt_volume[ax.index], alpha=alpha, cmap="rainbow")
         ax.set_title(f"plane = {ax.index}")
 
     # img_volume = img_volume.squeeze()
@@ -246,7 +252,7 @@ def multi_slice_viewer_debug(img_volume: Tensor, *gt_volumes: Tensor, no_contour
             if not no_contour:
                 ax.con = ax.contour(ax.gt_volume[ax.index])
             else:
-                ax.con = ax.imshow(ax.gt_volume[ax.index], alpha=0.2, cmap="rainbow")
+                ax.con = ax.imshow(ax.gt_volume[ax.index], alpha=alpha, cmap="rainbow")
         ax.set_title(f"plane = {ax.index}")
         ax.axis("off")
 
