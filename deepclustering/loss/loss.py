@@ -102,8 +102,8 @@ class KL_div(nn.Module):
     def forward(self, prob: Tensor, target: Tensor, **kwargs) -> Tensor:
         if not kwargs.get("disable_assert"):
             assert prob.shape == target.shape
-            assert simplex(prob)
-            assert simplex(target)
+            assert simplex(prob), prob
+            assert simplex(target), target
             assert not target.requires_grad
             assert prob.requires_grad
         b, c, *_ = target.shape

@@ -1,4 +1,3 @@
-__all__ = ["PatientSampler", "SubMedicalDatasetBasedOnIndex"]
 import random
 import re
 from itertools import repeat
@@ -11,13 +10,17 @@ from torch.utils.data.sampler import Sampler
 
 from .medicalSegmentationDataset import MedicalImageSegmentationDataset
 
+__all__ = ["PatientSampler", "SubMedicalDatasetBasedOnIndex"]
+
 
 class PatientSampler(Sampler):
-    def __init__(self, dataset: MedicalImageSegmentationDataset, grp_regex: str, shuffle=False, verbose=True) -> None:
+    def __init__(self, dataset: MedicalImageSegmentationDataset, grp_regex: str, shuffle=False, verbose=True,
+                 infinite_sampler: bool = False) -> None:
         filenames: List[str] = dataset.filenames[dataset.subfolders[0]]
         self.grp_regex = grp_regex
         self.shuffle: bool = shuffle
         self.shuffle_fn: Callable = (lambda x: random.sample(x, len(x))) if self.shuffle else id_
+        self._infinite_sampler = infinite_sampler
         if verbose:
             print(f"Grouping using {self.grp_regex} regex")
         grouping_regex: Pattern = re.compile(self.grp_regex)
@@ -26,7 +29,7 @@ class PatientSampler(Sampler):
         matches: List[Match] = map_(grouping_regex.match, stems)
         patients: List[str] = [match.group(0) for match in matches]
 
-        unique_patients: List[str] = list(set(patients))
+        unique_patients: List[str] = sorted(list(set(patients)))
         assert len(unique_patients) < len(filenames)
         if verbose:
             print(f"Found {len(unique_patients)} unique patients out of {len(filenames)} images")
@@ -43,9 +46,19 @@ class PatientSampler(Sampler):
         return len(self.idx_map.keys())
 
     def __iter__(self):
+        if not self._infinite_sampler:
+            return self._one_iter()
+        return self._infinite_iter()
+
+    def _one_iter(self):
         values = list(self.idx_map.values())
         shuffled = self.shuffle_fn(values)
         return iter(shuffled)
+
+    def _infinite_iter(self):
+
+        while True:
+            yield from self._one_iter()
 
 
 def SubMedicalDatasetBasedOnIndex(
