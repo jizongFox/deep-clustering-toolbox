@@ -6,14 +6,8 @@ from pathlib import Path
 from pprint import pprint
 from typing import List, Union
 
-import matplotlib
-import numpy as np
 import pandas as pd
-
-matplotlib.use("agg")
-import matplotlib.pyplot as plt
 from deepclustering import PROJECT_PATH
-from deepclustering.decorator.decorator import threaded
 
 
 class DrawCSV(object):
@@ -60,6 +54,10 @@ class DrawCSV(object):
             )
 
     def draw(self, dataframe, together=False):
+        import matplotlib
+        import numpy as np
+        matplotlib.use("agg")
+        import matplotlib.pyplot as plt
         if together:
             fig = plt.figure(figsize=self.figsize)
             for k in self.columns_to_draw:
@@ -105,8 +103,13 @@ class DrawCSV2(object):
         self.figsize = tuple(figsize)
         self.csv_name = csv_name
 
-    @threaded(daemon=False)
+    # @threaded(daemon=False)
     def draw(self, dataframe):
+        import matplotlib
+        import numpy as np
+        matplotlib.use("agg")
+        import matplotlib.pyplot as plt
+
         fig, axs = plt.subplots(
             nrows=self.columns_to_draw.__len__(), sharex=True, figsize=self.figsize
         )
@@ -120,7 +123,6 @@ class DrawCSV2(object):
 
         plt.savefig(str(self.save_dir) + f"/{self.save_name}")
         plt.close(fig)
-
 
     def _draw_single(self, ax, data_frame: pd.DataFrame, column_name: str):
         ax.plot(pd.Series(data_frame[column_name]).fillna(limit=5, method='ffill'), label=column_name)
