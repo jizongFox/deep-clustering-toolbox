@@ -1,5 +1,6 @@
 import argparse
 import re
+from pprint import pprint
 from typing import *
 
 import matplotlib.pyplot as plt
@@ -7,10 +8,9 @@ import numpy as np
 import torch
 import yaml
 from PIL import Image
+from deepclustering.utils import Vectorize, identical, map_
 from pathlib2 import Path
 from skimage.transform import resize as resize_func
-
-from deepclustering.utils import Vectorize, identical, map_
 
 """
 0: Nearest-neighbor
@@ -25,25 +25,52 @@ from deepclustering.utils import Vectorize, identical, map_
 Tensor = Union[np.ndarray, torch.Tensor]
 
 
+def cmap(cmap_name='viridis', zero_transparent=False):
+    from matplotlib.colors import ListedColormap
+    cmap = plt.cm.get_cmap(cmap_name)
+    my_cmap = cmap(np.arange(cmap.N))
+    if zero_transparent:
+        my_cmap[0, -1] = 0
+    my_cmap = ListedColormap(my_cmap)
+    return my_cmap
+
+
 def get_parser() -> argparse.Namespace:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         prog='3D volumne viewer for 2D-sliced images.',
         description='Group and view 2D images with different masks.',
     )
-    parser.add_argument('--img_source', type=str, required=True, help='2D image source folder as the background.')
-    parser.add_argument('--gt_folders', type=str, nargs='*', default=[], help='')
-    parser.add_argument('--n_subject', type=int, default=2,
-                        help='How many subjects you want to display in one figure (default=2).')
-    parser.add_argument('--shuffle', action='store_true', help='Shuffle the patients.')
-    parser.add_argument('--crop', type=int, default=0, help="Crop image size (default=0).")
-    parser.add_argument('--group_pattern', type=str, default='patient\d+_\d+', help="group_pattern")
-    parser.add_argument('--img_extension', type=str, default='png', help="Image extension to select, default='png'")
-    parser.add_argument('--mapping', type=yaml.load, nargs="*", default=[], metavar="[{0: 1, 1: 2}, {0: 1, 1: 2} ]")
-    parser.add_argument('--resize', type=int, nargs=2, default=None, metavar=("M", "N"),
-                        help="useful option to deal with the cases where imgs, or gts have different resolution.")
-    parser.add_argument('--no_contour', default=False, action="store_true", help="show no_contour image")
-
-    return parser.parse_args()
+    img_setting_group = parser.add_argument_group("image setting group", "set image folders to the program")
+    img_setting_group.add_argument('--img_source', type=str, required=True,
+                                   help='2D image source folder as the background.')
+    img_setting_group.add_argument('--gt_folders', type=str, nargs='*', default=[], help='')
+    batch_generation_group = parser.add_argument_group("batch generation group", "group image to batches")
+    batch_generation_group.add_argument('--n_subject', type=int, default=2,
+                                        help='How many subjects you want to display in one figure (default=2).')
+    batch_generation_group.add_argument('--shuffle', action='store_true', help='Shuffle the patients.')
+    batch_generation_group.add_argument('--crop', type=int, default=0, help="Crop image size (default=0).")
+    batch_generation_group.add_argument('--group_pattern', type=str, default='patient\d+_\d+', help="group_pattern")
+    batch_generation_group.add_argument('--img_extension', type=str, default='png',
+                                        help="Image extension to select, default='png'")
+    batch_generation_group.add_argument('--mapping', type=yaml.load, nargs="*", default=[], metavar="{0: 1, 1: 2}",
+                                        help="mapping setting, like:[{0: 1, 1: 2}, {0: 1, 1: 2}] ")
+    batch_generation_group.add_argument('--resize', type=int, nargs=2, default=None, metavar=("M", "N"),
+                                        help="useful option to deal with the cases where imgs, or gts have different resolution.")
+    batch_plot_group = parser.add_argument_group("batch plot group", "batch plot parameters")
+    batch_plot_group.add_argument('--cmap_name', default="viridis", type=str, help="cmap, default: viridis.")
+    batch_plot_group.add_argument('--alpha', default=1, type=float, help="transparent factor for ground truth display")
+    batch_plot_group.add_argument('--no_contour', default=False, action="store_true", help="show no_contour image")
+    batch_plot_group.add_argument("--zeroclass_transparent", default=False, action="store_true",
+                                  help="set the first class as transparent when no_contour=True")
+    args = parser.parse_args()
+    args.plot_parameters = {
+        "no_contour": args.no_contour,
+        "alpha": args.alpha,
+        "cmap": {
+            "cmap_name": args.cmap_name,
+            "zero_transparent": args.zeroclass_transparent}
+    }
+    return args
 
 
 class Volume(object):
@@ -233,13 +260,14 @@ class Volume(object):
 
 class Multi_Slice_Viewer(object):
 
-    def __init__(self, volume: Volume, n_subject=1, shuffle_subject=False, contour=True) -> None:
+    def __init__(self, volume: Volume, n_subject=1, shuffle_subject=False, contour=True, **kwargs) -> None:
         super().__init__()
         self.volume = volume
         self.n_subject = n_subject
         self.show_contour = contour
         self.volume.identifies = np.random.permutation(
             self.volume.identifies) if shuffle_subject else self.volume.identifies
+        self.kwargs = kwargs
 
     @staticmethod
     def _preproccess_data(volume_output):
@@ -249,7 +277,8 @@ class Multi_Slice_Viewer(object):
         if not isinstance(mask_volumes, list):
             mask_volumes = [mask_volumes]
         if mask_volumes[0] is not None:
-            assert img_volume.shape == mask_volumes[0].shape
+            assert img_volume.shape == mask_volumes[
+                0].shape, f"img_volume.shape:{img_volume.shape}, mask_volumes[0].shape: {mask_volumes[0].shape}"
         mask_names = list(gt_volume_dict.keys())
         return img_volume, mask_volumes, subject_name, mask_names
 
@@ -269,9 +298,11 @@ class Multi_Slice_Viewer(object):
                 ax.index = img_volume.shape[0] // 2
                 ax.imshow(ax.img_volume[ax.index], cmap='gray')
                 if self.show_contour:
-                    ax.con = ax.contour(ax.mask_volume[ax.index])
+                    ax.con = ax.contour(ax.mask_volume[ax.index], alpha=self.kwargs["plot_parameters"]["alpha"])
                 else:
-                    ax.con = ax.imshow(ax.mask_volume[ax.index], alpha=0.2)
+                    ax.con = ax.imshow(ax.mask_volume[ax.index],
+                                       cmap=cmap(**self.kwargs["plot_parameters"]["cmap"]),
+                                       alpha=self.kwargs["plot_parameters"]["alpha"])
                 ax.axis('off')
                 ax.set_title(f'{subject_name} @ plane:{ax.index} with {mask_name}')
 
@@ -286,9 +317,11 @@ class Multi_Slice_Viewer(object):
         fig = event.canvas.figure
         for i, ax in enumerate(fig.axes):
             if event.button == 'up':
-                self._previous_slice(ax, self.show_contour)
+                self._previous_slice(ax, self.show_contour, self.kwargs["plot_parameters"]["cmap"],
+                                     alpha=self.kwargs["plot_parameters"]["alpha"])
             elif event.button == 'down':
-                self._next_slice(ax, self.show_contour)
+                self._next_slice(ax, self.show_contour, self.kwargs["plot_parameters"]["cmap"],
+                                 alpha=self.kwargs["plot_parameters"]["alpha"])
         fig.canvas.draw()
 
     def process_mouse_button(self, event):
@@ -313,15 +346,16 @@ class Multi_Slice_Viewer(object):
                 ax.index = img_volume.shape[0] // 2
                 ax.imshow(ax.img_volume[ax.index], cmap='gray')
                 if self.show_contour:
-                    ax.con = ax.contour(ax.mask_volume[ax.index])
+                    ax.con = ax.contour(ax.mask_volume[ax.index], alpha=self.kwargs["plot_parameters"]["alpha"])
                 else:
-                    ax.con = ax.imshow(ax.mask_volume[ax.index], alpha=0.2)
-
+                    ax.con = ax.imshow(ax.mask_volume[ax.index],
+                                       cmap=cmap(**self.kwargs["plot_parameters"]["cmap"]),
+                                       alpha=self.kwargs["plot_parameters"]["alpha"])
                 ax.axis('off')
                 ax.set_title(f'{subject_name} @ plane:{ax.index} with {mask_name}')
 
     @staticmethod
-    def _previous_slice(ax, show_contour):
+    def _previous_slice(ax, show_contour, cmap_params={}, alpha=0.5):
         img_volume = ax.img_volume
         if show_contour:
             for con in ax.con.collections:
@@ -333,11 +367,12 @@ class Multi_Slice_Viewer(object):
         if show_contour:
             ax.con = ax.contour(ax.mask_volume[ax.index])
         else:
-            ax.con = ax.imshow(ax.mask_volume[ax.index], alpha=0.2)
+            ax.con = ax.imshow(ax.mask_volume[ax.index], cmap=cmap(**cmap_params),
+                               alpha=alpha)
         ax.set_title(f'{ax.subject_name} @ plane:{ax.index} with {ax.mask_name}')
 
     @staticmethod
-    def _next_slice(ax, show_contour):
+    def _next_slice(ax, show_contour, cmap_params={}, alpha=0.5):
         img_volume = ax.img_volume
         if show_contour:
             for con in ax.con.collections:
@@ -349,16 +384,17 @@ class Multi_Slice_Viewer(object):
         if show_contour:
             ax.con = ax.contour(ax.mask_volume[ax.index])
         else:
-            ax.con = ax.imshow(ax.mask_volume[ax.index], alpha=0.2)
+            ax.con = ax.imshow(ax.mask_volume[ax.index], cmap=cmap(**cmap_params), alpha=alpha)
         ax.set_title(f'{ax.subject_name} @ plane:{ax.index} with {ax.mask_name}')
 
 
 def main():
-    import subprocess
-    current_folder = subprocess.check_output("pwd", shell=True).strip()
-    # sys.path.insert(0,current_folder)
+    import subprocess, sys
+    current_folder = subprocess.check_output("pwd", shell=True).strip().decode()
+    sys.path.insert(0, current_folder)
     print(current_folder)
     args = get_parser()
+    pprint(vars(args))
     V = Volume(
         args.img_source,
         args.gt_folders,
@@ -369,7 +405,8 @@ def main():
         resize=args.resize,
     )
 
-    Viewer = Multi_Slice_Viewer(V, shuffle_subject=args.shuffle, n_subject=args.n_subject)
+    Viewer = Multi_Slice_Viewer(V, shuffle_subject=args.shuffle, n_subject=args.n_subject, contour=not args.no_contour,
+                                plot_parameters=args.plot_parameters)
     Viewer.show()
 
 
@@ -386,6 +423,7 @@ if __name__ == '__main__':
     """
 
     args = get_parser()
+    pprint(args)
     V = Volume(
         args.img_source,
         args.gt_folders,
@@ -396,5 +434,6 @@ if __name__ == '__main__':
         resize=args.resize
     )
 
-    Viewer = Multi_Slice_Viewer(V, shuffle_subject=args.shuffle, n_subject=args.n_subject, contour=not args.no_contour)
+    Viewer = Multi_Slice_Viewer(V, shuffle_subject=args.shuffle, n_subject=args.n_subject, contour=not args.no_contour,
+                                plot_parameters=args.plot_parameters)
     Viewer.show()
