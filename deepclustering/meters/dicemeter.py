@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from deepclustering.decorator.decorator import threaded
-from .metric import Metric
+from ._metric import _Metric
 from ..loss.dice_loss import dice_coef, dice_batch
 from ..utils import probs2one_hot, class2one_hot
 
@@ -22,10 +22,10 @@ def toOneHot(pred_logit, mask):
     return oh_predmask, oh_mask
 
 
-class _DiceMeter(Metric):
+class _DiceMeter(_Metric):
     def __init__(self, call_function, report_axises=None, C=4) -> None:
         super().__init__()
-        assert report_axises is None or isinstance(report_axises, (list,tuple))
+        assert report_axises is None or isinstance(report_axises, (list, tuple))
         self.diceCall = call_function
         self.report_axis = (
             report_axises if report_axises is not None else list(range(C))
@@ -46,7 +46,9 @@ class _DiceMeter(Metric):
         assert pred_logit.shape.__len__() == 4, f"pred_logit shape:{pred_logit.shape}"
         assert gt.shape.__len__() in (3, 4)
         if gt.shape.__len__() == 4:
-            assert (gt.shape[1] == 1), f"gt shape must be 1 in the 2nd axis, given {gt.shape[1]}."
+            assert (
+                gt.shape[1] == 1
+            ), f"gt shape must be 1 in the 2nd axis, given {gt.shape[1]}."
         dice_value = self.diceCall(*toOneHot(pred_logit, gt))
         if dice_value.shape.__len__() == 1:
             dice_value = dice_value.unsqueeze(0)

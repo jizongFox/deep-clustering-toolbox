@@ -1,9 +1,9 @@
 import numpy as np
 
-from .metric import Metric
+from ._metric import _Metric
 
 
-class AverageValueMeter(Metric):
+class AverageValueMeter(_Metric):
     def __init__(self, name="Average Meter"):
         super(AverageValueMeter, self).__init__()
         self.reset()

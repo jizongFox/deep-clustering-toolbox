@@ -1,19 +1,19 @@
-__all__ = ["Metric", "AggragatedMeter", "MeterInterface"]
+__all__ = ["_Metric", "AggragatedMeter", "MeterInterface"]
 
 import functools
 from abc import abstractmethod
-from typing import *
+from typing import List, Dict, Union, Any
 
 import pandas as pd
 from easydict import EasyDict as edict
+from ._utils import rename_df_columns
+
+"""
+we should incoorperate the Meters and drawers in the same interace, instead of setting them separetely.
+"""
 
 
-def rename_df_columns(dataframe: pd.DataFrame, name: str):
-    dataframe.columns = list(map(lambda x: name + "_" + x, dataframe.columns))
-    return dataframe
-
-
-class Metric:
+class _Metric:
     """Base class for all metrics.
 
     From: https://github.com/pytorch/tnt/blob/master/torchnet/meter/meter.py
@@ -84,15 +84,17 @@ class MeterInterface:
     A listed of Aggregated Meters with names, that severs to be a interface for project.
     """
 
-    def __init__(self, meter_config: Dict[str, Metric]) -> None:
+    def __init__(self, meter_config: Dict[str, _Metric]) -> None:
         """
         :param meter_config: a dict of individual meter configurations
         """
         # check:
         for k, v in meter_config.items():
             assert isinstance(k, str), k
-            assert isinstance(v, Metric), v  # can also check the subclasses.
-        self.ind_meter_dict = (edict(meter_config) if not isinstance(meter_config, edict) else meter_config)
+            assert isinstance(v, _Metric), v  # can also check the subclasses.
+        self.ind_meter_dict = (
+            edict(meter_config) if not isinstance(meter_config, edict) else meter_config
+        )
         for _, v in self.ind_meter_dict.items():
             v.reset()
         for k, v in self.ind_meter_dict.items():
@@ -102,12 +104,12 @@ class MeterInterface:
             {k: AggragatedMeter() for k in self.ind_meter_dict.keys()}
         )
 
-    def __getitem__(self, meter_name) -> Metric:
+    def __getitem__(self, meter_name) -> _Metric:
         return self.ind_meter_dict[meter_name]
 
-    def register_new_meter(self, name: str, meter: Metric) -> None:
+    def register_new_meter(self, name: str, meter: _Metric) -> None:
         assert isinstance(name, str), name
-        assert isinstance(meter, Metric), meter
+        assert isinstance(meter, _Metric), meter
         self.ind_meter_dict[name] = meter
         setattr(self, name, meter)
         self.aggregated_meter_dict[name] = AggragatedMeter()
@@ -137,7 +139,9 @@ class MeterInterface:
         """
         for k in self.ind_meter_dict.keys():
             self.aggregated_meter_dict[k].add(
-                self.ind_meter_dict[k].summary() if not detailed_summary else self.ind_meter_dict[k].detailed_summary()
+                self.ind_meter_dict[k].summary()
+                if not detailed_summary
+                else self.ind_meter_dict[k].detailed_summary()
             )
             self.ind_meter_dict[k].reset()
 

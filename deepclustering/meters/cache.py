@@ -1,9 +1,10 @@
 import torch
 from numbers import Number
-from .metric import Metric
+from ._metric import _Metric
 import numpy as np
 
-class Cache(Metric):
+
+class Cache(_Metric):
     """
     Cache is a meter to just store the elements in self.log. For statistic propose of use.
     """
@@ -34,9 +35,11 @@ class AveragewithStd(Cache):
     """
 
     def add(self, input):
-        assert isinstance(input, Number) \
-               or (isinstance(input, torch.Tensor) and input.shape.__len__() <= 1) \
-               or (isinstance(input, np.ndarray) and input.shape.__len__() <= 1)
+        assert (
+            isinstance(input, Number)
+            or (isinstance(input, torch.Tensor) and input.shape.__len__() <= 1)
+            or (isinstance(input, np.ndarray) and input.shape.__len__() <= 1)
+        )
         if torch.is_tensor(input):
             input = input.cpu().item()
 
@@ -52,5 +55,5 @@ class AveragewithStd(Cache):
         return {
             "mean": mean.item(),
             "lstd": mean.item() - std.item(),
-            "hstd": mean.item() + std.item()
+            "hstd": mean.item() + std.item(),
         }

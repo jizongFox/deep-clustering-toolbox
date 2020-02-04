@@ -4,10 +4,10 @@ import torch
 from sklearn.metrics import cohen_kappa_score
 from torch import Tensor
 
-from .metric import Metric
+from ._metric import _Metric
 
 
-class KappaMetrics(Metric):
+class KappaMetrics(_Metric):
     """ SKLearnMetrics computes various classification metrics at the end of a batch.
      Unforunately, doesn't work when used with generators...."""
 

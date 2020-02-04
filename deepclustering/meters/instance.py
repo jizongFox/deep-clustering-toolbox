@@ -1,10 +1,10 @@
-from .metric import Metric
+from ._metric import _Metric
 
 
 # this meter is to show the instance value, instead of print.
 
-class InstanceValue(Metric):
 
+class InstanceValue(_Metric):
     def __init__(self) -> None:
         super().__init__()
         self.instance_value = None
