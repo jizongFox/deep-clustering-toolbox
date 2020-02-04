@@ -1,5 +1,5 @@
 from deepclustering.augment import SequentialWrapper, pil_augment
-from deepclustering.dataset.acdc_dataloader import ACDCSemiInterface
+from deepclustering.dataset.segmentation.acdc_dataset import ACDCSemiInterface
 from deepclustering.manager import ConfigManger
 from deepclustering.model import Model
 from deepclustering.utils import fix_all_seed

@@ -1,4 +1,4 @@
-from .acdc_dataloader import ACDCSemiInterface, ACDCDataset
+from deepclustering.dataset.segmentation.acdc_dataset import ACDCSemiInterface, ACDCDataset
 from .classification.cifar_helper import (
     default_cifar10_img_transform,
     Cifar10ClusteringDatasetInterface,

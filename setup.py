@@ -22,7 +22,6 @@ setup(
     author_email="jizong.peng.1@etsmtl.net",
     description="",
     install_requires=[
-        "pip-tools",
         "msgpack",
         "numpy",
         "torch",
@@ -34,8 +33,7 @@ setup(
         "scikit-image",
         "pandas",
         "easydict",
-        "matplotlib==3.0.3",
-        "typing_inspect",
+        "matplotlib",
         "tqdm==4.32.2",
         "py==1.8.0",
         "pytest-remotedata==0.3.1",
@@ -45,7 +43,8 @@ setup(
         "medpy",
         "pyyaml",
         "termcolor",
-        "gpuqueue"
+        "gpuqueue",
+        "gdown"
     ],
 
 )

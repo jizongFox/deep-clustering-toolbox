@@ -1,5 +1,5 @@
-from .medicalSegmentationDataset import (
+from ._medicalSegmentationDataset import (
     MedicalImageSegmentationDataset,
     MedicalImageSegmentationDatasetWithMetaInfo,
 )
-from .patient_sampler import PatientSampler, SubMedicalDatasetBasedOnIndex
+from ._patient_sampler import PatientSampler, SubMedicalDatasetBasedOnIndex
