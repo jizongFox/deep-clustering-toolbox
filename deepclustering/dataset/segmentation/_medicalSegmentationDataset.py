@@ -90,7 +90,7 @@ class MedicalImageSegmentationDataset(Dataset):
     def get_patient_list(self):
         if not hasattr(self, "_re_pattern"):
             raise RuntimeError("Calling `get_patient_list` before setting `set_patient_pattern`")
-        return sorted(list(set([self._re_pattern.search(path).group(0) for path in self.filenames["img"]])))
+        return sorted(list(set([self._re_pattern.search(path).group(0) for path in self.filenames["t1"]])))
 
     @classmethod
     def make_dataset(cls, root: str, mode: str, subfolders: List[str], verbose=True) -> Dict[str, List[str]]:
