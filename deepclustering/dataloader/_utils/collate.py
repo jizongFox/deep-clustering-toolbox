@@ -9,7 +9,7 @@ import torch
 import re
 from torch._six import container_abcs, string_classes, int_classes
 
-np_str_obj_array_pattern = re.compile(r'[SaUO]')
+np_str_obj_array_pattern = re.compile(r"[SaUO]")
 
 
 def default_convert(data):
@@ -18,18 +18,25 @@ def default_convert(data):
     elem_type = type(data)
     if isinstance(data, torch.Tensor):
         return data
-    elif elem_type.__module__ == 'numpy' and elem_type.__name__ != 'str_' \
-            and elem_type.__name__ != 'string_':
+    elif (
+        elem_type.__module__ == "numpy"
+        and elem_type.__name__ != "str_"
+        and elem_type.__name__ != "string_"
+    ):
         # array of string classes and object
-        if elem_type.__name__ == 'ndarray' \
-                and np_str_obj_array_pattern.search(data.dtype.str) is not None:
+        if (
+            elem_type.__name__ == "ndarray"
+            and np_str_obj_array_pattern.search(data.dtype.str) is not None
+        ):
             return data
         return torch.as_tensor(data)
     elif isinstance(data, container_abcs.Mapping):
         return {key: default_convert(data[key]) for key in data}
-    elif isinstance(data, tuple) and hasattr(data, '_fields'):  # namedtuple
+    elif isinstance(data, tuple) and hasattr(data, "_fields"):  # namedtuple
         return elem_type(default_convert(d) for d in data)
-    elif isinstance(data, container_abcs.Sequence) and not isinstance(data, string_classes):
+    elif isinstance(data, container_abcs.Sequence) and not isinstance(
+        data, string_classes
+    ):
         return [default_convert(d) for d in data]
     else:
         return data
@@ -37,7 +44,8 @@ def default_convert(data):
 
 default_collate_err_msg_format = (
     "default_collate: batch must contain tensors, numpy arrays, numbers, "
-    "dicts or lists; found {}")
+    "dicts or lists; found {}"
+)
 
 
 def default_collate(batch):
@@ -54,10 +62,13 @@ def default_collate(batch):
             storage = elem.storage()._new_shared(numel)
             out = elem.new(storage)
         return torch.stack(batch, 0, out=out)
-    elif elem_type.__module__ == 'numpy' and elem_type.__name__ != 'str_' \
-            and elem_type.__name__ != 'string_':
+    elif (
+        elem_type.__module__ == "numpy"
+        and elem_type.__name__ != "str_"
+        and elem_type.__name__ != "string_"
+    ):
         elem = batch[0]
-        if elem_type.__name__ == 'ndarray':
+        if elem_type.__name__ == "ndarray":
             # array of string classes and object
             if np_str_obj_array_pattern.search(elem.dtype.str) is not None:
                 raise TypeError(default_collate_err_msg_format.format(elem.dtype))
@@ -73,7 +84,7 @@ def default_collate(batch):
         return batch
     elif isinstance(elem, container_abcs.Mapping):
         return {key: default_collate([d[key] for d in batch]) for key in elem}
-    elif isinstance(elem, tuple) and hasattr(elem, '_fields'):  # namedtuple
+    elif isinstance(elem, tuple) and hasattr(elem, "_fields"):  # namedtuple
         return elem_type(*(default_collate(samples) for samples in zip(*batch)))
     elif isinstance(elem, container_abcs.Sequence):
         transposed = zip(*batch)

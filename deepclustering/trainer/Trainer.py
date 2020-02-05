@@ -31,16 +31,16 @@ class _Trainer(ABC):
 
     @lazy_load_checkpoint
     def __init__(
-            self,
-            model: Model,
-            train_loader: DataLoader,
-            val_loader: DataLoader,
-            max_epoch: int = 100,
-            save_dir: str = "base",
-            checkpoint_path: str = None,
-            device="cpu",
-            config: dict = None,
-            **kwargs
+        self,
+        model: Model,
+        train_loader: DataLoader,
+        val_loader: DataLoader,
+        max_epoch: int = 100,
+        save_dir: str = "base",
+        checkpoint_path: str = None,
+        device="cpu",
+        config: dict = None,
+        **kwargs,
     ) -> None:
         _warnings((), kwargs)
         self.model = model
@@ -59,7 +59,9 @@ class _Trainer(ABC):
         if config:
             self.config = dcopy(config)
             self.config.pop("Config", None)  # delete the Config attribute
-            with open(str(self.save_dir / "config.yaml"), "w") as outfile:  # type: ignore
+            with open(
+                str(self.save_dir / "config.yaml"), "w"
+            ) as outfile:  # type: ignore
                 yaml.dump(self.config, outfile, default_flow_style=False)
             # set environment variable:
             set_environment(config.get("Environment"))
@@ -114,7 +116,12 @@ class _Trainer(ABC):
 
     @abstractmethod
     def _train_loop(
-            self, train_loader: DataLoader = None, epoch: int = 0, mode=ModelMode.TRAIN, *args, **kwargs
+        self,
+        train_loader: DataLoader = None,
+        epoch: int = 0,
+        mode=ModelMode.TRAIN,
+        *args,
+        **kwargs,
     ):
         # warning control
         _warnings(args, kwargs)
@@ -124,7 +131,14 @@ class _Trainer(ABC):
         _warnings(args, kwargs)
 
     @abstractmethod
-    def _eval_loop(self, val_loader: DataLoader = None, epoch: int = 0, mode=ModelMode.EVAL, *args, **kwargs) -> float:
+    def _eval_loop(
+        self,
+        val_loader: DataLoader = None,
+        epoch: int = 0,
+        mode=ModelMode.EVAL,
+        *args,
+        **kwargs,
+    ) -> float:
         # warning control
         _warnings(args, kwargs)
 
@@ -135,7 +149,9 @@ class _Trainer(ABC):
         :param kwargs:
         :return:
         """
-        assert Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir(), Path(self.checkpoint)
+        assert Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir(), Path(
+            self.checkpoint
+        )
         state_dict = torch.load(
             str(Path(self.checkpoint) / "best.pth"), map_location=torch.device("cpu")
         )
@@ -199,7 +215,9 @@ class _Trainer(ABC):
         self._start_epoch = state_dict["epoch"] + 1
 
     def load_checkpoint_from_path(self, checkpoint_path):
-        assert (Path(checkpoint_path).exists() and Path(checkpoint_path).is_dir()), Path(checkpoint_path)
+        assert Path(checkpoint_path).exists() and Path(checkpoint_path).is_dir(), Path(
+            checkpoint_path
+        )
         state_dict = torch.load(
             str(Path(checkpoint_path) / self.checkpoint_identifier),
             map_location=torch.device("cpu"),

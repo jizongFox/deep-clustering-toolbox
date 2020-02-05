@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 
 
-def get_image_paths(root: str, extension='.png') -> List[Path]:
+def get_image_paths(root: str, extension=".png") -> List[Path]:
     image_paths = sorted(Path(root).glob(f"*{extension}"))
     return image_paths
 
@@ -24,13 +24,20 @@ def split_images(image: Image.Image, title) -> List[Image.Image]:
         assert len(y_points) == 2
     except:
         import ipdb
+
         ipdb.set_trace()
     x_summary = np_img.mean(0).mean(1)
     x_points = np.where(np.diff(x_summary > 175) == True)[0]
-    assert x_points.__len__() == 2 * (len(title)), f"x_point:{x_points.__len__()}, title:{len(title)}"
+    assert x_points.__len__() == 2 * (
+        len(title)
+    ), f"x_point:{x_points.__len__()}, title:{len(title)}"
     resulting_imgs = []
     for i in range(len(title)):
-        resulting_imgs.append(image.crop((x_points[2 * i] + 1, y_points[0] + 1, x_points[2 * i + 1], y_points[1])))
+        resulting_imgs.append(
+            image.crop(
+                (x_points[2 * i] + 1, y_points[0] + 1, x_points[2 * i + 1], y_points[1])
+            )
+        )
     return resulting_imgs
 
 
@@ -47,8 +54,15 @@ def main(args):
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--folder_path", required=True, type=str, help="folder having those capture of screen images.")
-    parser.add_argument("--titles", required=True, type=str, nargs="+", help="titles to be display")
+    parser.add_argument(
+        "--folder_path",
+        required=True,
+        type=str,
+        help="folder having those capture of screen images.",
+    )
+    parser.add_argument(
+        "--titles", required=True, type=str, nargs="+", help="titles to be display"
+    )
 
     args = parser.parse_args()
     pprint(args)
@@ -57,10 +71,11 @@ def get_args():
 
 def call_from_cmd():
     import sys, subprocess
+
     calling_folder = str(subprocess.check_output("pwd", shell=True))
     sys.path.insert(0, calling_folder)
     main(get_args())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(get_args())

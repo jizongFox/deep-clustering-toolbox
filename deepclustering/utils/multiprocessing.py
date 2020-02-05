@@ -6,14 +6,12 @@ from torch import multiprocessing
 from torchvision.transforms import Compose, Resize, ToTensor, ColorJitter
 
 torch.set_num_threads(1)
-T = Compose([
-    Resize((224, 224)),
-    ColorJitter(brightness=[0.8, 1.6]),
-    ToTensor()
-])
+T = Compose([Resize((224, 224)), ColorJitter(brightness=[0.8, 1.6]), ToTensor()])
 
 
-def read_img(path_queue: multiprocessing.JoinableQueue, data_queue: multiprocessing.SimpleQueue):
+def read_img(
+    path_queue: multiprocessing.JoinableQueue, data_queue: multiprocessing.SimpleQueue
+):
     torch.set_num_threads(1)
     while True:
         img_path = path_queue.get()
@@ -28,7 +26,6 @@ def read_img2(img_path):
 
 
 class multiprocessing_mapping(object):
-
     def __init__(self, num_workers=4, transform=read_img) -> None:
         super().__init__()
         self.num_workers = num_workers
@@ -38,9 +35,10 @@ class multiprocessing_mapping(object):
         self.path_queue.cancel_join_thread()
         self.workers = [
             multiprocessing.Process(
-                target=self.transform,
-                args=(self.path_queue, self.data_queue,)
-            ) for _ in range(self.num_workers)]
+                target=self.transform, args=(self.path_queue, self.data_queue)
+            )
+            for _ in range(self.num_workers)
+        ]
 
         for w in self.workers:
             w.daemon = True  # ensure that the worker exits on process exit

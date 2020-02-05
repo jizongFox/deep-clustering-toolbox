@@ -140,7 +140,6 @@ def threaded(_func=None, *, name="meter", daemon=False):
 
 
 class WaitThreadsEnd:
-
     def __init__(self, thread_name: str = "meter") -> None:
         super().__init__()
         self.thread_name = thread_name

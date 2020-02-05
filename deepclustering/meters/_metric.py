@@ -1,71 +1,92 @@
-__all__ = ["_Metric", "AggragatedMeter", "MeterInterface"]
-
 import functools
 from abc import abstractmethod
-from typing import List, Dict, Union, Any
+from collections import OrderedDict
+from typing import List, Dict, Any
 
 import pandas as pd
 from easydict import EasyDict as edict
+
 from ._utils import rename_df_columns
 
+__all__ = ["MeterInterface"]
+
 """
-we should incoorperate the Meters and drawers in the same interace, instead of setting them separetely.
+we should incorporate the `Meters` and `Drawers` in the same interace, instead of setting them separately.
 """
+REC_TYPE = Dict[int, Dict[str, float]]
 
 
 class _Metric:
     """Base class for all metrics.
-
+    record the values within a single epoch
     From: https://github.com/pytorch/tnt/blob/master/torchnet/meter/meter.py
     """
 
     @abstractmethod
     def reset(self):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def add(self, *args, **kwargs):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def value(self, **kwargs):
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def summary(self) -> dict:
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def detailed_summary(self) -> dict:
-        raise NotImplementedError
+        pass
 
 
-class AggragatedMeter:
+class _AggregatedMeter:
     """
-    Aggregate historical information in a List.
+    Aggregate historical information in a ordered dict.
     """
 
     def __init__(self) -> None:
         super().__init__()
-        self.record: List[Dict[str, float]] = []
+        # self.record: List[Dict[str, float]] = []
+        self._record_dict: REC_TYPE = OrderedDict()
+        self._current_epoch: int = 0
 
-    # public interface of dict
-    def summary(self, if_dict=False) -> Union[pd.DataFrame, List[Dict[str, float]]]:
-        if if_dict:
-            return self.record
-        return pd.DataFrame(self.record)
+    @property
+    def record_dict(self) -> REC_TYPE:
+        return self._record_dict
+
+    @property
+    def current_epoch(self) -> int:
+        """ return current epoch
+        """
+        return self._current_epoch
+
+    def summary(self) -> pd.DataFrame:
+        # public interface of _AggregateMeter
+        # todo: deal with the case where you have absent epoch
+        validated_table = pd.DataFrame(self.record_dict).T
+        if len(self.record_dict) < self.current_epoch:
+            # you have the abscent value for the missing epoch
+            missing_table = pd.DataFrame(
+                index=set(range(self.current_epoch)) - set(self.record_dict.keys())
+            )
+            validated_table = validated_table.append(missing_table, sort=True)
+        return validated_table
 
     def add(self, input_dict: Dict[str, float]) -> None:
-        self.record.append(input_dict)
+        # self.record.append(input_dict)
+        self._record_dict[self._current_epoch] = input_dict
+        self._current_epoch += 1
 
     def reset(self) -> None:
-        self.record = []
+        self._record_dict: REC_TYPE = OrderedDict()
+        self._current_epoch = 0
 
     def state_dict(self) -> Dict[str, Any]:
-        """Returns the state of the weight_scheduler as a :class:`dict`.
-
-        It contains an entry for every variable in self.__dict__ which
-        is not the optimizer.
+        """Returns the state of the class.
         """
         return self.__dict__
 
@@ -78,79 +99,117 @@ class AggragatedMeter:
         """
         self.__dict__.update(state_dict)
 
+    def __repr__(self):
+        return str(pd.DataFrame(self.record_dict).T)
+
 
 class MeterInterface:
     """
-    A listed of Aggregated Meters with names, that severs to be a interface for project.
+    Interface for meters for each batch and epoch
     """
 
     def __init__(self, meter_config: Dict[str, _Metric]) -> None:
         """
         :param meter_config: a dict of individual meter configurations
         """
-        # check:
+        # check input meter configurations:
         for k, v in meter_config.items():
             assert isinstance(k, str), k
-            assert isinstance(v, _Metric), v  # can also check the subclasses.
-        self.ind_meter_dict = (
-            edict(meter_config) if not isinstance(meter_config, edict) else meter_config
-        )
-        for _, v in self.ind_meter_dict.items():
+            # todo check `assert isSubclass`
+            assert issubclass(
+                type(v), _Metric
+            ), f"{v.__class__.__name__} should be a subclass of {_Metric.__class__.__name__}, given {v}."  # can also check the subclasses.
+        self._ind_meter_dicts: Dict[str, _Metric] = edict(
+            meter_config
+        ) if not isinstance(meter_config, edict) else meter_config
+
+        for v in self._ind_meter_dicts.values():
             v.reset()
-        for k, v in self.ind_meter_dict.items():
+        for k, v in self._ind_meter_dicts.items():
             setattr(self, k, v)
 
-        self.aggregated_meter_dict: Dict[str, AggragatedMeter] = edict(
-            {k: AggragatedMeter() for k in self.ind_meter_dict.keys()}
+        self._aggregated_meter_dicts: Dict[str, _AggregatedMeter] = edict(
+            {k: _AggregatedMeter() for k in self._ind_meter_dicts.keys()}
         )
 
-    def __getitem__(self, meter_name) -> _Metric:
-        return self.ind_meter_dict[meter_name]
+    def __getitem__(self, meter_name: str) -> _Metric:
+        try:
+            return self._ind_meter_dicts[meter_name]
+        except AttributeError as e:
+            raise e
 
     def register_new_meter(self, name: str, meter: _Metric) -> None:
         assert isinstance(name, str), name
-        assert isinstance(meter, _Metric), meter
-        self.ind_meter_dict[name] = meter
-        setattr(self, name, meter)
-        self.aggregated_meter_dict[name] = AggragatedMeter()
+        assert issubclass(
+            type(meter), _Metric
+        ), f"{meter.__class__.__name__} should be a subclass of {_Metric.__class__.__name__}, given {meter}."
 
-    def summary(self) -> pd.DataFrame:
-        """
-        summary on the list of sub summarys, merging them together.
-        :return:
-        """
-        list_of_summary = [
-            rename_df_columns(v.summary(), k)
-            for k, v in self.aggregated_meter_dict.items()
-        ]
-        # merge the list
-        summary = functools.reduce(
-            lambda x, y: pd.merge(x, y, left_index=True, right_index=True),
-            list_of_summary,
-        )
-        return pd.DataFrame(summary)
+        # add meters
+        self._ind_meter_dicts[name] = meter
+        setattr(self, name, meter)
+        self._aggregated_meter_dicts[name] = _AggregatedMeter()
+        self._aggregated_meter_dicts[name]._current_epoch = self.current_epoch
+
+    def delete_meter(self, name: str) -> None:
+        assert (
+            name in self.meter_names
+        ), f"{name} should be in `meter_names`: {self.meter_names}, given {name}."
+        del self._ind_meter_dicts[name]
+        del self._aggregated_meter_dicts[name]
+        delattr(self, name)
+
+    def delete_meters(self, name_list: List[str]):
+        assert isinstance(
+            name_list, list
+        ), f" name_list must be a list of str, given {name_list}."
+        for name in name_list:
+            self.delete_meter(name)
 
     def step(self, detailed_summary=False) -> None:
         """
-        This is to put individual Meter summary to Aggregated Meter dict
-        And reset the individual Meters
+        This is to put individual Meter summary to Aggregated Meter dict and reset the individual Meters
+        this is supposed to be called at the end of an epoch.
         :param detailed_summary: return `detailed_summary` instead of `summary`
         :return: None
         """
-        for k in self.ind_meter_dict.keys():
-            self.aggregated_meter_dict[k].add(
-                self.ind_meter_dict[k].summary()
+        for k in self.meter_names:
+            self._aggregated_meter_dicts[k].add(
+                self._ind_meter_dicts[k].summary()
                 if not detailed_summary
-                else self.ind_meter_dict[k].detailed_summary()
+                else self._ind_meter_dicts[k].detailed_summary()
             )
-            self.ind_meter_dict[k].reset()
+        self.reset_before_epoch()
+
+    def reset_before_epoch(self) -> None:
+        """
+        reset individual meters
+        :return: None
+        """
+        for v in self._ind_meter_dicts.values():
+            v.reset()
+
+    def clear_history(self) -> None:
+        """This is to clear the aggregated meters for history"""
+        for v in self._aggregated_meter_dicts.values():
+            v.reset()
+
+    def reset_all(self):
+        """
+        This is to call at the
+        :return:
+        """
+        self.reset_before_epoch()
+        self.clear_history()
+
+    def reset(self):
+        self.reset_all()
 
     def state_dict(self) -> dict:
         """
         to export dict
         :return: state dict
         """
-        return {k: v.record for k, v in self.aggregated_meter_dict.items()}
+        return {k: v.state_dict() for k, v in self._aggregated_meter_dicts.items()}
 
     def load_state_dict(self, checkpoint):
         """
@@ -159,19 +218,47 @@ class MeterInterface:
         :return:None
         """
         assert isinstance(checkpoint, dict)
-        for k, v in self.aggregated_meter_dict.items():
+        _old_keys = checkpoint.keys()
+        _new_keys = self.state_dict().keys()
+
+        missed_keys = list(set(_new_keys) - set(_old_keys))
+        redundant_keys = list(set(_old_keys) - set(_new_keys))
+        if missed_keys.__len__() > 0:
+            print(f"Found missed keys: {', '.join(missed_keys)}")
+        if redundant_keys.__len__() > 0:
+            print(f"Found redundant keys: {', '.join(redundant_keys)}")
+
+        for k, v in self._aggregated_meter_dicts.items():
             try:
-                v.record = checkpoint[k]
+                v.load_state_dict(checkpoint[k])
             except KeyError:
-                print(f"keyword {k} wrong, skipping")
-        print(self.summary().tail())
+                # you have a missed key,just leave it alone and set the current_epoch to align others.
+                v._current_epoch = self.current_epoch
+        current_epoch = self._aggregated_meter_dicts[self.meter_names[0]].current_epoch
+        for k in self.meter_names:
+            assert current_epoch == self._aggregated_meter_dicts[k].current_epoch
+        print(self.summary())
 
-    def reset_ind_meters(self):
-        for _, v in self.ind_meter_dict.items():
-            v.reset()
+    @property
+    def meter_names(self) -> List[str]:
+        return list(self._aggregated_meter_dicts.keys())
 
-    def reset_all(self):
-        self.reset_ind_meters()
-        self.aggregated_meter_dict: Dict[str, AggragatedMeter] = edict(
-            {k: AggragatedMeter() for k in self.ind_meter_dict.keys()}
+    @property
+    def current_epoch(self):
+        return self._aggregated_meter_dicts[self.meter_names[0]].current_epoch
+
+    def summary(self) -> pd.DataFrame:
+        """
+        summary on the list of sub summarys, merging them together.
+        :return:
+        """
+        list_of_summary = [
+            rename_df_columns(v.summary(), k)
+            for k, v in self._aggregated_meter_dicts.items()
+        ]
+        # merge the list
+        summary = functools.reduce(
+            lambda x, y: pd.merge(x, y, left_index=True, right_index=True),
+            list_of_summary,
         )
+        return pd.DataFrame(summary)

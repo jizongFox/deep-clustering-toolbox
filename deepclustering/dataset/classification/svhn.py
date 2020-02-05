@@ -54,7 +54,7 @@ class SVHN(VisionDataset):
     }
 
     def __init__(
-            self, root, split="train", transform=None, target_transform=None, download=False
+        self, root, split="train", transform=None, target_transform=None, download=False
     ):
         super(SVHN, self).__init__(root)
         self.transform = transform

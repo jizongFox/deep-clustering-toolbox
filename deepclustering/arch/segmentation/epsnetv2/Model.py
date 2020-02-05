@@ -13,26 +13,32 @@ __maintainer__ = "Sachin Mehta"
 
 
 class EESP(nn.Module):
-    '''
+    """
     This class defines the EESP block, which is based on the following principle
         REDUCE ---> SPLIT ---> TRANSFORM --> MERGE
-    '''
+    """
 
-    def __init__(self, nIn, nOut, stride=1, k=4, r_lim=7, down_method='esp'):  # down_method --> ['avg' or 'esp']
-        '''
+    def __init__(
+        self, nIn, nOut, stride=1, k=4, r_lim=7, down_method="esp"
+    ):  # down_method --> ['avg' or 'esp']
+        """
         :param nIn: number of input channels
         :param nOut: number of output channels
         :param stride: factor by which we should skip (useful for down-sampling). If 2, then down-samples the feature map by 2
         :param k: # of parallel branches
         :param r_lim: A maximum value of receptive field allowed for EESP block
         :param g: number of groups to be used in the feature map reduction step.
-        '''
+        """
         super().__init__()
         self.stride = stride
         n = int(nOut / k)
         n1 = nOut - (k - 1) * n
-        assert down_method in ['avg', 'esp'], 'One of these is suppported (avg or esp)'
-        assert n == n1, "n(={}) and n1(={}) should be equal for Depth-wise Convolution ".format(n, n1)
+        assert down_method in ["avg", "esp"], "One of these is suppported (avg or esp)"
+        assert (
+            n == n1
+        ), "n(={}) and n1(={}) should be equal for Depth-wise Convolution ".format(
+            n, n1
+        )
         # assert nIn%k == 0, "Number of input channels ({}) should be divisible by # of branches ({})".format(nIn, k)
         # assert n % k == 0, "Number of output channels ({}) should be divisible by # of branches ({})".format(n, k)
         self.proj_1x1 = CBR(nIn, n, 1, stride=1, groups=k)
@@ -53,18 +59,20 @@ class EESP(nn.Module):
         # self.bn = nn.ModuleList()
         for i in range(k):
             d_rate = map_receptive_ksize[self.k_sizes[i]]
-            self.spp_dw.append(CDilated(n, n, kSize=3, stride=stride, groups=n, d=d_rate))
+            self.spp_dw.append(
+                CDilated(n, n, kSize=3, stride=stride, groups=n, d=d_rate)
+            )
             # self.bn.append(nn.BatchNorm2d(n))
         self.conv_1x1_exp = CB(nOut, nOut, 1, 1, groups=k)
         self.br_after_cat = BR(nOut)
         self.module_act = nn.PReLU(nOut)
-        self.downAvg = True if down_method == 'avg' else False
+        self.downAvg = True if down_method == "avg" else False
 
     def forward(self, input):
-        '''
+        """
         :param input: input feature map
         :return: transformed feature map
-        '''
+        """
 
         # Reduce --> project high-dimensional feature maps to low-dimensional space
         output1 = self.proj_1x1(input)
@@ -100,37 +108,37 @@ class EESP(nn.Module):
 
 
 class DownSampler(nn.Module):
-    '''
+    """
     Down-sampling fucntion that has two parallel branches: (1) avg pooling
     and (2) EESP block with stride of 2. The output feature maps of these branches
     are then concatenated and thresholded using an activation function (PReLU in our
     case) to produce the final output.
-    '''
+    """
 
     def __init__(self, nin, nout, k=4, r_lim=9, reinf=True):
-        '''
+        """
             :param nin: number of input channels
             :param nout: number of output channels
             :param k: # of parallel branches
             :param r_lim: A maximum value of receptive field allowed for EESP block
             :param g: number of groups to be used in the feature map reduction step.
-        '''
+        """
         super().__init__()
         nout_new = nout - nin
-        self.eesp = EESP(nin, nout_new, stride=2, k=k, r_lim=r_lim, down_method='avg')
+        self.eesp = EESP(nin, nout_new, stride=2, k=k, r_lim=r_lim, down_method="avg")
         self.avg = nn.AvgPool2d(kernel_size=3, padding=1, stride=2)
         if reinf:
             self.inp_reinf = nn.Sequential(
                 CBR(config_inp_reinf, config_inp_reinf, 3, 1),
-                CB(config_inp_reinf, nout, 1, 1)
+                CB(config_inp_reinf, nout, 1, 1),
             )
         self.act = nn.PReLU(nout)
 
     def forward(self, input, input2=None):
-        '''
+        """
         :param input: input feature map
         :return: feature map down-sampled by a factor of 2
-        '''
+        """
         avg_out = self.avg(input)
         eesp_out = self.eesp(input)
         output = torch.cat([avg_out, eesp_out], 1)
@@ -148,15 +156,15 @@ class DownSampler(nn.Module):
 
 
 class EESPNet(nn.Module):
-    '''
+    """
     This class defines the ESPNetv2 architecture for the ImageNet classification
-    '''
+    """
 
     def __init__(self, classes=20, s=1):
-        '''
+        """
         :param classes: number of classes in the dataset. Default is 20 for the cityscapes
         :param s: factor that scales the number of output feature maps
-        '''
+        """
         super().__init__()
         reps = [0, 3, 7, 3]  # how many times EESP blocks should be repeated.
         channels = 3
@@ -180,35 +188,46 @@ class EESPNet(nn.Module):
         elif s in [1.5, 2]:
             config.append(1280)
         else:
-            ValueError('Configuration not supported')
+            ValueError("Configuration not supported")
 
         # print('Config: ', config)
 
         global config_inp_reinf
         config_inp_reinf = 3
         self.input_reinforcement = True
-        assert len(K) == len(r_lim), 'Length of branching factor array and receptive field array should be the same.'
+        assert len(K) == len(
+            r_lim
+        ), "Length of branching factor array and receptive field array should be the same."
 
         self.level1 = CBR(channels, config[0], 3, 2)  # 112 L1
 
-        self.level2_0 = DownSampler(config[0], config[1], k=K[0], r_lim=r_lim[0],
-                                    reinf=self.input_reinforcement)  # out = 56
-        self.level3_0 = DownSampler(config[1], config[2], k=K[1], r_lim=r_lim[1],
-                                    reinf=self.input_reinforcement)  # out = 28
+        self.level2_0 = DownSampler(
+            config[0], config[1], k=K[0], r_lim=r_lim[0], reinf=self.input_reinforcement
+        )  # out = 56
+        self.level3_0 = DownSampler(
+            config[1], config[2], k=K[1], r_lim=r_lim[1], reinf=self.input_reinforcement
+        )  # out = 28
         self.level3 = nn.ModuleList()
         for i in range(reps[1]):
-            self.level3.append(EESP(config[2], config[2], stride=1, k=K[2], r_lim=r_lim[2]))
+            self.level3.append(
+                EESP(config[2], config[2], stride=1, k=K[2], r_lim=r_lim[2])
+            )
 
-        self.level4_0 = DownSampler(config[2], config[3], k=K[2], r_lim=r_lim[2],
-                                    reinf=self.input_reinforcement)  # out = 14
+        self.level4_0 = DownSampler(
+            config[2], config[3], k=K[2], r_lim=r_lim[2], reinf=self.input_reinforcement
+        )  # out = 14
         self.level4 = nn.ModuleList()
         for i in range(reps[2]):
-            self.level4.append(EESP(config[3], config[3], stride=1, k=K[3], r_lim=r_lim[3]))
+            self.level4.append(
+                EESP(config[3], config[3], stride=1, k=K[3], r_lim=r_lim[3])
+            )
 
         self.level5_0 = DownSampler(config[3], config[4], k=K[3], r_lim=r_lim[3])  # 7
         self.level5 = nn.ModuleList()
         for i in range(reps[3]):
-            self.level5.append(EESP(config[4], config[4], stride=1, k=K[4], r_lim=r_lim[4]))
+            self.level5.append(
+                EESP(config[4], config[4], stride=1, k=K[4], r_lim=r_lim[4])
+            )
 
         # expand the feature maps using depth-wise separable convolution
         self.level5.append(CBR(config[4], config[4], 3, 1, groups=config[4]))
@@ -224,12 +243,12 @@ class EESPNet(nn.Module):
         self.init_params()
 
     def init_params(self):
-        '''
+        """
         Function to initialze the parameters
-        '''
+        """
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                init.kaiming_normal_(m.weight, mode='fan_out')
+                init.kaiming_normal_(m.weight, mode="fan_out")
                 if m.bias is not None:
                     init.constant_(m.bias, 0)
             elif isinstance(m, nn.BatchNorm2d):
@@ -241,10 +260,10 @@ class EESPNet(nn.Module):
                     init.constant_(m.bias, 0)
 
     def forward(self, input, p=0.2, seg=True):
-        '''
+        """
         :param input: Receives the input RGB image
         :return: a C-dimensional vector, C=# of classes
-        '''
+        """
         out_l1 = self.level1(input)  # 112
         if not self.input_reinforcement:
             del input

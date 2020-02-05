@@ -49,7 +49,7 @@ class Img2Tensor(object):
     def __init__(self, include_rgb: bool = False, include_grey: bool = True) -> None:
         super().__init__()
         assert (
-                include_rgb or include_grey
+            include_rgb or include_grey
         ), f"Options must be \
         True for at least one option, given {include_rgb}, {include_grey}"
         self.include_rgb = include_rgb
@@ -160,12 +160,12 @@ class RandomCrop(object):
     """
 
     def __init__(
-            self,
-            size: Union[int, Tuple[int, int], List[int]],
-            padding: Union[int, Tuple[int, int, int, int], List[int]] = None,
-            pad_if_needed: bool = False,
-            fill: Union[int, float] = 0,
-            padding_mode: str = "constant",
+        self,
+        size: Union[int, Tuple[int, int], List[int]],
+        padding: Union[int, Tuple[int, int, int, int], List[int]] = None,
+        pad_if_needed: bool = False,
+        fill: Union[int, float] = 0,
+        padding_mode: str = "constant",
     ):
         if isinstance(size, numbers.Number):
             self.size: Tuple[int, int] = (int(size), int(size))
@@ -518,7 +518,7 @@ class RandomApply(RandomTransforms):
     """
 
     def __init__(
-            self, transforms: Union[Tuple[Callable], List[Callable]], p: float = 0.5
+        self, transforms: Union[Tuple[Callable], List[Callable]], p: float = 0.5
     ):
         super(RandomApply, self).__init__(transforms)
         self.p = p

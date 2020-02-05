@@ -35,16 +35,18 @@ class NormalGradientBackwardStep(object):
 
 class Model(ABC):
     def __init__(
-            self,
-            arch_dict: Dict[str, Any] = None,
-            optim_dict: Dict[str, Any] = None,
-            scheduler_dict: Dict[str, Any] = None,
+        self,
+        arch_dict: Dict[str, Any] = None,
+        optim_dict: Dict[str, Any] = None,
+        scheduler_dict: Dict[str, Any] = None,
     ) -> None:
         super().__init__()
         self.arch_dict = arch_dict
         self.optim_dict = optim_dict
         self.scheduler_dict = scheduler_dict
-        self.use_warmup_scheduler: bool = scheduler_dict.get("warmup") if scheduler_dict is not None else None
+        self.use_warmup_scheduler: bool = scheduler_dict.get(
+            "warmup"
+        ) if scheduler_dict is not None else None
         self.torchnet, self.optimizer, self.scheduler = self._setup()
         self.to(device=torch.device("cpu"))
         self.is_apex: bool = False
@@ -73,10 +75,16 @@ class Model(ABC):
         optimizer: optim.Optimizer
         if self.optim_dict is not None:
             self.optim_name = self.optim_dict["name"]
-            self.optim_params = {k: v for k, v in self.optim_dict.items() if k != "name"}
-            optimizer = getattr(optim, self.optim_name)(torchnet.parameters(), **self.optim_params)
+            self.optim_params = {
+                k: v for k, v in self.optim_dict.items() if k != "name"
+            }
+            optimizer = getattr(optim, self.optim_name)(
+                torchnet.parameters(), **self.optim_params
+            )
         else:
-            warnings.warn(f"optimizer is a placeholder (lr=0.0), to override.", RuntimeWarning)
+            warnings.warn(
+                f"optimizer is a placeholder (lr=0.0), to override.", RuntimeWarning
+            )
             self.optim_name = None
             self.optim_params = None
             optimizer = getattr(optim, "SGD")(torchnet.parameters(), lr=0.00)
@@ -84,18 +92,25 @@ class Model(ABC):
         scheduler: lr_scheduler._LRScheduler
         if self.scheduler_dict:
             self.scheduler_name = self.scheduler_dict["name"]
-            self.scheduler_params = {k: v for k, v in self.scheduler_dict.items() if k != "name"}
-            scheduler = getattr(lr_scheduler, self.scheduler_name) \
-                (optimizer, **{k: v for k, v in self.scheduler_params.items() if k != "warmup"})
+            self.scheduler_params = {
+                k: v for k, v in self.scheduler_dict.items() if k != "name"
+            }
+            scheduler = getattr(lr_scheduler, self.scheduler_name)(
+                optimizer,
+                **{k: v for k, v in self.scheduler_params.items() if k != "warmup"},
+            )
             if self.use_warmup_scheduler:
                 from ..schedulers import GradualWarmupScheduler
+
                 scheduler = GradualWarmupScheduler(
                     optimizer=optimizer,
                     **self.scheduler_params["warmup"],
-                    after_scheduler=scheduler
+                    after_scheduler=scheduler,
                 )
         else:
-            warnings.warn(f"scheduler is a constant placeholder, to override.", RuntimeWarning)
+            warnings.warn(
+                f"scheduler is a constant placeholder, to override.", RuntimeWarning
+            )
             self.scheduler_name = None
             self.scheduler_params = None
             scheduler = getattr(lr_scheduler, "StepLR")(optimizer, 1, 1)
@@ -154,8 +169,9 @@ class Model(ABC):
         force_simplex = kwargs.pop("force_simplex", None)
         torch_logits = self.torchnet(*args, **kwargs)
         if force_simplex:
-            assert not simplex(torch_logits,
-                               1), "torchnet output is already a simplex, no need to impose `torch_logits`"
+            assert not simplex(
+                torch_logits, 1
+            ), "torchnet output is already a simplex, no need to impose `torch_logits`"
             return F.softmax(torch_logits, 1)
         return torch_logits
 
@@ -185,7 +201,9 @@ class Model(ABC):
         arch_dict = state_dict["arch_dict"]
         optim_dict = state_dict["optim_dict"]
         scheduler_dict = state_dict["scheduler_dict"]
-        model = cls(arch_dict=arch_dict, optim_dict=optim_dict, scheduler_dict=scheduler_dict)
+        model = cls(
+            arch_dict=arch_dict, optim_dict=optim_dict, scheduler_dict=scheduler_dict
+        )
         model.load_state_dict(state_dict=state_dict)
         model.to(torch.device("cpu"))
         return model

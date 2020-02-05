@@ -3,11 +3,12 @@ __all__ = ["SliceDiceMeter", "BatchDiceMeter"]
 import torch
 import torch.nn.functional as F
 from torch import Tensor
-
+import numpy as np
 from deepclustering.decorator.decorator import threaded
 from ._metric import _Metric
 from ..loss.dice_loss import dice_coef, dice_batch
 from ..utils import probs2one_hot, class2one_hot
+from ..utils.numerical_type import to_float
 
 
 def toOneHot(pred_logit, mask):
@@ -26,15 +27,22 @@ class _DiceMeter(_Metric):
     def __init__(self, call_function, report_axises=None, C=4) -> None:
         super().__init__()
         assert report_axises is None or isinstance(report_axises, (list, tuple))
-        self.diceCall = call_function
-        self.report_axis = (
-            report_axises if report_axises is not None else list(range(C))
-        )
-        self.diceLog = []
-        self.C = C
+        if report_axises is not None:
+            assert max(report_axises) <= C, (
+                "Incompatible parameter of `C`={} and "
+                "`report_axises`={}".format(C, report_axises)
+            )
+        self._C = C
+        self._report_axis = list(range(self._C))
+        if report_axises is not None:
+            self._report_axis = report_axises
+        self._diceCallFunction = call_function
+        self._diceLog = []
+        self._n = 0
 
     def reset(self):
-        self.diceLog = []
+        self._diceLog = []
+        self._n = 0
 
     def add(self, pred_logit: Tensor, gt: Tensor):
         """
@@ -44,48 +52,35 @@ class _DiceMeter(_Metric):
         :return:
         """
         assert pred_logit.shape.__len__() == 4, f"pred_logit shape:{pred_logit.shape}"
-        assert gt.shape.__len__() in (3, 4)
         if gt.shape.__len__() == 4:
-            assert (
-                gt.shape[1] == 1
-            ), f"gt shape must be 1 in the 2nd axis, given {gt.shape[1]}."
-        dice_value = self.diceCall(*toOneHot(pred_logit, gt))
+            gt = gt.squeeze(2)
+        assert gt.shape.__len__() == 3
+        dice_value = self._diceCallFunction(*toOneHot(pred_logit, gt))
         if dice_value.shape.__len__() == 1:
             dice_value = dice_value.unsqueeze(0)
         assert dice_value.shape.__len__() == 2
-        self.diceLog.append(dice_value)
+        self._diceLog.append(dice_value)
+        self._n += 1
 
-    def value(self, **kwargs):
-        log = self.log
-        means = log.mean(0)
-        stds = log.std(0)
-        report_means = (
-            log.mean(1)
-            if self.report_axis == "all"
-            else log[:, self.report_axis].mean(1)
-        )
-        report_std = report_means.std()
-        report_mean = report_means.mean()
-        return (report_mean, report_std), (means, stds)
-
-    @property
-    def log(self):
-        try:
-            log = torch.cat(self.diceLog)
-        except:
-            log = torch.Tensor(tuple([0 for _ in range(self.C)]))
-        if len(log.shape) == 1:
-            log = log.unsqueeze(0)
-        assert len(log.shape) == 2
-        return log
+    def value(self):
+        if self._n > 0:
+            log = torch.cat(self._diceLog)
+            means = log.mean(0)
+            stds = log.std(0)
+            report_means = log[:, self._report_axis].mean(1)
+            report_std = report_means.std()
+            report_mean = report_means.mean()
+            return (report_mean, report_std), (means, stds)
+        else:
+            return (np.nan, np.nan), ([np.nan] * self._C, [np.nan] * self._C)
 
     def detailed_summary(self) -> dict:
         _, (means, _) = self.value()
-        return {f"DSC{i}": means[i].item() for i in range(len(means))}
+        return {f"DSC{i}": to_float(means[i]) for i in range(len(means))}
 
     def summary(self) -> dict:
         _, (means, _) = self.value()
-        return {f"DSC{i}": means[i].item() for i in self.report_axis}
+        return {f"DSC{i}": to_float(means[i]) for i in self._report_axis}
 
 
 class SliceDiceMeter(_DiceMeter):

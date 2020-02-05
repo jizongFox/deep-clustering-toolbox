@@ -26,12 +26,12 @@ class YAMLArgParser(object):
     """
 
     def __new__(
-            cls,
-            verbose: bool = True,
-            k_v_sep1: str = ":",
-            k_v_sep2: str = "=",
-            hierarchy: str = ".",
-            type_sep: str = "!",
+        cls,
+        verbose: bool = True,
+        k_v_sep1: str = ":",
+        k_v_sep2: str = "=",
+        hierarchy: str = ".",
+        type_sep: str = "!",
     ) -> Dict[str, Any]:
         cls.k_v_sep1 = k_v_sep1
         cls.k_v_sep2 = k_v_sep2
@@ -141,9 +141,9 @@ def yaml_load(yaml_path: Union[Path, str], verbose=False) -> Dict[str, Any]:
 def str2bool(v):
     if isinstance(v, bool):
         return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+    if v.lower() in ("yes", "true", "t", "y", "1"):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif v.lower() in ("no", "false", "f", "n", "0"):
         return False
     else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+        raise argparse.ArgumentTypeError("Boolean value expected.")

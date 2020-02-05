@@ -54,7 +54,7 @@ class CIFAR10(data.Dataset):
     }
 
     def __init__(
-            self, root, train=True, transform=None, target_transform=None, download=False
+        self, root, train=True, transform=None, target_transform=None, download=False
     ):
         self.root = os.path.expanduser(root)
         self.transform = transform
@@ -153,7 +153,7 @@ class CIFAR10(data.Dataset):
         import tarfile
 
         if self._check_integrity():
-            print('Files already downloaded and verified')
+            print("Files already downloaded and verified")
             return
 
         download_url(self.url, self.root, self.filename, self.tgz_md5)

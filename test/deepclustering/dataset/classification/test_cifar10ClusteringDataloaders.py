@@ -73,7 +73,7 @@ class TestCifar(TestCase):
             self.transform_list["tf3"],
         )
         for i, data in enumerate(
-                tqdm(BackgroundGenerator(combineLoader, max_prefetch=20))
+            tqdm(BackgroundGenerator(combineLoader, max_prefetch=20))
         ):
             if i > 10:
                 break
