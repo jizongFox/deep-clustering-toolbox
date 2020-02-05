@@ -114,6 +114,7 @@ class MedicalImageSegmentationDataset(Dataset):
             )
         )
 
+
     @classmethod
     def make_dataset(
         cls, root: str, mode: str, subfolders: List[str], verbose=True
