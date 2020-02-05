@@ -12,7 +12,7 @@ class SingleProcessCache:
     >>>     def method(self,index):
     """
 
-    def __init__(self, key=None, ) -> None:
+    def __init__(self, key=None) -> None:
         self._key = key
         self._is_class_method = False
         self._cache = self._initialize_cache()
@@ -33,7 +33,11 @@ class SingleProcessCache:
 
     def _get_variable_from_key(self, key, args, kwargs):
         # get the arguments and default values of the func
-        assert key in self.arg_list, "key should be in the args list {}, given {}.".format(self.arg_list.args, key)
+        assert (
+            key in self.arg_list
+        ), "key should be in the args list {}, given {}.".format(
+            self.arg_list.args, key
+        )
         # check if there is the key in the kwargs
         if key in kwargs:
             return kwargs[key]
@@ -60,7 +64,9 @@ class SingleProcessCache:
         self.func = func
         self.default_dict = {}
         if func_args.defaults:
-            self.default_dict = dict(zip(func_args.args[::-1], func_args.defaults[::-1]))
+            self.default_dict = dict(
+                zip(func_args.args[::-1], func_args.defaults[::-1])
+            )
         self.arg_list = func_args.args
         if "self" in self.arg_list:
             self._is_class_method = True

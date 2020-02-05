@@ -9,7 +9,11 @@ CC_wrapper_path = str(Path(PROJECT_PATH) / "deepclustering/utils/CC_wrapper.sh")
 LC_wrapper_path = str(Path(PROJECT_PATH) / "deepclustering/utils/LOCAL_wrapper.sh")
 JA_wrapper_path = str(Path(PROJECT_PATH) / "deepclustering/utils/JOBARRAY_wrapper.sh")
 try:
-    __git_hash__ = subprocess.check_output([f"cd {PROJECT_PATH}; git rev-parse HEAD", ], shell=True).strip().decode()
+    __git_hash__ = (
+        subprocess.check_output([f"cd {PROJECT_PATH}; git rev-parse HEAD"], shell=True)
+        .strip()
+        .decode()
+    )
 except:
     __git_hash__ = None
 

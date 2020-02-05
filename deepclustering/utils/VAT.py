@@ -32,7 +32,9 @@ def _l2_normalize(d: torch.Tensor) -> torch.Tensor:
 
 
 class VATLoss(nn.Module):
-    def __init__(self, xi=10.0, eps=1.0, prop_eps=0.25, ip=1, distance_func=KL_div(reduce=True)):
+    def __init__(
+        self, xi=10.0, eps=1.0, prop_eps=0.25, ip=1, distance_func=KL_div(reduce=True)
+    ):
         """VAT loss
         :param xi: hyperparameter of VAT (default: 10.0)
         :param eps: hyperparameter of VAT (default: 1.0)
@@ -78,7 +80,9 @@ class VATLoss(nn.Module):
             elif isinstance(self.eps, (float, int)):
                 r_adv = d * self.eps * self.prop_eps
             else:
-                raise NotImplementedError(f"eps should be tensor or float, given {self.eps}.")
+                raise NotImplementedError(
+                    f"eps should be tensor or float, given {self.eps}."
+                )
 
             pred_hat = model(x + r_adv)[0]
             lds = self.distance_func(pred_hat, pred)
@@ -91,7 +95,9 @@ class VATLoss_Multihead(nn.Module):
     this is the VAT for the multihead networks. each head outputs a simplex.
     """
 
-    def __init__(self, xi=10.0, eps=1.0, prop_eps=0.25, ip=1, distance_func=KL_div(reduce=True)):
+    def __init__(
+        self, xi=10.0, eps=1.0, prop_eps=0.25, ip=1, distance_func=KL_div(reduce=True)
+    ):
         """VAT loss
         :param xi: hyperparameter of VAT (default: 10.0)
         :param eps: hyperparameter of VAT (default: 1.0)
@@ -120,8 +126,12 @@ class VATLoss_Multihead(nn.Module):
                 pred_hat = model(x + self.xi * d)
                 assert assert_list(simplex, pred_hat)
                 # here the pred_hat is the list of simplex
-                adv_distance = list(map(lambda p_, p: self.distance_func(p_, p), pred_hat, pred))
-                _adv_distance: torch.Tensor = sum(adv_distance) / float(len(adv_distance))
+                adv_distance = list(
+                    map(lambda p_, p: self.distance_func(p_, p), pred_hat, pred)
+                )
+                _adv_distance: torch.Tensor = sum(adv_distance) / float(
+                    len(adv_distance)
+                )
                 _adv_distance.backward()  # type: ignore
                 d = _l2_normalize(d.grad)
 
@@ -134,11 +144,15 @@ class VATLoss_Multihead(nn.Module):
             elif isinstance(self.eps, (float, int)):
                 r_adv = d * self.eps * self.prop_eps
             else:
-                raise NotImplementedError(f"eps should be tensor or float, given {self.eps}.")
+                raise NotImplementedError(
+                    f"eps should be tensor or float, given {self.eps}."
+                )
 
             pred_hat = model(x + r_adv)
             assert assert_list(simplex, pred_hat)
-            lds =  list(map(lambda p_, p: self.distance_func(p_, p), pred_hat, pred))  # type: ignore
+            lds = list(
+                map(lambda p_, p: self.distance_func(p_, p), pred_hat, pred)
+            )  # type: ignore
             lds: torch.Tensor = sum(lds) / float(len(lds))
 
         return lds, (x + r_adv).detach(), r_adv.detach()

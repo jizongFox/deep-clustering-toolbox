@@ -2,10 +2,10 @@ import numpy as np
 import torch
 
 from .confusionmatrix import ConfusionMatrix
-from .metric import Metric
+from ._metric import _Metric
 
 
-class IoU(Metric):
+class IoU(_Metric):
     """Computes the intersection over union (IoU) per class and corresponding
     mean (mIoU).
 
@@ -60,10 +60,10 @@ class IoU(Metric):
             0
         ), "number of targets and predicted outputs do not match"
         assert (
-                predicted.dim() == 3 or predicted.dim() == 4
+            predicted.dim() == 3 or predicted.dim() == 4
         ), "predictions must be of dimension (N, H, W) or (N, K, H, W)"
         assert (
-                target.dim() == 3 or target.dim() == 4
+            target.dim() == 3 or target.dim() == 4
         ), "targets must be of dimension (N, H, W) or (N, K, H, W)"
 
         # If the tensor is in categorical format convert it to integer format
@@ -102,9 +102,11 @@ class IoU(Metric):
         acc = np.diag(hist).sum() / hist.sum()
         acc_cls = np.diag(hist) / hist.sum(axis=1)
         acc_cls = np.nanmean(acc_cls)
-        iu = (np.diag(hist) + 1e-16) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist) + 1e-16)
-        valid = hist.sum(axis=1) > 0  # added # 横着加
-        mean_iu = np.nanmean(iu[valid])  ## gt 出现过的mean_iu
+        iu = (np.diag(hist) + 1e-16) / (
+            hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist) + 1e-16
+        )
+        valid = hist.sum(axis=1) > 0  # added  横着加
+        mean_iu = np.nanmean(iu[valid])  # gt 出现过的mean_iu
         freq = hist.sum(axis=1) / hist.sum()
         fwavacc = (freq[freq > 0] * iu[freq > 0]).sum()
         # cls_iu = dict(zip(range(n_class), iu))
@@ -119,4 +121,7 @@ class IoU(Metric):
         }
 
     def summary(self) -> dict:
-        return {f"{k}": v for k, v in zip(range(self.num_classes), self.value()["Class_IoU"])}
+        return {
+            f"{k}": v
+            for k, v in zip(range(self.num_classes), self.value()["Class_IoU"])
+        }

@@ -14,11 +14,21 @@ try:
 except ImportError:
     from toy_example.utils import SimpleNet, get_prior_from_dataset
 try:
-    from .trainer import SemiTrainer, SemiEntropyTrainer, SemiPrimalDualTrainer, SemiWeightedIICTrainer, \
-        SemiUDATrainer
+    from .trainer import (
+        SemiTrainer,
+        SemiEntropyTrainer,
+        SemiPrimalDualTrainer,
+        SemiWeightedIICTrainer,
+        SemiUDATrainer,
+    )
 except ImportError:
-    from toy_example.trainer import SemiTrainer, SemiEntropyTrainer, SemiPrimalDualTrainer, SemiWeightedIICTrainer, \
-        SemiUDATrainer
+    from toy_example.trainer import (
+        SemiTrainer,
+        SemiEntropyTrainer,
+        SemiPrimalDualTrainer,
+        SemiWeightedIICTrainer,
+        SemiUDATrainer,
+    )
 try:
     from .dataset import get_mnist_dataloaders
 except ImportError:
@@ -32,28 +42,21 @@ config = ConfigManger("./config.yaml", integrality_check=False).config
 
 fix_all_seed(0)
 ## dataloader part
-unlabeled_class_sample_nums = {
-    0: 10000,
-    1: 1000,
-    2: 2000,
-    3: 3000,
-    4: 4000
-}
+unlabeled_class_sample_nums = {0: 10000, 1: 1000, 2: 2000, 3: 3000, 4: 4000}
 dataloader_params = {
     "batch_size": 64,
     "num_workers": 1,
     "drop_last": True,
     "pin_memory": True,
 }
-train_transform = transforms.Compose([
-    transforms.ToTensor()
-])
-val_transform = transforms.Compose([
-    transforms.ToTensor()
-])
+train_transform = transforms.Compose([transforms.ToTensor()])
+val_transform = transforms.Compose([transforms.ToTensor()])
 labeled_loader, unlabeled_loader, val_loader = get_mnist_dataloaders(
-    labeled_sample_num=10, unlabeled_class_sample_nums=unlabeled_class_sample_nums, train_transform=train_transform,
-    val_transform=val_transform, dataloader_params=dataloader_params
+    labeled_sample_num=10,
+    unlabeled_class_sample_nums=unlabeled_class_sample_nums,
+    train_transform=train_transform,
+    val_transform=val_transform,
+    dataloader_params=dataloader_params,
 )
 prior = get_prior_from_dataset(unlabeled_loader.dataset)
 print("prior for unlabeled dataset", prior)
@@ -78,10 +81,17 @@ Trainer = {
     "SemiEntropyTrainer": SemiEntropyTrainer,
     "SemiPrimalDualTrainer": SemiPrimalDualTrainer,
     "SemiWeightedIICTrainer": SemiWeightedIICTrainer,
-    "SemiUDATrainer": SemiUDATrainer
+    "SemiUDATrainer": SemiUDATrainer,
 }.get(config["Trainer"]["name"])
 assert Trainer
 
-trainer = Trainer(model, labeled_loader, unlabeled_loader, val_loader, prior=prior, config=config,
-                  **{k: v for k, v in config["Trainer"].items() if k != "name"})
+trainer = Trainer(
+    model,
+    labeled_loader,
+    unlabeled_loader,
+    val_loader,
+    prior=prior,
+    config=config,
+    **{k: v for k, v in config["Trainer"].items() if k != "name"}
+)
 trainer.start_training()

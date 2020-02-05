@@ -3,10 +3,10 @@ import warnings
 import numpy as np
 import torch
 
-from .metric import Metric
+from ._metric import _Metric
 
 
-class ConfusionMatrix(Metric):
+class ConfusionMatrix(_Metric):
     """Constructs a confusion matrix for a multi-class classification problems.
 
     Does not support multi-label, multi-class problems.

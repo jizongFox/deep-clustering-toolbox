@@ -38,7 +38,7 @@ class TestKLDiv(unittest.TestCase):
         self.target = torch.randint(
             low=0,
             high=self.shape[1],
-            size=[self.shape[i] for i in range(self.shape.__len__()) if i != 1]
+            size=[self.shape[i] for i in range(self.shape.__len__()) if i != 1],
         )
         self.target_oh = class2one_hot(self.target, C=self.shape[1]).float()
 
@@ -46,7 +46,9 @@ class TestKLDiv(unittest.TestCase):
         kl_criterion = nn.KLDivLoss(reduction=reduction)
         kl_loss = kl_criterion(self.pred.log(), target=self.target_oh)
         _kl_loss = loss.KL_div(reduction=reduction)(self.pred, self.target_oh)
-        assert torch.isclose(kl_loss, _kl_loss / self.shape[1] if reduction == "mean" else _kl_loss)
+        assert torch.isclose(
+            kl_loss, _kl_loss / self.shape[1] if reduction == "mean" else _kl_loss
+        )
 
     def test_kl_equivalent(self):
         for reduction in ("sum", "mean"):
@@ -56,7 +58,9 @@ class TestKLDiv(unittest.TestCase):
         random_entropy = loss.Entropy()(self.pred)
         with self.assertRaises(AssertionError):
             loss.Entropy()(self.logit)
-        max_entropy = loss.Entropy()(torch.zeros_like(self.pred).fill_(1 / self.shape[1]))
+        max_entropy = loss.Entropy()(
+            torch.zeros_like(self.pred).fill_(1 / self.shape[1])
+        )
         assert random_entropy <= max_entropy
         zero_entropy = loss.Entropy()(torch.Tensor([[1, 0], [0, 1]]))
         assert zero_entropy == 0
@@ -70,7 +74,7 @@ class TestJSDDiv(unittest.TestCase):
         self.target = torch.randint(
             low=0,
             high=self.shape[1],
-            size=[self.shape[i] for i in range(self.shape.__len__()) if i != 1]
+            size=[self.shape[i] for i in range(self.shape.__len__()) if i != 1],
         )
         self.target_oh = class2one_hot(self.target, C=self.shape[1]).float()
 
@@ -86,9 +90,14 @@ class TestJSDDiv(unittest.TestCase):
         kl_criterion = loss.KL_div(reduction=reduction)
         mean_pred = iter_average([self.target_oh.detach(), self.pred.detach()])
         mean_pred.requires_grad = True
-        assert torch.allclose(jsd_loss1, 0.5 * (
-                kl_criterion(mean_pred, self.target_oh.detach()) + kl_criterion(mean_pred, self.pred.detach())
-        ))
+        assert torch.allclose(
+            jsd_loss1,
+            0.5
+            * (
+                kl_criterion(mean_pred, self.target_oh.detach())
+                + kl_criterion(mean_pred, self.pred.detach())
+            ),
+        )
 
     def test_jsd_2d(self):
         jsd_2d_criterion = loss.JSD_div_2D()
@@ -104,7 +113,7 @@ class TestCrossEntropyLoss(unittest.TestCase):
         self.target = torch.randint(
             low=0,
             high=self.shape[1],
-            size=[self.shape[i] for i in range(self.shape.__len__()) if i != 1]
+            size=[self.shape[i] for i in range(self.shape.__len__()) if i != 1],
         )
         self.target_oh = class2one_hot(self.target, C=self.shape[1]).float()
 

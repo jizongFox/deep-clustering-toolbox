@@ -26,23 +26,32 @@ model = Model(
     scheduler_dict=config["Scheduler"],
 )
 
-transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
-transform_test = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
+transform_train = transforms.Compose(
+    [
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ]
+)
+transform_test = transforms.Compose(
+    [
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    ]
+)
 # here you may want to have different labeled/unlabeled/val sets for semi supervised learning.
 train_set = CIFAR10(root=DATA_PATH, transform=transform_train, train=True)
 labeled_set, _, _ = random_split(train_set, [4000, 41000, 5000])
 train_loader = DataLoader(labeled_set, **config["DataLoader"])
-val_loader = DataLoader(CIFAR10(root=DATA_PATH, transform=transform_test, train=False), **config["DataLoader"])
+val_loader = DataLoader(
+    CIFAR10(root=DATA_PATH, transform=transform_test, train=False),
+    **config["DataLoader"]
+)
 
-Trainer = {"sgd": SGDTrainer, "swa": SWATrainer}.get(config["Trainer"].get("name").lower())
+Trainer = {"sgd": SGDTrainer, "swa": SWATrainer}.get(
+    config["Trainer"].get("name").lower()
+)
 assert Trainer
 
 trainer = Trainer(

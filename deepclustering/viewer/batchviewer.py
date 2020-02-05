@@ -151,6 +151,7 @@ def view_batch(*args, width=300, height=300, lut={}):
             item = use_these[i]
             try:
                 import torch
+
                 if isinstance(item, torch.Tensor):
                     item = item.detach().cpu().numpy()
             except ImportError:
@@ -173,7 +174,7 @@ def view_batch(*args, width=300, height=300, lut={}):
     app.exit(app.exec_())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     global app
@@ -182,8 +183,12 @@ if __name__ == '__main__':
         app = QtGui.QApplication(sys.argv)
     sv = BatchViewer()
     batch = np.random.uniform(0, 3, (6, 100, 100, 100)).astype(int)
-    lut = {2: np.array([[0, 0.5, 0, 1], [0, 0, 0.5, 1], [0.5, 0, 0, 1], [0.5, 0.5, 0, 1]]) * 255,
-           1: np.array([[1, 0.5, 0, 1], [0, 0, 0.5, 1], [0.5, 0, 0, 1], [0.5, 0.5, 0, 1]]) * 255}
+    lut = {
+        2: np.array([[0, 0.5, 0, 1], [0, 0, 0.5, 1], [0.5, 0, 0, 1], [0.5, 0.5, 0, 1]])
+        * 255,
+        1: np.array([[1, 0.5, 0, 1], [0, 0, 0.5, 1], [0.5, 0, 0, 1], [0.5, 0.5, 0, 1]])
+        * 255,
+    }
     sv.setBatch(batch, lut)
     sv.show()
     app.exec_()
@@ -191,7 +196,7 @@ if __name__ == '__main__':
     sys.exit()
     # IPython.embed()
 
-'''class SliceViewer(QtGui.QWidget):
+"""class SliceViewer(QtGui.QWidget):
     def __init__(self):
         super(SliceViewer, self).__init__()
         self.initUI()
@@ -220,4 +225,4 @@ if __name__ == '__main__':
         #self.setGeometry(0, 0, 1200, 1200)
         self.setWindowTitle('QtGui.QCheckBox')
 
-        self.show()'''
+        self.show()"""

@@ -11,7 +11,7 @@ class ConfigManger:
     DEFAULT_CONFIG = ""
 
     def __init__(
-            self, DEFAULT_CONFIG_PATH: str = None, verbose=True, integrality_check=True
+        self, DEFAULT_CONFIG_PATH: str = None, verbose=True, integrality_check=True
     ) -> None:
         self.parsed_args: Dict[str, Any] = YAMLArgParser(verbose=verbose)
         if DEFAULT_CONFIG_PATH is None:

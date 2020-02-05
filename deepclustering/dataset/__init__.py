@@ -1,4 +1,7 @@
-from deepclustering.dataset.segmentation.acdc_dataset import ACDCSemiInterface, ACDCDataset
+from deepclustering.dataset.segmentation.acdc_dataset import (
+    ACDCSemiInterface,
+    ACDCDataset,
+)
 from .classification.cifar_helper import (
     default_cifar10_img_transform,
     Cifar10ClusteringDatasetInterface,
@@ -13,7 +16,12 @@ from .classification.stl10_helper import (
 )
 from .classification.svhn_helper import (
     SVHNClusteringDatasetInterface,
-    svhn_naive_transform, svhn_strong_transform
+    svhn_naive_transform,
+    svhn_strong_transform,
 )
-from .segmentation import (MedicalImageSegmentationDataset, MedicalImageSegmentationDatasetWithMetaInfo, PatientSampler,
-                           SubMedicalDatasetBasedOnIndex)
+from .segmentation import (
+    MedicalImageSegmentationDataset,
+    MedicalImageSegmentationDatasetWithMetaInfo,
+    PatientSampler,
+    SubMedicalDatasetBasedOnIndex,
+)

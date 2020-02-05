@@ -18,7 +18,10 @@ class TestDrawAverageWithSTD(TestCase):
         self.METER = MeterInterface(config)
         columns_to_draw = [["avg_mean", "avg_lstd", "avg_hstd"]]
         from pathlib import Path
-        self.drawer = DrawCSV2(columns_to_draw=columns_to_draw, save_dir=Path(__file__).parent)
+
+        self.drawer = DrawCSV2(
+            columns_to_draw=columns_to_draw, save_dir=Path(__file__).parent
+        )
 
     def _train_loop(self, data, epoch):
         for i in data:

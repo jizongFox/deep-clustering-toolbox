@@ -21,18 +21,26 @@ class SpleenDataset(MedicalImageSegmentationDataset):
     folder_name = "Spleen"
 
     def __init__(
-            self,
-            root_dir: str,
-            mode: str,
-            subfolders: List[str],
-            transforms: SequentialWrapper = None,
-            verbose=True,
+        self,
+        root_dir: str,
+        mode: str,
+        subfolders: List[str],
+        transforms: SequentialWrapper = None,
+        verbose=True,
     ) -> None:
-        if Path(root_dir, self.folder_name).exists() and Path(root_dir, self.folder_name).is_dir():
+        if (
+            Path(root_dir, self.folder_name).exists()
+            and Path(root_dir, self.folder_name).is_dir()
+        ):
             print(f"Found {self.folder_name}.")
         else:
-            download_and_extract_archive(url=self.download_link, download_root=root_dir, extract_root=root_dir,
-                                         filename=self.zip_name, remove_finished=False)
+            download_and_extract_archive(
+                url=self.download_link,
+                download_root=root_dir,
+                extract_root=root_dir,
+                filename=self.zip_name,
+                remove_finished=False,
+            )
         super().__init__(
             os.path.join(root_dir, "Spleen"),
             mode,
@@ -46,11 +54,11 @@ class SpleenDataset(MedicalImageSegmentationDataset):
 
 class SpleenSemiInterface(MedicalDatasetSemiInterface):
     def __init__(
-            self,
-            labeled_data_ratio: float = 0.2,
-            unlabeled_data_ratio: float = 0.8,
-            seed: int = 0,
-            verbose: bool = True,
+        self,
+        labeled_data_ratio: float = 0.2,
+        unlabeled_data_ratio: float = 0.8,
+        seed: int = 0,
+        verbose: bool = True,
     ) -> None:
         super().__init__(
             SpleenDataset,
@@ -62,10 +70,10 @@ class SpleenSemiInterface(MedicalDatasetSemiInterface):
         )
 
     def _create_semi_supervised_datasets(
-            self,
-            labeled_transform: SequentialWrapper = None,
-            unlabeled_transform: SequentialWrapper = None,
-            val_transform: SequentialWrapper = None,
+        self,
+        labeled_transform: SequentialWrapper = None,
+        unlabeled_transform: SequentialWrapper = None,
+        val_transform: SequentialWrapper = None,
     ) -> Tuple[
         MedicalImageSegmentationDataset,
         MedicalImageSegmentationDataset,
@@ -94,9 +102,9 @@ class SpleenSemiInterface(MedicalDatasetSemiInterface):
         labeled_set = SubMedicalDatasetBasedOnIndex(train_set, labeled_patients)
         unlabeled_set = SubMedicalDatasetBasedOnIndex(train_set, unlabeled_patients)
         assert (
-                labeled_set.filenames["img"].__len__()
-                + unlabeled_set.filenames["img"].__len__()
-                == train_set.filenames["img"].__len__()
+            labeled_set.filenames["img"].__len__()
+            + unlabeled_set.filenames["img"].__len__()
+            == train_set.filenames["img"].__len__()
         ), "wrong on labeled/unlabeled split."
         del train_set
         if self.verbose:

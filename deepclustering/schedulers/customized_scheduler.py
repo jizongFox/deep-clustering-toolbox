@@ -22,9 +22,7 @@ class WeightScheduler(object):
         It contains an entry for every variable in self.__dict__ which
         is not the optimizer.
         """
-        return {
-            key: value for key, value in self.__dict__.items()
-        }
+        return {key: value for key, value in self.__dict__.items()}
 
     def load_state_dict(self, state_dict):
         """Loads the schedulers state.
@@ -49,12 +47,14 @@ class WeightScheduler(object):
             self.step()
         assert len(lrs) == len(epochs)
         import matplotlib  # type: ignore
+
         _current_bkend = matplotlib.get_backend()
         try:
             matplotlib.use("tkagg")
         except:
             pass
         import matplotlib.pyplot as plt  # type: ignore
+
         plt.figure()
         plt.plot(epochs, lrs)
         plt.title(f"{self.__class__.__name__}, learning (weight) rate")
@@ -70,7 +70,9 @@ class WeightScheduler(object):
 
 
 class RampScheduler(WeightScheduler):
-    def __init__(self, begin_epoch=0, max_epoch=10, min_value=0.0, max_value=1.0, ramp_mult=-5.0):
+    def __init__(
+        self, begin_epoch=0, max_epoch=10, min_value=0.0, max_value=1.0, ramp_mult=-5.0
+    ):
         super().__init__()
         self.begin_epoch = int(begin_epoch)
         self.max_epoch = int(max_epoch)
@@ -85,7 +87,12 @@ class RampScheduler(WeightScheduler):
     @property
     def value(self):
         return self.get_lr(
-            self.epoch, self.begin_epoch, self.max_epoch, self.min_value, self.max_value, self.mult
+            self.epoch,
+            self.begin_epoch,
+            self.max_epoch,
+            self.min_value,
+            self.max_value,
+            self.mult,
         )
 
     @staticmethod

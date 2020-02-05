@@ -17,5 +17,5 @@ from .svhn_helper import (
     SVHNSemiSupervisedDatasetInterface,
     SVHNClusteringDatasetInterface,
     svhn_naive_transform,
-    svhn_strong_transform
+    svhn_strong_transform,
 )

@@ -34,9 +34,13 @@ class _DatasetKind(object):
     @staticmethod
     def create_fetcher(kind, dataset, auto_collation, collate_fn, drop_last):
         if kind == _DatasetKind.Map:
-            return _utils.fetch._MapDatasetFetcher(dataset, auto_collation, collate_fn, drop_last)
+            return _utils.fetch._MapDatasetFetcher(
+                dataset, auto_collation, collate_fn, drop_last
+            )
         else:
-            return _utils.fetch._IterableDatasetFetcher(dataset, auto_collation, collate_fn, drop_last)
+            return _utils.fetch._IterableDatasetFetcher(
+                dataset, auto_collation, collate_fn, drop_last
+            )
 
 
 class _InfiniteConstantSampler(Sampler):
@@ -55,7 +59,7 @@ class _InfiniteConstantSampler(Sampler):
         # This has to be a TypeError, otherwise, since this is used in
         # `len(dataloader)`, `list(dataloader)` will fail.
         # see NOTE [ Lack of Default `__len__` in Python Abstract Base Classes ]
-        raise TypeError('Cannot determine the DataLoader length of a IterableDataset')
+        raise TypeError("Cannot determine the DataLoader length of a IterableDataset")
 
 
 class DataLoader(object):
@@ -118,18 +122,31 @@ class DataLoader(object):
 
     __initialized = False
 
-    def __init__(self, dataset, batch_size=1, shuffle=False, sampler=None,
-                 batch_sampler=None, num_workers=0, collate_fn=None,
-                 pin_memory=False, drop_last=False, timeout=0,
-                 worker_init_fn=None, multiprocessing_context=None):
+    def __init__(
+        self,
+        dataset,
+        batch_size=1,
+        shuffle=False,
+        sampler=None,
+        batch_sampler=None,
+        num_workers=0,
+        collate_fn=None,
+        pin_memory=False,
+        drop_last=False,
+        timeout=0,
+        worker_init_fn=None,
+        multiprocessing_context=None,
+    ):
         torch._C._log_api_usage_once("python.data_loader")
 
         if num_workers < 0:
-            raise ValueError('num_workers option should be non-negative; '
-                             'use num_workers=0 to disable multiprocessing.')
+            raise ValueError(
+                "num_workers option should be non-negative; "
+                "use num_workers=0 to disable multiprocessing."
+            )
 
         if timeout < 0:
-            raise ValueError('timeout option should be non-negative')
+            raise ValueError("timeout option should be non-negative")
 
         self.dataset = dataset
         self.num_workers = num_workers
@@ -172,38 +189,46 @@ class DataLoader(object):
             if shuffle is not False:
                 raise ValueError(
                     "DataLoader with IterableDataset: expected unspecified "
-                    "shuffle option, but got shuffle={}".format(shuffle))
+                    "shuffle option, but got shuffle={}".format(shuffle)
+                )
             elif sampler is not None:
                 # See NOTE [ Custom Samplers and IterableDataset ]
                 raise ValueError(
                     "DataLoader with IterableDataset: expected unspecified "
-                    "sampler option, but got sampler={}".format(sampler))
+                    "sampler option, but got sampler={}".format(sampler)
+                )
             elif batch_sampler is not None:
                 # See NOTE [ Custom Samplers and IterableDataset ]
                 raise ValueError(
                     "DataLoader with IterableDataset: expected unspecified "
-                    "batch_sampler option, but got batch_sampler={}".format(batch_sampler))
+                    "batch_sampler option, but got batch_sampler={}".format(
+                        batch_sampler
+                    )
+                )
         else:
             self.dataset_kind = _DatasetKind.Map
 
         if sampler is not None and shuffle:
-            raise ValueError('sampler option is mutually exclusive with '
-                             'shuffle')
+            raise ValueError("sampler option is mutually exclusive with " "shuffle")
 
         if batch_sampler is not None:
             # auto_collation with custom batch_sampler
             if batch_size != 1 or shuffle or sampler is not None or drop_last:
-                raise ValueError('batch_sampler option is mutually exclusive '
-                                 'with batch_size, shuffle, sampler, and '
-                                 'drop_last')
+                raise ValueError(
+                    "batch_sampler option is mutually exclusive "
+                    "with batch_size, shuffle, sampler, and "
+                    "drop_last"
+                )
             batch_size = None
             drop_last = False
         elif batch_size is None:
             # no auto_collation
             if shuffle or sampler is not None or drop_last:
-                raise ValueError('batch_size=None option disables auto-batching '
-                                 'and is mutually exclusive with '
-                                 'shuffle, sampler, and drop_last')
+                raise ValueError(
+                    "batch_size=None option disables auto-batching "
+                    "and is mutually exclusive with "
+                    "shuffle, sampler, and drop_last"
+                )
 
         if sampler is None:  # give default samplers
             if self.dataset_kind == _DatasetKind.Iterable:
@@ -242,33 +267,52 @@ class DataLoader(object):
         if multiprocessing_context is not None:
             if self.num_workers > 0:
                 if not multiprocessing._supports_context:
-                    raise ValueError('multiprocessing_context relies on Python >= 3.4, with '
-                                     'support for different start methods')
+                    raise ValueError(
+                        "multiprocessing_context relies on Python >= 3.4, with "
+                        "support for different start methods"
+                    )
 
                 if isinstance(multiprocessing_context, string_classes):
                     valid_start_methods = multiprocessing.get_all_start_methods()
                     if multiprocessing_context not in valid_start_methods:
                         raise ValueError(
-                            ('multiprocessing_context option '
-                             'should specify a valid start method in {}, but got '
-                             'multiprocessing_context={}').format(valid_start_methods, multiprocessing_context))
-                    multiprocessing_context = multiprocessing.get_context(multiprocessing_context)
+                            (
+                                "multiprocessing_context option "
+                                "should specify a valid start method in {}, but got "
+                                "multiprocessing_context={}"
+                            ).format(valid_start_methods, multiprocessing_context)
+                        )
+                    multiprocessing_context = multiprocessing.get_context(
+                        multiprocessing_context
+                    )
 
-                if not isinstance(multiprocessing_context, python_multiprocessing.context.BaseContext):
-                    raise ValueError(('multiprocessing_context option should be a valid context '
-                                      'object or a string specifying the start method, but got '
-                                      'multiprocessing_context={}').format(multiprocessing_context))
+                if not isinstance(
+                    multiprocessing_context, python_multiprocessing.context.BaseContext
+                ):
+                    raise ValueError(
+                        (
+                            "multiprocessing_context option should be a valid context "
+                            "object or a string specifying the start method, but got "
+                            "multiprocessing_context={}"
+                        ).format(multiprocessing_context)
+                    )
             else:
-                raise ValueError(('multiprocessing_context can only be used with '
-                                  'multi-process loading (num_workers > 0), but got '
-                                  'num_workers={}').format(self.num_workers))
+                raise ValueError(
+                    (
+                        "multiprocessing_context can only be used with "
+                        "multi-process loading (num_workers > 0), but got "
+                        "num_workers={}"
+                    ).format(self.num_workers)
+                )
 
         self.__multiprocessing_context = multiprocessing_context
 
     def __setattr__(self, attr, val):
-        if self.__initialized and attr in ('batch_size', 'sampler', 'drop_last'):
-            raise ValueError('{} attribute should not be set after {} is '
-                             'initialized'.format(attr, self.__class__.__name__))
+        if self.__initialized and attr in ("batch_size", "sampler", "drop_last"):
+            raise ValueError(
+                "{} attribute should not be set after {} is "
+                "initialized".format(attr, self.__class__.__name__)
+            )
 
         super(DataLoader, self).__setattr__(attr, val)
 
@@ -340,7 +384,12 @@ class _SingleProcessDataLoaderIter(_BaseDataLoaderIter):
         assert self.num_workers == 0
 
         self.dataset_fetcher = _DatasetKind.create_fetcher(
-            self.dataset_kind, self.dataset, self.auto_collation, self.collate_fn, self.drop_last)
+            self.dataset_kind,
+            self.dataset,
+            self.auto_collation,
+            self.collate_fn,
+            self.drop_last,
+        )
 
     def __next__(self):
         index = self._next_index()  # may raise StopIteration
@@ -654,7 +703,9 @@ class _MultiProcessingDataLoaderIter(_BaseDataLoaderIter):
         # map: task idx => - (worker_id,)        if data isn't fetched (outstanding)
         #                  \ (worker_id, data)   if data is already fetched (out-of-order)
         self.task_info = {}
-        self.tasks_outstanding = 0  # always equal to count(v for v in task_info.values() if len(v) == 1)
+        self.tasks_outstanding = (
+            0  # always equal to count(v for v in task_info.values() if len(v) == 1)
+        )
         self.workers_done_event = multiprocessing_context.Event()
 
         self.index_queues = []
@@ -669,10 +720,21 @@ class _MultiProcessingDataLoaderIter(_BaseDataLoaderIter):
             # index_queue.cancel_join_thread()
             w = multiprocessing_context.Process(
                 target=_utils.worker._worker_loop,
-                args=(self.dataset_kind, self.dataset, index_queue,
-                      self.worker_result_queue, self.workers_done_event,
-                      self.auto_collation, self.collate_fn, self.drop_last,
-                      self.base_seed + i, self.worker_init_fn, i, self.num_workers))
+                args=(
+                    self.dataset_kind,
+                    self.dataset,
+                    index_queue,
+                    self.worker_result_queue,
+                    self.workers_done_event,
+                    self.auto_collation,
+                    self.collate_fn,
+                    self.drop_last,
+                    self.base_seed + i,
+                    self.worker_init_fn,
+                    i,
+                    self.num_workers,
+                ),
+            )
             w.daemon = True
             # NB: Process.start() actually take some time as it needs to
             #     start a process and pass the arguments over via a pipe.
@@ -690,9 +752,13 @@ class _MultiProcessingDataLoaderIter(_BaseDataLoaderIter):
             self.data_queue = queue.Queue()
             pin_memory_thread = threading.Thread(
                 target=_utils.pin_memory._pin_memory_loop,
-                args=(self.worker_result_queue, self.data_queue,
-                      torch.cuda.current_device(),
-                      self.pin_memory_thread_done_event))
+                args=(
+                    self.worker_result_queue,
+                    self.data_queue,
+                    torch.cuda.current_device(),
+                    self.pin_memory_thread_done_event,
+                ),
+            )
             pin_memory_thread.daemon = True
             pin_memory_thread.start()
             # Similar to workers (see comment above), we only register
@@ -701,7 +767,9 @@ class _MultiProcessingDataLoaderIter(_BaseDataLoaderIter):
         else:
             self.data_queue = self.worker_result_queue
 
-        _utils.signal_handling._set_worker_pids(id(self), tuple(w.pid for w in self.workers))
+        _utils.signal_handling._set_worker_pids(
+            id(self), tuple(w.pid for w in self.workers)
+        )
         _utils.signal_handling._set_SIGCHLD_handler()
         self.worker_pids_set = True
 
@@ -734,8 +802,10 @@ class _MultiProcessingDataLoaderIter(_BaseDataLoaderIter):
                     failed_workers.append(w)
                     self._shutdown_worker(worker_id)
             if len(failed_workers) > 0:
-                pids_str = ', '.join(str(w.pid) for w in failed_workers)
-                raise RuntimeError('DataLoader worker (pid(s) {}) exited unexpectedly'.format(pids_str))
+                pids_str = ", ".join(str(w.pid) for w in failed_workers)
+                raise RuntimeError(
+                    "DataLoader worker (pid(s) {}) exited unexpectedly".format(pids_str)
+                )
             if isinstance(e, queue.Empty):
                 return (False, None)
             raise
@@ -756,7 +826,9 @@ class _MultiProcessingDataLoaderIter(_BaseDataLoaderIter):
             if success:
                 return data
             else:
-                raise RuntimeError('DataLoader timed out after {} seconds'.format(self.timeout))
+                raise RuntimeError(
+                    "DataLoader timed out after {} seconds".format(self.timeout)
+                )
         elif self.pin_memory:
             while self.pin_memory_thread.is_alive():
                 success, data = self._try_get_data()
@@ -764,7 +836,7 @@ class _MultiProcessingDataLoaderIter(_BaseDataLoaderIter):
                     return data
             else:
                 # while condition is false, i.e., pin_memory_thread died.
-                raise RuntimeError('Pin memory thread exited unexpectedly')
+                raise RuntimeError("Pin memory thread exited unexpectedly")
             # In this case, `self.data_queue` is a `queue.Queue`,. But we don't
             # need to call `.task_done()` because we don't use `.join()`.
         else:
@@ -785,7 +857,9 @@ class _MultiProcessingDataLoaderIter(_BaseDataLoaderIter):
             while self.rcvd_idx < self.send_idx:
                 info = self.task_info[self.rcvd_idx]
                 worker_id = info[0]
-                if len(info) == 2 or self.workers_status[worker_id]:  # has data or is still active
+                if (
+                    len(info) == 2 or self.workers_status[worker_id]
+                ):  # has data or is still active
                     break
                 del self.task_info[self.rcvd_idx]
                 self.rcvd_idx += 1
@@ -886,7 +960,7 @@ class _MultiProcessingDataLoaderIter(_BaseDataLoaderIter):
                 # Exit `pin_memory_thread` first because exiting workers may leave
                 # corrupted data in `worker_result_queue` which `pin_memory_thread`
                 # reads from.
-                if hasattr(self, 'pin_memory_thread'):
+                if hasattr(self, "pin_memory_thread"):
                     # Use hasattr in case error happens before we set the attribute.
                     self.pin_memory_thread_done_event.set()
                     # Send something to pin_memory_thread in case it is waiting
