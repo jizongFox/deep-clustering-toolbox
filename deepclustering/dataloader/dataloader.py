@@ -704,8 +704,8 @@ class _MultiProcessingDataLoaderIter(_BaseDataLoaderIter):
         #                  \ (worker_id, data)   if data is already fetched (out-of-order)
         self.task_info = {}
         self.tasks_outstanding = (
-            0  # always equal to count(v for v in task_info.values() if len(v) == 1)
-        )
+            0
+        )  # always equal to count(v for v in task_info.values() if len(v) == 1)
         self.workers_done_event = multiprocessing_context.Event()
 
         self.index_queues = []

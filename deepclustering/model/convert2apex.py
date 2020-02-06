@@ -4,7 +4,7 @@ import warnings
 import torch
 from torch import Tensor
 
-from .general import Model
+from .models import Model
 
 try:
     from apex import amp
