@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
 from typing import List, Tuple
 
 from sklearn.model_selection import train_test_split
 
+from deepclustering import DATA_PATH
 from deepclustering.augment import SequentialWrapper
 from deepclustering.dataset.segmentation._medicalSegmentationDataset import (
     MedicalImageSegmentationDataset,
@@ -11,9 +13,7 @@ from deepclustering.dataset.segmentation._patient_sampler import (
     SubMedicalDatasetBasedOnIndex,
 )
 from deepclustering.dataset.semi_helper import MedicalDatasetSemiInterface
-from deepclustering import DATA_PATH
 from deepclustering.utils.download_unzip_helper import download_and_extract_archive
-from pathlib import Path
 
 
 class ACDCDataset(MedicalImageSegmentationDataset):
@@ -55,6 +55,7 @@ class ACDCDataset(MedicalImageSegmentationDataset):
 class ACDCSemiInterface(MedicalDatasetSemiInterface):
     def __init__(
         self,
+        root_dir=DATA_PATH,
         labeled_data_ratio: float = 0.2,
         unlabeled_data_ratio: float = 0.8,
         seed: int = 0,
@@ -62,7 +63,7 @@ class ACDCSemiInterface(MedicalDatasetSemiInterface):
     ) -> None:
         super().__init__(
             ACDCDataset,
-            DATA_PATH,
+            root_dir,
             labeled_data_ratio,
             unlabeled_data_ratio,
             seed,
@@ -95,16 +96,20 @@ class ACDCSemiInterface(MedicalDatasetSemiInterface):
         )
 
         labeled_patients, unlabeled_patients = train_test_split(
-            train_set.get_patient_list(),
+            train_set.get_group_list(),
             test_size=self.unlabeled_ratio,
             random_state=self.seed,
         )
         labeled_set = SubMedicalDatasetBasedOnIndex(train_set, labeled_patients)
         unlabeled_set = SubMedicalDatasetBasedOnIndex(train_set, unlabeled_patients)
-        assert (
-            labeled_set.filenames["img"].__len__()
-            + unlabeled_set.filenames["img"].__len__()
-            == train_set.filenames["img"].__len__()
+        assert len(labeled_set) + len(unlabeled_set) == len(
+            train_set
         ), "wrong on labeled/unlabeled split."
         del train_set
+        if labeled_transform:
+            labeled_set.set_transform(labeled_transform)
+        if unlabeled_transform:
+            unlabeled_set.set_transform(unlabeled_transform)
+        if val_transform:
+            val_set.set_transform(val_transform)
         return labeled_set, unlabeled_set, val_set

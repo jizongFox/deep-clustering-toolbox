@@ -1,4 +1,5 @@
 __all__ = ["SemiDataSetInterface", "MedicalDatasetSemiInterface"]
+
 from abc import abstractmethod
 from copy import deepcopy as dcp
 from itertools import repeat
@@ -373,9 +374,9 @@ class MedicalDatasetSemiInterface:
 
     def SemiSupervisedDataLoaders(
         self,
-        labeled_transform: SequentialWrapper,
-        unlabeled_transform: SequentialWrapper,
-        val_transform: SequentialWrapper,
+        labeled_transform: SequentialWrapper = None,
+        unlabeled_transform: SequentialWrapper = None,
+        val_transform: SequentialWrapper = None,
         group_labeled=False,
         group_unlabeled=False,
         group_val=True,
@@ -385,9 +386,12 @@ class MedicalDatasetSemiInterface:
         labeled_set, unlabeled_set, val_set = self._create_semi_supervised_datasets(
             labeled_transform=None, unlabeled_transform=None, val_transform=None
         )
-        labeled_set = self.override_transforms(labeled_set, labeled_transform)
-        unlabeled_set = self.override_transforms(unlabeled_set, unlabeled_transform)
-        val_set = self.override_transforms(val_set, val_transform)
+        if labeled_transform is not None:
+            labeled_set = self.override_transforms(labeled_set, labeled_transform)
+        if unlabeled_transform is not None:
+            unlabeled_set = self.override_transforms(unlabeled_set, unlabeled_transform)
+        if val_transform is not None:
+            val_set = self.override_transforms(val_set, val_transform)
         # labeled_dataloader
         if self._if_use_indiv_bz:
             _dataloader_params.update(
@@ -491,6 +495,7 @@ class MedicalDatasetSemiInterface:
     def override_transforms(
         dataset: MedicalImageSegmentationDataset, transform: SequentialWrapper
     ):
-        assert isinstance(dataset, MedicalImageSegmentationDataset)
-        dataset.transform = transform
+        assert isinstance(dataset, MedicalImageSegmentationDataset), dataset
+        assert isinstance(transform, SequentialWrapper), transform
+        dataset.set_transform(transform)
         return dataset

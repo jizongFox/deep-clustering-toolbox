@@ -1,11 +1,12 @@
 # this file is to help with the download and unzip of dataset retrieved from the google drive link.
 import errno
+import gzip
 import hashlib
 import os
 import tarfile
-import gzip
 import warnings
 import zipfile
+
 from tqdm import tqdm
 
 
@@ -86,7 +87,9 @@ def download_url(url, root, filename=None, md5=None):
             print("Downloading " + url + " to " + fpath)
             from gdown import download
 
-            download(url=url, output=fpath)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                download(url=url, output=fpath)
         except (urllib.error.URLError, IOError) as e:
             if url[:5] == "https":
                 url = url.replace("https:", "http:")

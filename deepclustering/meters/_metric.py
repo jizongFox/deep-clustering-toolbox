@@ -10,6 +10,7 @@ from ._utils import rename_df_columns
 
 __all__ = ["MeterInterface"]
 
+# todo:
 """
 we should incorporate the `Meters` and `Drawers` in the same interace, instead of setting them separately.
 """
@@ -50,7 +51,6 @@ class _AggregatedMeter:
 
     def __init__(self) -> None:
         super().__init__()
-        # self.record: List[Dict[str, float]] = []
         self._record_dict: REC_TYPE = OrderedDict()
         self._current_epoch: int = 0
 
@@ -77,7 +77,6 @@ class _AggregatedMeter:
         return validated_table
 
     def add(self, input_dict: Dict[str, float]) -> None:
-        # self.record.append(input_dict)
         self._record_dict[self._current_epoch] = input_dict
         self._current_epoch += 1
 
@@ -115,7 +114,6 @@ class MeterInterface:
         # check input meter configurations:
         for k, v in meter_config.items():
             assert isinstance(k, str), k
-            # todo check `assert isSubclass`
             assert issubclass(
                 type(v), _Metric
             ), f"{v.__class__.__name__} should be a subclass of {_Metric.__class__.__name__}, given {v}."  # can also check the subclasses.

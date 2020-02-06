@@ -23,8 +23,8 @@ class TestDownloadDataset(TestCase):
             verbose=True,
             mode="train",
         )
-        assert len(dataset) == 1129
-        assert dataset.get_patient_list().__len__() == 40
+        assert len(dataset) == 1196
+        assert dataset.get_group_list().__len__() == 35
 
         dataset = SpleenDataset(
             root_dir=self.dataset_root,
@@ -32,8 +32,8 @@ class TestDownloadDataset(TestCase):
             verbose=True,
             mode="val",
         )
-        assert len(dataset) == 248
-        assert dataset.get_patient_list().__len__() == 10
+        assert len(dataset) == 196
+        assert dataset.get_group_list().__len__() == 5
 
     def tearDown(self) -> None:
         super().tearDown()

@@ -24,7 +24,7 @@ class TestDownloadDataset(TestCase):
             mode="train",
         )
         assert len(dataset) == 1129
-        assert dataset.get_patient_list().__len__() == 40
+        assert dataset.get_group_list().__len__() == 40
 
         dataset = ProstateDataset(
             root_dir=self.dataset_root,
@@ -33,7 +33,7 @@ class TestDownloadDataset(TestCase):
             mode="val",
         )
         assert len(dataset) == 248
-        assert dataset.get_patient_list().__len__() == 10
+        assert dataset.get_group_list().__len__() == 10
 
     def tearDown(self) -> None:
         super().tearDown()

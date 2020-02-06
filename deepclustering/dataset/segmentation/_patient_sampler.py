@@ -1,13 +1,14 @@
 import random
 import re
+from copy import deepcopy as dcp
 from itertools import repeat
 from pathlib import Path
 from typing import List, Pattern, Dict, Callable, Match
 
 import numpy as np
-from deepclustering.utils import id_, map_
 from torch.utils.data.sampler import Sampler
 
+from deepclustering.utils import id_, map_
 from ._medicalSegmentationDataset import MedicalImageSegmentationDataset
 
 __all__ = ["PatientSampler", "SubMedicalDatasetBasedOnIndex"]
@@ -22,7 +23,7 @@ class PatientSampler(Sampler):
         verbose=True,
         infinite_sampler: bool = False,
     ) -> None:
-        filenames: List[str] = dataset.filenames[dataset.subfolders[0]]
+        filenames: List[str] = dataset.get_filenames()
         self.grp_regex = grp_regex
         self.shuffle: bool = shuffle
         self.shuffle_fn: Callable = (
@@ -74,28 +75,21 @@ class PatientSampler(Sampler):
 
 
 def SubMedicalDatasetBasedOnIndex(
-    dataset: MedicalImageSegmentationDataset, patient_list
+    dataset: MedicalImageSegmentationDataset, group_list
 ) -> MedicalImageSegmentationDataset:
     """
     This class divide a list of file path to some different groups in order to split the dataset based on p_pattern string.
     """
-    import re
-
-    def _is_matched(str_path: str, patient_list: List) -> bool:
-        patterns = [re.compile(p) for p in patient_list]
-        for pattern in patterns:
-            if pattern.search(str_path):
-                return True
-        return False
-
-    from copy import deepcopy as dcp
-
-    assert isinstance(patient_list, (tuple, list)) and patient_list.__len__() >= 1
+    assert (
+        isinstance(group_list, (tuple, list)) and group_list.__len__() >= 1
+    ), f"group_list to be extracted: {group_list}"
     dataset = dcp(dataset)
-    patient_img_list = dataset.filenames["img"]
-    sub_patient_index = [_is_matched(f, patient_list) for f in patient_img_list]
-    dataset.filenames = {
+    patient_img_list: List[str] = dataset.get_filenames()
+    sub_patient_index = [
+        dataset._get_group_name(f) in group_list for f in patient_img_list
+    ]
+    dataset._filenames = {
         k: np.array(v)[np.array(sub_patient_index)].tolist()
-        for k, v in dataset.filenames.items()
+        for k, v in dataset._filenames.items()
     }
     return dataset
