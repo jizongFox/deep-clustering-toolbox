@@ -1,10 +1,11 @@
-import pathlib
+from os import path
 
 from setuptools import setup, find_packages
 
-HERE = pathlib.Path(__file__).parent
-README = (HERE / "README.md").read_text()
+this_directory = path.abspath(path.dirname(__file__))
 
+with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
+    long_description = f.read()
 setup(
     name="deepclustering",
     entry_points={
@@ -14,13 +15,16 @@ setup(
             "report=deepclustering.postprocessing.report2:call_from_cmd",
         ]
     },
-    version="1.0.0",
-    packages=find_packages(),
+    version="0.0.2",
+    packages=find_packages(
+        exclude=["playground", ".data", "script", "test", "runs", "config"]
+    ),
     url="https://github.com/jizongFox/deep-clustering-toolbox",
-    license="MIT    ",
+    license="MIT",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author="Jizong Peng",
     author_email="jizong.peng.1@etsmtl.net",
-    description="",
     install_requires=[
         "msgpack",
         "numpy",

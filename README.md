@@ -1,9 +1,9 @@
-# deep-clustering-toolbox 
+# deep-clustering-toolbox
 #### PyTorch Vision toolbox not only for deep-clustering
 ### Introduction
 
-This repo contains the base code for a deep learning framework using `PyTorch`, to benchmark algorithms for various dataset. 
-The current version supports `MNIST`, `CIFAR10`, `SVHN` and `STL-10` for semisupervised and unsupervised learning. 
+This repo contains the base code for a deep learning framework using `PyTorch`, to benchmark algorithms for various dataset.
+The current version supports `MNIST`, `CIFAR10`, `SVHN` and `STL-10` for semisupervised and unsupervised learning.
 `ACDC`, `Promise12`, `WMH` and so on are supported as segmentation counterpart.
 
 #### Features:
@@ -11,23 +11,23 @@ The current version supports `MNIST`, `CIFAR10`, `SVHN` and `STL-10` for semisup
 >- Automatic checkpoint management adapting to various settings
 >- Automatic meter recording and experimental status plotting using matplotlib and threads
 >- Various build-in loss functions and help tricks and assert statements frequently used in PyTorch Framework, such as `disable_tracking_bn`, `ema`, `vat`, etc.
->- Various post-processing tools such as Viewer for Medical image segmentations, multislice_viwers for 3D dataset real-time debug 
+>- Various post-processing tools such as Viewer for Medical image segmentations, multislice_viwers for 3D dataset real-time debug
 and report script for experimental summaries.
 >- Extendable modules for rapid development.
 
-#### Several projects are benefited from this scalable framework, builing top on this, including: 
+#### Several projects are benefited from this scalable framework, builing top on this, including:
 
-+ DeepClustering implemented for 
->- `Invariant Information Clustering for Unsupervised Image Classification and Segmentation`, 
++ DeepClustering implemented for
+>- `Invariant Information Clustering for Unsupervised Image Classification and Segmentation`,
 >- `Learning Discrete Representations via Information Maximizing Self-Augmented Training`,
 >- [`Information based Deep Clustering: An experimental study`](https://github.com/jizongFox/DeepClusteringProject)
-+ SemiSupervised classification for 
->- `Semi-Supervised Learning by Augmented Distribution Alignment`, 
->- `Virtual Adversarial Training: A Regularization Method for Supervised and Semi-Supervised Learning`, 
++ SemiSupervised classification for
+>- `Semi-Supervised Learning by Augmented Distribution Alignment`,
+>- `Virtual Adversarial Training: A Regularization Method for Supervised and Semi-Supervised Learning`,
 >- `Temporal Ensembling for Semi-Supervised Learning`,
 >- `Mean teachers are better role models: Weight-averaged consistency targets improve semi-supervised deep learning results`
-+ SemiSupervised Segmentation for 
->- `Adversarial Learning for Semi-Supervised Semantic Segmentation`, 
++ SemiSupervised Segmentation for
+>- `Adversarial Learning for Semi-Supervised Semantic Segmentation`,
 >- `Semi-Supervised and Task-Driven Data Augmentation`,
 >- [`Deep Co-Training for Semi-Supervised Image Segmentation`](https://arxiv.org/abs/1903.11233)
 + Discretely-constrained CNN for
@@ -58,6 +58,10 @@ python setup install # for those who do not want to make changes immediately.
 python setup develop # for those who want to modify the code and make the impact immediate.
 
 ```
+Or very simply
+```bash
+pip install deepclustering
+```
 ### Citation
 If you feel useful for your project, please consider citing this work.
 ```latex
@@ -68,6 +72,3 @@ If you feel useful for your project, please consider citing this work.
   year={2019}
 }
 ```
-
-
-
