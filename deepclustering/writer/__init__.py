@@ -1,2 +1,2 @@
 from .SummaryWriter import SummaryWriter
-from .draw_csv import DrawCSV, DrawCSV2
+from .draw_csv import DrawCSV2

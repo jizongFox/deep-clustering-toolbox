@@ -43,6 +43,14 @@ class _Metric:
     def detailed_summary(self) -> dict:
         pass
 
+    @abstractmethod
+    def get_plot_names(self) -> List[str]:
+        pass
+
+    @abstractmethod
+    def get_axe_numbers(self) -> int:
+        return len(self.get_plot_names())
+
 
 class _AggregatedMeter:
     """

@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 
 from ._metric import _Metric
@@ -54,3 +56,6 @@ class AverageValueMeter(_Metric):
             return "\t".join([f"{k}:{v}" for k, v in value_dict.items()])
 
         return f"{self.__class__.__name__}: n={self.n} \n \t {_dict2str(self.detailed_summary())}"
+
+    def get_plot_names(self) -> List[str]:
+        return ["mean"]
