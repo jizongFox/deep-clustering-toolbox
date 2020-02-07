@@ -87,19 +87,19 @@ class SGDTrainer(_Trainer):
         **kwargs,
     ):
         # set model mode
-        self.model.set_mode(mode)
-        assert self.model.torchnet.training == True
+        self._model.set_mode(mode)
+        assert self._model.torchnet.training == True
         # set tqdm-based trainer
-        self.METERINTERFACE["lr"].add(self.model.get_lr()[0])
+        self.METERINTERFACE["lr"].add(self._model.get_lr()[0])
         _train_loader = tqdm_(train_loader)
         _train_loader.set_description(
             f" Training epoch {epoch}: lr={self.METERINTERFACE['lr'].summary()['value']:.5f}"
         )
         for batch_id, (imgs, targets) in enumerate(_train_loader):
-            imgs, targets = imgs.to(self.device), targets.to(self.device)
-            preds = self.model(imgs)
+            imgs, targets = imgs.to(self._device), targets.to(self._device)
+            preds = self._model(imgs)
             loss = self.ce_criterion(preds, targets)
-            with ZeroGradientBackwardStep(loss, self.model) as scaled_loss:
+            with ZeroGradientBackwardStep(loss, self._model) as scaled_loss:
                 scaled_loss.backward()
 
             self.METERINTERFACE["train_loss"].add(loss.item())
@@ -117,14 +117,14 @@ class SGDTrainer(_Trainer):
         **kwargs,
     ) -> float:
         # set model mode
-        self.model.set_mode(mode)
-        assert self.model.torchnet.training == False, self.model.training
+        self._model.set_mode(mode)
+        assert self._model.torchnet.training == False, self._model.training
         # set tqdm-based trainer
         _val_loader = tqdm_(val_loader)
         _val_loader.set_description(f"Validating epoch {epoch}: ")
         for batch_id, (imgs, targets) in enumerate(_val_loader):
-            imgs, targets = imgs.to(self.device), targets.to(self.device)
-            preds = self.model(imgs)
+            imgs, targets = imgs.to(self._device), targets.to(self._device)
+            preds = self._model(imgs)
             loss = self.ce_criterion(preds, targets)
             self.METERINTERFACE["val_loss"].add(loss.item())
             self.METERINTERFACE["val_acc"].add(preds.max(1)[1], targets)
@@ -160,7 +160,7 @@ class SWATrainer(SGDTrainer):
         )
         # initialize swa_model.
         self.swa_model = Model.initialize_from_state_dict(model.state_dict())
-        self.swa_model.to(self.device)
+        self.swa_model.to(self._device)
         self.swa_n = 0
 
     def __init_meters__(self) -> List[Union[str, List[str]]]:
@@ -188,23 +188,23 @@ class SWATrainer(SGDTrainer):
         )
 
     def start_training(self):
-        for epoch in range(self._start_epoch, self.max_epoch):
-            self._train_loop(train_loader=self.train_loader, epoch=epoch)
+        for epoch in range(self._start_epoch, self._max_epoch):
+            self._train_loop(train_loader=self._train_loader, epoch=epoch)
             with torch.no_grad():
-                current_score = self._eval_loop(self.val_loader, epoch)
+                current_score = self._eval_loop(self._val_loader, epoch)
                 # inference on swa model
-                if self.model.scheduler.if_cycle_ends():
+                if self._model.scheduler.if_cycle_ends():
                     print("swa")  # if some condition
                     self.step_swa()
-                    self._eval_swa_loop(self.val_loader, epoch)
+                    self._eval_swa_loop(self._val_loader, epoch)
                 # inference on swa ends
 
             self.METERINTERFACE.step()
-            self.model.schedulerStep()
+            self._model.schedulerStep()
 
             # save meters and checkpoints
             SUMMARY = self.METERINTERFACE.summary()
-            SUMMARY.to_csv(self.save_dir / self.wholemeter_filename)
+            SUMMARY.to_csv(self._save_dir / self.wholemeter_filename)
             self.drawer.draw(SUMMARY)
             self.save_checkpoint(self.state_dict(), epoch, current_score)
 
@@ -218,7 +218,7 @@ class SWATrainer(SGDTrainer):
         _val_loader = tqdm_(val_loader)
         _val_loader.set_description(f"Validating SWA epoch {epoch}: ")
         for batch_id, (imgs, targets) in enumerate(_val_loader):
-            imgs, targets = imgs.to(self.device), targets.to(self.device)
+            imgs, targets = imgs.to(self._device), targets.to(self._device)
             preds = self.swa_model(imgs)
             loss = self.ce_criterion(preds, targets)
             self.METERINTERFACE["val_swa_loss"].add(loss.item())
@@ -233,8 +233,8 @@ class SWATrainer(SGDTrainer):
         return self.METERINTERFACE["val_swa_acc"].summary()["acc"]
 
     def step_swa(self):
-        self._moving_average(self.swa_model, self.model, alpha=1.0 / (self.swa_n + 1))
-        self._adjust_bn(self.swa_model, self.train_loader)
+        self._moving_average(self.swa_model, self._model, alpha=1.0 / (self.swa_n + 1))
+        self._adjust_bn(self.swa_model, self._train_loader)
         self.swa_n += 1
 
     @staticmethod

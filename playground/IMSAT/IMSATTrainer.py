@@ -11,7 +11,7 @@ from deepclustering import PROJECT_PATH
 from deepclustering.loss.IMSAT_loss import Perturbation_Loss, MultualInformaton_IMSAT
 from deepclustering.meters import AverageValueMeter, MeterInterface
 from deepclustering.model import Model
-from deepclustering.trainer.Trainer import _Trainer
+from deepclustering.trainer._trainer import _Trainer
 from deepclustering.utils import tqdm_, simplex, assert_list
 from deepclustering.utils.VAT import VATLoss_Multihead
 from deepclustering.utils.classification.assignment_mapping import (
@@ -51,7 +51,7 @@ class IMSATTrainer(_Trainer):
         nearest_dict = np.loadtxt(
             Path(PROJECT_PATH) / "playground/IMSAT/10th_neighbor.txt"
         )
-        self.nearest_dict = torch.from_numpy(nearest_dict).float().to(self.device)
+        self.nearest_dict = torch.from_numpy(nearest_dict).float().to(self._device)
 
     def __init_meters__(self) -> List[str]:
         METER_CONFIG = {
@@ -91,23 +91,23 @@ class IMSATTrainer(_Trainer):
     def _train_loop(
         self, train_loader=None, epoch=0, mode: ModelMode = ModelMode.TRAIN, **kwargs
     ):
-        self.model.set_mode(mode)
+        self._model.set_mode(mode)
         assert (
-            self.model.training
-        ), f"Model should be in train() model, given {self.model.training}."
+            self._model.training
+        ), f"Model should be in train() model, given {self._model.training}."
         train_loader_: tqdm = tqdm_(train_loader)
         train_loader_.set_description(f"Training epoch: {epoch}")
         for batch, image_labels in enumerate(train_loader_):
             images, _, (index, *_) = list(zip(*image_labels))
             tf1_images = torch.cat(
                 [images[0] for _ in range(images.__len__() - 1)], dim=0
-            ).to(self.device)
-            tf2_images = torch.cat(images[1:], dim=0).to(self.device).to(self.device)
+            ).to(self._device)
+            tf2_images = torch.cat(images[1:], dim=0).to(self._device).to(self._device)
             index = torch.cat([index for _ in range(images.__len__() - 1)], dim=0)
 
             assert tf1_images.shape == tf2_images.shape
-            tf1_pred_logit = self.model.torchnet(tf1_images)
-            tf2_pred_logit = self.model.torchnet(tf2_images)
+            tf1_pred_logit = self._model.torchnet(tf1_images)
+            tf2_pred_logit = self._model.torchnet(tf2_images)
             assert (
                 assert_list(simplex, tf1_pred_logit)
                 and tf1_pred_logit[0].shape == tf2_pred_logit[0].shape
@@ -127,16 +127,18 @@ class IMSATTrainer(_Trainer):
 
             # VAT_generator = VATLoss_Multihead(eps=self.nearest_dict[index])
             VAT_generator = VATLoss_Multihead(eps=10)
-            vat_loss, adv_tf1_images, _ = VAT_generator(self.model.torchnet, tf1_images)
+            vat_loss, adv_tf1_images, _ = VAT_generator(
+                self._model.torchnet, tf1_images
+            )
 
             batch_loss: torch.Tensor = vat_loss - 0.1 * ml_losses
 
             # self.METERINTERFACE["train_sat_loss"].add(sat_losses.item())
             self.METERINTERFACE["train_mi_loss"].add(ml_losses.item())
             self.METERINTERFACE["train_adv_loss"].add(vat_loss.item())
-            self.model.zero_grad()
+            self._model.zero_grad()
             batch_loss.backward()
-            self.model.step()
+            self._model.step()
             report_dict = self._training_report_dict
             train_loader_.set_postfix(report_dict)
 
@@ -147,44 +149,44 @@ class IMSATTrainer(_Trainer):
         mode: ModelMode = ModelMode.EVAL,
         **kwargs,
     ) -> float:
-        self.model.set_mode(mode)
+        self._model.set_mode(mode)
         assert (
-            not self.model.training
-        ), f"Model should be in eval model in _eval_loop, given {self.model.training}."
+            not self._model.training
+        ), f"Model should be in eval model in _eval_loop, given {self._model.training}."
         val_loader_: tqdm = tqdm_(val_loader)
         preds = torch.zeros(
-            self.model.arch_dict["num_sub_heads"],
+            self._model.arch_dict["num_sub_heads"],
             val_loader.dataset.__len__(),
             dtype=torch.long,
-            device=self.device,
+            device=self._device,
         )
         target = torch.zeros(
-            val_loader.dataset.__len__(), dtype=torch.long, device=self.device
+            val_loader.dataset.__len__(), dtype=torch.long, device=self._device
         )
         slice_done = 0
         subhead_accs = []
         val_loader_.set_description(f"Validating epoch: {epoch}")
         for batch, image_labels in enumerate(val_loader_):
             images, gt, *_ = list(zip(*image_labels))
-            images, gt = images[0].to(self.device), gt[0].to(self.device)
-            _pred = self.model.torchnet(images)
+            images, gt = images[0].to(self._device), gt[0].to(self._device)
+            _pred = self._model.torchnet(images)
             assert (
                 assert_list(simplex, _pred)
-                and _pred.__len__() == self.model.arch_dict["num_sub_heads"]
+                and _pred.__len__() == self._model.arch_dict["num_sub_heads"]
             )
             bSlicer = slice(slice_done, slice_done + images.shape[0])
-            for subhead in range(self.model.arch_dict["num_sub_heads"]):
+            for subhead in range(self._model.arch_dict["num_sub_heads"]):
                 preds[subhead][bSlicer] = _pred[subhead].max(1)[1]
             target[bSlicer] = gt
             slice_done += gt.shape[0]
         assert slice_done == val_loader.dataset.__len__(), "Slice not completed."
 
-        for subhead in range(self.model.arch_dict["num_sub_heads"]):
+        for subhead in range(self._model.arch_dict["num_sub_heads"]):
             reorder_pred, remap = hungarian_match(
                 flat_preds=preds[subhead],
                 flat_targets=target,
-                preds_k=self.model.arch_dict["output_k_B"],
-                targets_k=self.model.arch_dict["output_k_B"],
+                preds_k=self._model.arch_dict["output_k_B"],
+                targets_k=self._model.arch_dict["output_k_B"],
             )
             _acc = flat_acc(reorder_pred, target)
             subhead_accs.append(_acc)

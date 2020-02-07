@@ -79,18 +79,18 @@ class MNISTTrainer(_Trainer):
     def _train_loop(
         self, train_loader=None, epoch=0, mode=ModelMode.TRAIN, *args, **kwargs
     ):
-        self.model.train()
+        self._model.train()
         train_loader_: tqdm = tqdm_(train_loader)
         for batch_num, data in enumerate(train_loader_):
             img, _ = data
-            img = img.to(self.device)
+            img = img.to(self._device)
             # ===================forward=====================
-            output = self.model(img)
+            output = self._model(img)
             loss = self.criterion(output, img)
             # ===================backward====================
-            self.model.zero_grad()
+            self._model.zero_grad()
             loss.backward()
-            self.model.step()
+            self._model.step()
             self.METERINTERFACE.rec_loss.add(loss.item())
             train_loader_.set_postfix(self._training_report_dict())
 
@@ -110,9 +110,9 @@ class MNISTTrainer(_Trainer):
         # self.model.eval()
         for batch_num, data in enumerate(val_loader):
             img, _ = data
-            img = img.to(self.device)
+            img = img.to(self._device)
             # ===================forward=====================
-            output = self.model(img)
+            output = self._model(img)
             output_draw = make_grid((output + 1) / 2)
             self.writer.add_image("rec", output_draw, global_step=epoch)
             break

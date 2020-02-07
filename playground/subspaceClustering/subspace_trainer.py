@@ -1,7 +1,7 @@
 from typing import List
 
 from deepclustering.model import Model
-from deepclustering.trainer.Trainer import _Trainer
+from deepclustering.trainer._trainer import _Trainer
 from torch.utils.data import DataLoader
 
 
@@ -30,7 +30,7 @@ class subspaceTrainer(_Trainer):
         )
         self.labeled_loader = labeled_loader
         self.unlabeled_loader = unlabeled_loader
-        assert self.train_loader == None
+        assert self._train_loader is None
 
     def __init_meters__(self) -> List[str]:
         return [""]

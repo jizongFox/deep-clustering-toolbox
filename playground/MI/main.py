@@ -22,7 +22,7 @@ from deepclustering.loss.IID_losses import IIDLoss
 from deepclustering.manager import ConfigManger
 from deepclustering.meters import MeterInterface, AverageValueMeter
 from deepclustering.model import Model
-from deepclustering.trainer.Trainer import _Trainer
+from deepclustering.trainer._trainer import _Trainer
 from deepclustering.utils import tqdm_, simplex, tqdm, flatten_dict, dict_filter
 from deepclustering.utils.VAT import VATLoss_Multihead
 from deepclustering.utils.classification.assignment_mapping import (
@@ -119,17 +119,17 @@ class IMSAT_Trainer(_Trainer):
         return report_dict
 
     def start_training(self):
-        for epoch in range(self._start_epoch, self.max_epoch):
-            self._train_loop(train_loader=self.train_loader, epoch=epoch)
+        for epoch in range(self._start_epoch, self._max_epoch):
+            self._train_loop(train_loader=self._train_loader, epoch=epoch)
             with torch.no_grad():
-                current_score = self._eval_loop(self.val_loader, epoch)
+                current_score = self._eval_loop(self._val_loader, epoch)
             self.METERINTERFACE.step()
-            self.model.schedulerStep()
+            self._model.schedulerStep()
             # save meters and checkpoints
             for k, v in self.METERINTERFACE.aggregated_meter_dict.items():
-                v.summary().to_csv(self.save_dir / f"meters/{k}.csv")
+                v.summary().to_csv(self._save_dir / f"meters/{k}.csv")
             self.METERINTERFACE.summary().to_csv(
-                self.save_dir / self.wholemeter_filename
+                self._save_dir / self.wholemeter_filename
             )
             self.writer.add_scalars(
                 "Scalars",
@@ -148,25 +148,25 @@ class IMSAT_Trainer(_Trainer):
         **kwargs,
     ):
         super()._train_loop(*args, **kwargs)
-        self.model.set_mode(mode)
-        assert self.model.training
+        self._model.set_mode(mode)
+        assert self._model.training
         _train_loader: tqdm = tqdm_(train_loader)
         for _batch_num, images_labels_indices in enumerate(_train_loader):
             images, labels, *_ = zip(*images_labels_indices)
             tf1_images = torch.cat(
                 tuple([images[0] for _ in range(images.__len__() - 1)]), dim=0
-            ).to(self.device)
-            tf2_images = torch.cat(tuple(images[1:]), dim=0).to(self.device)
-            pred_tf1_simplex = self.model(tf1_images)
-            pred_tf2_simplex = self.model(tf2_images)
+            ).to(self._device)
+            tf2_images = torch.cat(tuple(images[1:]), dim=0).to(self._device)
+            pred_tf1_simplex = self._model(tf1_images)
+            pred_tf2_simplex = self._model(tf2_images)
             assert simplex(pred_tf1_simplex[0]), pred_tf1_simplex
             assert simplex(pred_tf2_simplex[0]), pred_tf2_simplex
             total_loss = self._trainer_specific_loss(
                 tf1_images, tf2_images, pred_tf1_simplex, pred_tf2_simplex
             )
-            self.model.zero_grad()
+            self._model.zero_grad()
             total_loss.backward()
-            self.model.step()
+            self._model.step()
             report_dict = self._training_report_dict
             _train_loader.set_postfix(report_dict)
 
@@ -177,30 +177,30 @@ class IMSAT_Trainer(_Trainer):
         self, val_loader: DataLoader, epoch: int, mode=ModelMode.EVAL, *args, **kwargs
     ) -> float:
         super(IMSAT_Trainer, self)._eval_loop(*args, **kwargs)
-        self.model.set_mode(mode)
-        assert not self.model.training
+        self._model.set_mode(mode)
+        assert not self._model.training
         _val_loader = tqdm_(val_loader)
         preds = torch.zeros(
-            self.model.arch_dict["num_sub_heads"],
+            self._model.arch_dict["num_sub_heads"],
             val_loader.dataset.__len__(),
             dtype=torch.long,
-            device=self.device,
+            device=self._device,
         )
         probas = torch.zeros(
-            self.model.arch_dict["num_sub_heads"],
+            self._model.arch_dict["num_sub_heads"],
             val_loader.dataset.__len__(),
-            self.model.arch_dict["output_k"],
+            self._model.arch_dict["output_k"],
             dtype=torch.float,
-            device=self.device,
+            device=self._device,
         )
         gts = torch.zeros(
-            val_loader.dataset.__len__(), dtype=torch.long, device=self.device
+            val_loader.dataset.__len__(), dtype=torch.long, device=self._device
         )
         _batch_done = 0
         for _batch_num, images_labels_indices in enumerate(_val_loader):
             images, labels, *_ = zip(*images_labels_indices)
-            images, labels = images[0].to(self.device), labels[0].to(self.device)
-            pred = self.model(images)
+            images, labels = images[0].to(self._device), labels[0].to(self._device)
+            pred = self._model(images)
             _bSlice = slice(_batch_done, _batch_done + images.shape[0])
             gts[_bSlice] = labels
             for subhead in range(pred.__len__()):
@@ -211,12 +211,12 @@ class IMSAT_Trainer(_Trainer):
 
         # record
         subhead_accs = []
-        for subhead in range(self.model.arch_dict["num_sub_heads"]):
+        for subhead in range(self._model.arch_dict["num_sub_heads"]):
             reorder_pred, remap = hungarian_match(
                 flat_preds=preds[subhead],
                 flat_targets=gts,
-                preds_k=self.model.arch_dict["output_k"],
-                targets_k=self.model.arch_dict["output_k"],
+                preds_k=self._model.arch_dict["output_k"],
+                targets_k=self._model.arch_dict["output_k"],
             )
             _acc = flat_acc(reorder_pred, gts)
             subhead_accs.append(_acc)
@@ -244,7 +244,7 @@ class IMSAT_Trainer(_Trainer):
         """
         assert simplex(pred[0]), pred
         mi_losses, entropy_losses, centropy_losses = [], [], []
-        for subhead_num in range(self.model.arch_dict["num_sub_heads"]):
+        for subhead_num in range(self._model.arch_dict["num_sub_heads"]):
             _mi_loss, (_entropy_loss, _centropy_loss) = self.criterion(
                 pred[subhead_num]
             )
@@ -259,7 +259,7 @@ class IMSAT_Trainer(_Trainer):
         self.METERINTERFACE["train_entropy"].add(entrop_loss.item())
         self.METERINTERFACE["train_centropy"].add(centropy_loss.item())
 
-        sat_loss = torch.Tensor([0]).to(self.device)
+        sat_loss = torch.Tensor([0]).to(self._device)
         if self.sat_weight > 0:
             if not self.use_vat:
                 # use transformation
@@ -269,7 +269,7 @@ class IMSAT_Trainer(_Trainer):
                 sat_loss = sum(_sat_loss) / len(_sat_loss)
             else:
                 sat_loss, *_ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(
-                    self.model.torchnet, images
+                    self._model.torchnet, images
                 )
 
         self.METERINTERFACE["train_sat"].add(sat_loss.item())
@@ -341,7 +341,7 @@ class IMSAT_Enhanced_Trainer(IMSAT_Trainer):
         """
         assert simplex(pred[0]), pred
         mi_losses, entropy_losses, centropy_losses = [], [], []
-        for subhead_num in range(self.model.arch_dict["num_sub_heads"]):
+        for subhead_num in range(self._model.arch_dict["num_sub_heads"]):
             _mi_loss, (_entropy_loss, _centropy_loss) = self.criterion(
                 pred[subhead_num]
             )
@@ -356,13 +356,13 @@ class IMSAT_Enhanced_Trainer(IMSAT_Trainer):
         self.METERINTERFACE["train_entropy"].add(entrop_loss.item())
         self.METERINTERFACE["train_centropy"].add(centropy_loss.item())
 
-        sat_loss = torch.Tensor([0]).to(self.device)
+        sat_loss = torch.Tensor([0]).to(self._device)
         if self.sat_weight > 0:
             rt_loss = list(map(lambda p1, p2: self.kl(p2, p1.detach()), pred, pred_tf))
             rt_loss = sum(rt_loss) / len(rt_loss)
             self.METERINTERFACE["train_rt"].add(rt_loss.item())
             vat_loss, *_ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(
-                self.model.torchnet, images
+                self._model.torchnet, images
             )
             regul_loss = rt_loss + vat_loss
 
@@ -468,7 +468,7 @@ class IIC_Trainer(IMSAT_Trainer):
         sat_loss = 0
         if self.sat_weight > 0:
             sat_loss, *_ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(
-                self.model.torchnet, images
+                self._model.torchnet, images
             )
             self.METERINTERFACE["train_sat"].add(sat_loss.item())
         total_loss = batch_loss + self.sat_weight * sat_loss
@@ -493,17 +493,17 @@ class IIC_enhanced_Trainer(IIC_Trainer):
 
         # generate adversarial images: Take image without repetition
         _, adv_images, _ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(
-            self.model.torchnet, images[: self.train_loader.batch_size]
+            self._model.torchnet, images[: self._train_loader.batch_size]
         )
-        adv_preds = self.model(adv_images)
-        assert adv_preds[0].__len__() == self.train_loader.batch_size
+        adv_preds = self._model(adv_images)
+        assert adv_preds[0].__len__() == self._train_loader.batch_size
 
         batch_loss: List[torch.Tensor] = []  # type: ignore
         for subhead in range(pred.__len__()):
             # add adv prediction to the whole prediction list
             _loss, _loss_no_lambda = self.criterion(
                 torch.cat(
-                    (pred[subhead], pred[subhead][: self.train_loader.batch_size]),
+                    (pred[subhead], pred[subhead][: self._train_loader.batch_size]),
                     dim=0,
                 ),
                 torch.cat((pred_tf[subhead], adv_preds[subhead]), dim=0),
@@ -527,9 +527,9 @@ class IIC_adv_Trainer(IIC_Trainer):
     ) -> torch.Tensor:
         assert simplex(pred[0]) and pred_tf.__len__() == pred.__len__()
         _, adv_images, _ = VATLoss_Multihead(xi=1, eps=10, prop_eps=0.1)(
-            self.model.torchnet, images
+            self._model.torchnet, images
         )
-        adv_pred = self.model(adv_images)
+        adv_pred = self._model(adv_images)
         assert simplex(adv_pred[0])
 
         batch_loss: List[torch.Tensor] = []  # type: ignore

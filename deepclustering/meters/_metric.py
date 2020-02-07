@@ -10,10 +10,6 @@ from ._utils import rename_df_columns
 
 __all__ = ["MeterInterface"]
 
-# todo:
-"""
-we should incorporate the `Meters` and `Drawers` in the same interace, instead of setting them separately.
-"""
 REC_TYPE = Dict[int, Dict[str, float]]
 
 
