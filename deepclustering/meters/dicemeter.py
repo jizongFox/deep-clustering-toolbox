@@ -1,14 +1,19 @@
-__all__ = ["SliceDiceMeter", "BatchDiceMeter"]
+from typing import List
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import Tensor
-import numpy as np
-from deepclustering.decorator.decorator import threaded
+
 from ._metric import _Metric
 from ..loss.dice_loss import dice_coef, dice_batch
 from ..utils import probs2one_hot, class2one_hot
-from ..utils.numerical_type import to_float
+from ..utils.typecheckconvert import to_float
+
+__all__ = ["SliceDiceMeter", "BatchDiceMeter"]
+
+
+# from deepclustering.decorator.decorator import threaded
 
 
 def toOneHot(pred_logit, mask):
@@ -37,11 +42,11 @@ class _DiceMeter(_Metric):
         if report_axises is not None:
             self._report_axis = report_axises
         self._diceCallFunction = call_function
-        self._diceLog = []
+        self._diceLog = []  # type: ignore
         self._n = 0
 
     def reset(self):
-        self._diceLog = []
+        self._diceLog = []  # type: ignore
         self._n = 0
 
     def add(self, pred_logit: Tensor, gt: Tensor):
@@ -81,6 +86,9 @@ class _DiceMeter(_Metric):
     def summary(self) -> dict:
         _, (means, _) = self.value()
         return {f"DSC{i}": to_float(means[i]) for i in self._report_axis}
+
+    def get_plot_names(self) -> List[str]:
+        return [f"DSC{i}" for i in self._report_axis]
 
 
 class SliceDiceMeter(_DiceMeter):

@@ -1,90 +1,9 @@
 import argparse
-import os
-import subprocess
-import warnings
-from pathlib import Path
 from pprint import pprint
 from typing import List, Union
 
+import matplotlib.pyplot as plt
 import pandas as pd
-from deepclustering import PROJECT_PATH
-
-
-class DrawCSV(object):
-    """
-    directly override the columns_to_draw would be fine
-    """
-
-    def __init__(
-        self,
-        columns_to_draw=None,
-        save_dir=None,
-        save_name="plot.png",
-        csv_name="wholeMeter.csv",
-        figsize=[10, 15],
-    ) -> None:
-        super().__init__()
-        warnings.warn(
-            "Use DrawCSV2 drawer that accepts str or List[str], and threaded computing.",
-            DeprecationWarning,
-        )
-        if columns_to_draw is not None and not isinstance(columns_to_draw, list):
-            columns_to_draw = [columns_to_draw]
-        self.columns_to_draw: List[str] = columns_to_draw
-        self.save_name = save_name
-        self.save_dir = save_dir
-        self.figsize = tuple(figsize)
-        self.csv_name = csv_name
-
-    def call_draw(self):
-        try:
-            _csv_path = os.path.join(str(self.save_dir), self.csv_name)
-            _columns_to_draw = " ".join(self.columns_to_draw)
-            _save_dir = str(self.save_dir)
-            cmd = (
-                f"python  {PROJECT_PATH}/deepclustering/writer/draw_csv.py  "
-                f"--csv_path={_csv_path} "
-                f"--save_dir={_save_dir} "
-                f"--columns_to_draw {_columns_to_draw} &"
-            )
-            subprocess.call(cmd, shell=True)
-        except TypeError:
-            warnings.warn(
-                f"Given columns to draw: {self.columns_to_draw}.", UserWarning
-            )
-
-    def draw(self, dataframe, together=False):
-        import matplotlib
-        import numpy as np
-
-        matplotlib.use("agg")
-        import matplotlib.pyplot as plt
-
-        if together:
-            fig = plt.figure(figsize=self.figsize)
-            for k in self.columns_to_draw:
-                plt.plot(dataframe[k], label=k)
-            plt.legend()
-            plt.grid()
-            plt.savefig(str(self.save_dir) + f"/{self.save_name}")
-        else:
-            fig, axs = plt.subplots(
-                nrows=self.columns_to_draw.__len__(), sharex=True, figsize=self.figsize
-            )
-            if not isinstance(axs, np.ndarray):
-                axs = np.array([axs])
-            for i, k in enumerate(self.columns_to_draw):
-                if len(dataframe[k]) == 0:
-                    continue
-                _ax = axs[i]
-                _ax.plot(dataframe[k], label=k)
-                _ax.legend()
-                _ax.grid()
-                _ax.set_title(
-                    f"{k} with max:{dataframe[k].max():.3f}, min:{dataframe[k].min():.3f}"
-                )
-            plt.savefig(str(self.save_dir) + f"/{self.save_name}")
-        plt.close(fig)
 
 
 class DrawCSV2(object):
@@ -151,6 +70,21 @@ class DrawCSV2(object):
         ax.set_title("\n".join([title(k) for k in column_names]))
 
 
+class DrawCSV3:
+    def __init__(self) -> None:
+        self._total_axes_num = 0
+
+    def _draw_axe(self, meter_history: pd.DataFrame):
+        assert hasattr(
+            self, "_fig"
+        ), f"fig is not initialized, given total_axes_num={self._total_axes_num}."
+
+    def _initialize_fig(self):
+        if self._total_axes_num > 0:
+            self._fig = plt.figure(0)
+            self._axes = self._fig.add_suplots(1, self._total_axes_num)
+
+
 def arg_parser() -> argparse.Namespace:
     parser: argparse.ArgumentParser = argparse.ArgumentParser(
         description="parser to get parameters to draw csv using matplotlib."
@@ -192,18 +126,3 @@ def arg_parser() -> argparse.Namespace:
         print("Arguments:")
         pprint(args)
     return args
-
-
-if __name__ == "__main__":
-    args = arg_parser()
-    assert Path(args.csv_path).exists() and Path(args.csv_path).is_file(), args.csv_path
-
-    csv_drawer = DrawCSV(
-        columns_to_draw=args.columns_to_draw,
-        save_dir=args.save_dir,
-        save_name=args.save_name,
-        figsize=args.figsize,
-    )
-
-    csv_dataframe = pd.read_csv(args.csv_path)
-    csv_drawer.draw(csv_dataframe, together=args.overlap)

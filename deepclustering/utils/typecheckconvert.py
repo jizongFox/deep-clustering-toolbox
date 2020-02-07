@@ -5,6 +5,7 @@ import types
 
 import numpy as np
 import six
+import torch
 
 
 def is_np_array(val):
@@ -245,3 +246,29 @@ def is_tuple_or_list(val):
     :return: True if the variable is a list or a tuple, otherwise False
     """
     return isinstance(val, (list, tuple))
+
+
+# convert
+def to_numpy(tensor):
+    if torch.is_tensor(tensor):
+        return tensor.cpu().numpy()
+    elif type(tensor).__module__ != "numpy":
+        raise ValueError("Cannot convert {} to numpy array".format(type(tensor)))
+    return tensor
+
+
+def to_torch(ndarray):
+    if type(ndarray).__module__ == "numpy":
+        return torch.from_numpy(ndarray)
+    elif not torch.is_tensor(ndarray):
+        raise ValueError("Cannot convert {} to torch tensor".format(type(ndarray)))
+    return ndarray
+
+
+def to_float(value):
+    if torch.is_tensor(value):
+        return value.item()
+    elif type(value).__module__ == "numpy":
+        return value.item()
+    elif type(value) in (float, int):
+        return float(value)
