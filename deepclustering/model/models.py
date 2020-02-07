@@ -2,15 +2,14 @@ import warnings
 from typing import *
 
 import torch
-from torch import Tensor
-from torch import nn
-from torch.nn import functional as F
-from torch.optim import lr_scheduler
-
 from deepclustering import ModelMode
 from deepclustering import optim
 from deepclustering.arch import get_arch
 from deepclustering.utils import simplex
+from torch import Tensor
+from torch import nn
+from torch.nn import functional as F
+from torch.optim import lr_scheduler
 
 __all__ = ["Model", "DeployModel"]
 
@@ -109,12 +108,12 @@ class Model:
             )
             if "warmup" in _scheduler_params:
                 # encode warmup scheduler
-                from ..schedulers import GradualWarmupScheduler
+                from deepclustering.schedulers import GradualWarmupScheduler
 
-                self._scheduler = GradualWarmupScheduler(
+                self._scheduler = GradualWarmupScheduler(  # type: ignore
                     optimizer=self._optimizer,
-                    **_scheduler_params["warmup"],
                     after_scheduler=self._scheduler,
+                    **_scheduler_params["warmup"],
                 )
         else:
             self._scheduler_dict = None

@@ -1,24 +1,21 @@
 import atexit
 import os
-from abc import ABC, abstractmethod
-from copy import deepcopy as dcopy
+from abc import abstractmethod
 from pathlib import Path
 from typing import List, Union, Dict, Any
 
 import torch
-import yaml
-from torch import Tensor
 from torch.utils.data import DataLoader
 
 from .. import ModelMode, PROJECT_PATH
 from ..decorator import lazy_load_checkpoint
 from ..meters import MeterInterface
 from ..model import Model
-from ..utils import flatten_dict, _warnings, dict_filter, set_environment
+from ..utils import flatten_dict, _warnings, dict_filter, set_environment, write_yaml
 from ..writer import SummaryWriter, DrawCSV2
 
 
-class _Trainer(ABC):
+class _Trainer:
     """
     Abstract class for a general trainer, which has _train_loop, _eval_loop,load_state, state_dict, and save_checkpoint
     functions. All other trainers are the subclasses of this class.
@@ -40,38 +37,35 @@ class _Trainer(ABC):
         checkpoint_path: str = None,
         device="cpu",
         config: dict = None,
+        *args,
         **kwargs,
     ) -> None:
-        _warnings((), kwargs)
-        self.model = model
-        self.train_loader = train_loader
-        self.val_loader = val_loader
-        self.save_dir: Path = Path(self.RUN_PATH) / save_dir
-        self.save_dir.mkdir(exist_ok=True, parents=True)
-        self.checkpoint = checkpoint_path
-        self.max_epoch = int(max_epoch)
-        self.best_score: float = -1
+        _warnings(*args, **kwargs)
+        self._model = model
+        self._train_loader = train_loader
+        self._val_loader = val_loader
+        self._save_dir: Path = Path(self.RUN_PATH) / save_dir
+        self._save_dir.mkdir(exist_ok=True, parents=True)
+        self._checkpoint = checkpoint_path
+        self._max_epoch = int(max_epoch)
+        self._best_score: float = -1
         self._start_epoch = 0  # whether 0 or loaded from the checkpoint.
-        self.device = torch.device(device)
+        self._device = torch.device(device)
         # debug flag for `Trainer`
         self._debug = bool(os.environ.get("PYDEBUG") == "1")
 
         if config:
-            self.config = dcopy(config)
-            self.config.pop("Config", None)  # delete the Config attribute
-            with open(
-                str(self.save_dir / "config.yaml"), "w"
-            ) as outfile:  # type: ignore
-                yaml.dump(self.config, outfile, default_flow_style=False)
-            # set environment variable:
+            self._config = config.copy()
+            self._config.pop("Config", None)
+            write_yaml(self._config, save_dir=self._save_dir, save_name="config.yaml")
             set_environment(config.get("Environment"))
 
-        self.writer = SummaryWriter(str(self.save_dir))
+        self.writer = SummaryWriter(str(self._save_dir))
         # todo: try to override the DrawCSV
         _columns_to_draw = self.__init_meters__()
         self.drawer = DrawCSV2(
             columns_to_draw=_columns_to_draw,
-            save_dir=str(self.save_dir),
+            save_dir=str(self._save_dir),
             save_name="plot.png",
             csv_name=self.wholemeter_filename,
         )
@@ -97,22 +91,22 @@ class _Trainer(ABC):
         report_dict = dict_filter(report_dict)
         return report_dict
 
-    def start_training(self):
-        for epoch in range(self._start_epoch, self.max_epoch):
-            self._train_loop(train_loader=self.train_loader, epoch=epoch)
+    def _start_training(self):
+        for epoch in range(self._start_epoch, self._max_epoch):
+            self.train_loop(train_loader=self._train_loader, epoch=epoch)
             with torch.no_grad():
-                current_score = self._eval_loop(self.val_loader, epoch)
+                current_score = self.eval_loop(self._val_loader, epoch)
             self.METERINTERFACE.step()
-            self.model.schedulerStep()
+            self._model.schedulerStep()
             # save meters and checkpoints
             SUMMARY = self.METERINTERFACE.summary()
-            SUMMARY.to_csv(self.save_dir / self.wholemeter_filename)
+            SUMMARY.to_csv(self._save_dir / self.wholemeter_filename)
             self.drawer.draw(SUMMARY)
             self.save_checkpoint(self.state_dict(), epoch, current_score)
         self.writer.close()
 
     def to(self, device):
-        self.model.to(device=device)
+        self._model.to(device=device)
 
     @abstractmethod
     def _train_loop(
@@ -126,9 +120,15 @@ class _Trainer(ABC):
         # warning control
         _warnings(args, kwargs)
 
-    def _trainer_specific_loss(self, *args, **kwargs) -> Tensor:
-        # warning control
-        _warnings(args, kwargs)
+    def train_loop(self, *args, **kwargs):
+        return self._train_loop(*args, **kwargs)
+
+    @abstractmethod
+    def _run_step(self, *args, **kwargs):
+        pass
+
+    def run_step(self, *args, **kwargs):
+        return self._run_step(*args, **kwargs)
 
     @abstractmethod
     def _eval_loop(
@@ -140,7 +140,10 @@ class _Trainer(ABC):
         **kwargs,
     ) -> float:
         # warning control
-        _warnings(args, kwargs)
+        _warnings(*args, **kwargs)
+
+    def eval_loop(self, *args, **kwargs):
+        return self._eval_loop(*args, **kwargs)
 
     def inference(self, *args, **kwargs):
         """
@@ -149,14 +152,14 @@ class _Trainer(ABC):
         :param kwargs:
         :return:
         """
-        assert Path(self.checkpoint).exists() and Path(self.checkpoint).is_dir(), Path(
-            self.checkpoint
-        )
+        assert (
+            Path(self._checkpoint).exists() and Path(self._checkpoint).is_dir()
+        ), Path(self._checkpoint)
         state_dict = torch.load(
-            str(Path(self.checkpoint) / "best.pth"), map_location=torch.device("cpu")
+            str(Path(self._checkpoint) / "best.pth"), map_location=torch.device("cpu")
         )
         self.load_checkpoint(state_dict)
-        self.model.to(self.device)
+        self._model.to(self._device)
         # to be added
         # probably call self._eval() method.
 
@@ -178,15 +181,15 @@ class _Trainer(ABC):
         :param best_score:
         :return:
         """
-        save_best: bool = True if float(best_score) > float(self.best_score) else False
+        save_best: bool = True if float(best_score) > float(self._best_score) else False
         if save_best:
-            self.best_score = float(best_score)
+            self._best_score = float(best_score)
         state_dict["epoch"] = current_epoch
-        state_dict["best_score"] = float(self.best_score)
+        state_dict["best_score"] = float(self._best_score)
 
-        torch.save(state_dict, str(self.save_dir / "last.pth"))
+        torch.save(state_dict, str(self._save_dir / "last.pth"))
         if save_best:
-            torch.save(state_dict, str(self.save_dir / "best.pth"))
+            torch.save(state_dict, str(self._save_dir / "best.pth"))
 
     def load_state_dict(self, state_dict) -> None:
         """
@@ -211,7 +214,7 @@ class _Trainer(ABC):
         :return:
         """
         self.load_state_dict(state_dict)
-        self.best_score = state_dict["best_score"]
+        self._best_score = state_dict["best_score"]
         self._start_epoch = state_dict["epoch"] + 1
 
     def load_checkpoint_from_path(self, checkpoint_path):
@@ -234,9 +237,9 @@ class _Trainer(ABC):
 
         time.sleep(wait_time)  # to prevent that the call_draw function is not ended.
         Path(self.ARCHIVE_PATH).mkdir(exist_ok=True, parents=True)
-        sub_dir = self.save_dir.relative_to(Path(self.RUN_PATH))
+        sub_dir = self._save_dir.relative_to(Path(self.RUN_PATH))
         save_dir = Path(self.ARCHIVE_PATH) / str(sub_dir)
         if Path(save_dir).exists():
             shutil.rmtree(save_dir, ignore_errors=True)
-        shutil.move(str(self.save_dir), str(save_dir))
-        shutil.rmtree(str(self.save_dir), ignore_errors=True)
+        shutil.move(str(self._save_dir), str(save_dir))
+        shutil.rmtree(str(self._save_dir), ignore_errors=True)

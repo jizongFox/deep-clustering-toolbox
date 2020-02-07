@@ -1,16 +1,14 @@
-from pathlib import Path, PosixPath
-from pprint import pprint
-
-__all__ = ["YAMLArgParser", "yaml_load", "str2bool"]
-
 import argparse
 from copy import deepcopy as dcopy
 from functools import reduce
-from typing import List, Dict, Any, Union
+from pprint import pprint
+from typing import List, Dict, Any
 
 import yaml
 
 from .general import dict_merge
+
+__all__ = ["YAMLArgParser"]
 
 
 class YAMLArgParser(object):
@@ -120,22 +118,6 @@ class YAMLArgParser(object):
     def merge_dict(dict_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         args = reduce(lambda x, y: dict_merge(x, y, True), dict_list)
         return args
-
-
-def yaml_load(yaml_path: Union[Path, str], verbose=False) -> Dict[str, Any]:
-    """
-    load yaml file given a file string-like file path. return must be a dictionary.
-    :param yaml_path:
-    :param verbose:
-    :return:
-    """
-    assert isinstance(yaml_path, (Path, str, PosixPath)), type(yaml_path)
-    with open(str(yaml_path), "r") as stream:
-        data_loaded: dict = yaml.safe_load(stream)
-    if verbose:
-        print(f"Loaded yaml path:{str(yaml_path)}")
-        pprint(data_loaded)
-    return data_loaded
 
 
 def str2bool(v):

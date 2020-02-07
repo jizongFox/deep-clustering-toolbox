@@ -50,13 +50,12 @@ def set_nicer(nice) -> None:
         print(f"Process priority has been changed to {nice}.")
 
 
-def set_environment(environment_dict: Dict[str, str] = None) -> None:
+def set_environment(environment_dict: Dict[str, str] = None, verbose=True) -> None:
     if environment_dict:
-        import os
-
         for k, v in environment_dict.items():
             os.environ[k] = str(v)
-            print(f"setting environment {k}:{v}")
+            if verbose:
+                print(f"setting environment {k}:{v}")
 
 
 # reproducibility

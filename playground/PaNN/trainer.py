@@ -48,7 +48,7 @@ class SemiSegTrainer(_Trainer):
             config,
             **kwargs,
         )
-        assert self.train_loader is None
+        assert self._train_loader is None
         self.labeled_loader = labeled_loader
         self.unlabeled_loader = unlabeled_loader
         self.kl_criterion = KL_div()
@@ -59,14 +59,14 @@ class SemiSegTrainer(_Trainer):
             "lr": AverageValueMeter(),
             "trloss": AverageValueMeter(),
             "trdice": SliceDiceMeter(
-                C=self.model.arch_dict["num_classes"], report_axises=self.axis
+                C=self._model.arch_dict["num_classes"], report_axises=self.axis
             ),
             "valloss": AverageValueMeter(),
             "valdice": SliceDiceMeter(
-                C=self.model.arch_dict["num_classes"], report_axises=self.axis
+                C=self._model.arch_dict["num_classes"], report_axises=self.axis
             ),
             "valbdice": BatchDiceMeter(
-                C=self.model.arch_dict["num_classes"], report_axises=self.axis
+                C=self._model.arch_dict["num_classes"], report_axises=self.axis
             ),
         }
         self.METERINTERFACE = MeterInterface(meter_config)
@@ -80,19 +80,19 @@ class SemiSegTrainer(_Trainer):
         ]
 
     def start_training(self):
-        for epoch in range(self._start_epoch, self.max_epoch):
+        for epoch in range(self._start_epoch, self._max_epoch):
             self._train_loop(
                 labeled_loader=self.labeled_loader,
                 unlabeled_loader=self.unlabeled_loader,
                 epoch=epoch,
             )
             with torch.no_grad():
-                current_score = self._eval_loop(self.val_loader, epoch)
+                current_score = self._eval_loop(self._val_loader, epoch)
             self.METERINTERFACE.step()
-            self.model.schedulerStep()
+            self._model.schedulerStep()
             # save meters and checkpoints
             SUMMARY = self.METERINTERFACE.summary()
-            SUMMARY.to_csv(self.save_dir / self.wholemeter_filename)
+            SUMMARY.to_csv(self._save_dir / self.wholemeter_filename)
             self.drawer.draw(SUMMARY)
             self.save_checkpoint(self.state_dict(), epoch, current_score)
         self.writer.close()
@@ -106,23 +106,23 @@ class SemiSegTrainer(_Trainer):
         *args,
         **kwargs,
     ):
-        self.model.set_mode(mode)
+        self._model.set_mode(mode)
         labeled_loader = DataIter(labeled_loader)
         unlabeled_loader = DataIter(unlabeled_loader)
         _max_iter = tqdm_(range(self.max_iter))
         _max_iter.set_description(f"Training Epoch {epoch}")
-        self.METERINTERFACE["lr"].add(self.model.get_lr()[0])
+        self.METERINTERFACE["lr"].add(self._model.get_lr()[0])
         for (
             batch_num,
             ((lab_img, lab_gt), lab_path),
             ((unlab_img, _), unlab_path),
         ) in zip(_max_iter, labeled_loader, unlabeled_loader):
-            lab_img, lab_gt = lab_img.to(self.device), lab_gt.to(self.device)
-            lab_preds = self.model(lab_img, force_simplex=True)
+            lab_img, lab_gt = lab_img.to(self._device), lab_gt.to(self._device)
+            lab_preds = self._model(lab_img, force_simplex=True)
             sup_loss = self.kl_criterion(
                 lab_preds,
                 class2one_hot(
-                    lab_gt.squeeze(1), C=self.model.arch_dict["num_classes"]
+                    lab_gt.squeeze(1), C=self._model.arch_dict["num_classes"]
                 ).float(),
             )
             reg_loss = self._trainer_specific_loss(unlab_img)
@@ -130,7 +130,7 @@ class SemiSegTrainer(_Trainer):
             self.METERINTERFACE["trdice"].add(lab_preds, lab_gt)
 
             with ZeroGradientBackwardStep(
-                sup_loss + reg_loss, self.model
+                sup_loss + reg_loss, self._model
             ) as total_loss:
                 total_loss.backward()
             report_dict = self._training_report_dict
@@ -139,7 +139,7 @@ class SemiSegTrainer(_Trainer):
         self.writer.add_scalar_with_tag("train", report_dict, global_step=epoch)
 
     def _trainer_specific_loss(self, unlab_img: Tensor, **kwargs) -> Tensor:
-        return torch.tensor(0, dtype=torch.float32, device=self.device)
+        return torch.tensor(0, dtype=torch.float32, device=self._device)
 
     def _eval_loop(
         self,
@@ -149,16 +149,16 @@ class SemiSegTrainer(_Trainer):
         *args,
         **kwargs,
     ) -> float:
-        self.model.set_mode(mode)
+        self._model.set_mode(mode)
         _val_loader = tqdm_(val_loader)
         _val_loader.set_description(f"Validating Epoch {epoch}")
         for batch_num, ((val_img, val_gt), val_path) in enumerate(_val_loader):
-            val_img, val_gt = val_img.to(self.device), val_gt.to(self.device)
-            val_preds = self.model(val_img, force_simplex=True)
+            val_img, val_gt = val_img.to(self._device), val_gt.to(self._device)
+            val_preds = self._model(val_img, force_simplex=True)
             val_loss = self.kl_criterion(
                 val_preds,
                 class2one_hot(
-                    val_gt.squeeze(1), C=self.model.arch_dict["num_classes"]
+                    val_gt.squeeze(1), C=self._model.arch_dict["num_classes"]
                 ).float(),
                 disable_assert=True,
             )

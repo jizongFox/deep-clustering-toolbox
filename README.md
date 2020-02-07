@@ -1,6 +1,7 @@
 # deep-clustering-toolbox
 #### PyTorch Vision toolbox not only for deep-clustering
 ### Introduction
+I still use this repo for research propose. I update some modules frequently to make the framework flexible enough.
 
 This repo contains the base code for a deep learning framework using `PyTorch`, to benchmark algorithms for various dataset.
 The current version supports `MNIST`, `CIFAR10`, `SVHN` and `STL-10` for semisupervised and unsupervised learning.

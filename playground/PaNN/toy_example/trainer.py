@@ -52,7 +52,7 @@ class SemiTrainer(_Trainer):
             config,
             **kwargs,
         )
-        assert self.train_loader is None
+        assert self._train_loader is None
         self.labeled_loader = labeled_loader
         self.unlabeled_loader = unlabeled_loader
         self.kl_criterion = KL_div()
@@ -62,27 +62,27 @@ class SemiTrainer(_Trainer):
         meter_config = {
             "lr": AverageValueMeter(),
             "traloss": AverageValueMeter(),
-            "traconf": ConfusionMatrix(self.model.torchnet.num_classes),
+            "traconf": ConfusionMatrix(self._model.torchnet.num_classes),
             "valloss": AverageValueMeter(),
-            "valconf": ConfusionMatrix(self.model.torchnet.num_classes),
+            "valconf": ConfusionMatrix(self._model.torchnet.num_classes),
         }
         self.METERINTERFACE = MeterInterface(meter_config)
         return ["traloss_mean", "traconf_acc", "valloss_mean", "valconf_acc", "lr_mean"]
 
     def start_training(self):
-        for epoch in range(self._start_epoch, self.max_epoch):
+        for epoch in range(self._start_epoch, self._max_epoch):
             self._train_loop(
                 labeled_loader=self.labeled_loader,
                 unlabeled_loader=self.unlabeled_loader,
                 epoch=epoch,
             )
             with torch.no_grad():
-                current_score = self._eval_loop(self.val_loader, epoch)
+                current_score = self._eval_loop(self._val_loader, epoch)
             self.METERINTERFACE.step()
-            self.model.schedulerStep()
+            self._model.schedulerStep()
             # save meters and checkpoints
             SUMMARY = self.METERINTERFACE.summary()
-            SUMMARY.to_csv(self.save_dir / self.wholemeter_filename)
+            SUMMARY.to_csv(self._save_dir / self.wholemeter_filename)
             self.drawer.draw(SUMMARY)
             self.save_checkpoint(self.state_dict(), epoch, current_score)
         self.writer.close()
@@ -96,25 +96,25 @@ class SemiTrainer(_Trainer):
         *args,
         **kwargs,
     ):
-        self.model.set_mode(mode)
+        self._model.set_mode(mode)
         _max_iter = tqdm_(range(self.max_iter))
         _max_iter.set_description(f"Training Epoch {epoch}")
-        self.METERINTERFACE["lr"].add(self.model.get_lr()[0])
+        self.METERINTERFACE["lr"].add(self._model.get_lr()[0])
         for batch_num, (lab_img, lab_gt), (unlab_img, unlab_gt) in zip(
             _max_iter, labeled_loader, unlabeled_loader
         ):
-            lab_img, lab_gt = lab_img.to(self.device), lab_gt.to(self.device)
-            lab_preds = self.model(lab_img)
+            lab_img, lab_gt = lab_img.to(self._device), lab_gt.to(self._device)
+            lab_preds = self._model(lab_img)
             sup_loss = self.kl_criterion(
                 lab_preds,
-                class2one_hot(lab_gt, C=self.model.torchnet.num_classes).float(),
+                class2one_hot(lab_gt, C=self._model.torchnet.num_classes).float(),
             )
             reg_loss = self._trainer_specific_loss(unlab_img, unlab_gt)
             self.METERINTERFACE["traloss"].add(sup_loss.item())
             self.METERINTERFACE["traconf"].add(lab_preds.max(1)[1], lab_gt)
 
             with ZeroGradientBackwardStep(
-                sup_loss + reg_loss, self.model
+                sup_loss + reg_loss, self._model
             ) as total_loss:
                 total_loss.backward()
             report_dict = self._training_report_dict
@@ -125,7 +125,7 @@ class SemiTrainer(_Trainer):
     def _trainer_specific_loss(
         self, unlab_img: Tensor, unlab_gt: Tensor, **kwargs
     ) -> Tensor:
-        return torch.tensor(0, dtype=torch.float32, device=self.device)
+        return torch.tensor(0, dtype=torch.float32, device=self._device)
 
     def _eval_loop(
         self,
@@ -135,15 +135,15 @@ class SemiTrainer(_Trainer):
         *args,
         **kwargs,
     ) -> float:
-        self.model.set_mode(mode)
+        self._model.set_mode(mode)
         _val_loader = tqdm_(val_loader)
         _val_loader.set_description(f"Validating Epoch {epoch}")
         for batch_num, (val_img, val_gt) in enumerate(_val_loader):
-            val_img, val_gt = val_img.to(self.device), val_gt.to(self.device)
-            val_preds = self.model(val_img)
+            val_img, val_gt = val_img.to(self._device), val_gt.to(self._device)
+            val_preds = self._model(val_img)
             val_loss = self.kl_criterion(
                 val_preds,
-                class2one_hot(val_gt, C=self.model.torchnet.num_classes).float(),
+                class2one_hot(val_gt, C=self._model.torchnet.num_classes).float(),
                 disable_assert=True,
             )
             self.METERINTERFACE["valloss"].add(val_loss.item())
@@ -221,7 +221,7 @@ class SemiEntropyTrainer(SemiTrainer):
         )
         assert isinstance(prior, Tensor), prior
         assert simplex(prior, 0), f"`prior` provided must be simplex."
-        self.prior = prior.to(self.device)
+        self.prior = prior.to(self._device)
         self.entropy = Entropy()
         self.inverse_kl = inverse_kl
 
@@ -233,8 +233,8 @@ class SemiEntropyTrainer(SemiTrainer):
         return columns
 
     def _trainer_specific_loss(self, unlab_img: Tensor, *args, **kwargs) -> Tensor:
-        unlab_img = unlab_img.to(self.device)
-        unlabeled_preds = self.model(unlab_img)
+        unlab_img = unlab_img.to(self._device)
+        unlabeled_preds = self._model(unlab_img)
         assert simplex(unlabeled_preds, 1)
         marginal = unlabeled_preds.mean(0)
         if not self.inverse_kl:
@@ -311,8 +311,8 @@ class SemiPrimalDualTrainer(SemiEntropyTrainer):
         return columns
 
     def _trainer_specific_loss(self, unlab_img: Tensor, **kwargs) -> Tensor:
-        unlab_img = unlab_img.to(self.device)
-        unlabeled_preds = self.model(unlab_img)
+        unlab_img = unlab_img.to(self._device)
+        unlabeled_preds = self._model(unlab_img)
         assert simplex(unlabeled_preds, 1)
         marginal = unlabeled_preds.mean(0)
         lagrangian = (
@@ -325,8 +325,8 @@ class SemiPrimalDualTrainer(SemiEntropyTrainer):
 
     def _update_mu(self, unlab_img: Tensor):
         self.mu_optim.zero_grad()
-        unlab_img = unlab_img.to(self.device)
-        unlabeled_preds = self.model(unlab_img).detach()
+        unlab_img = unlab_img.to(self._device)
+        unlabeled_preds = self._model(unlab_img).detach()
         assert simplex(unlabeled_preds, 1)
         marginal = unlabeled_preds.mean(0)
         # to increase the lagrangian..
@@ -352,25 +352,25 @@ class SemiPrimalDualTrainer(SemiEntropyTrainer):
         *args,
         **kwargs,
     ):
-        self.model.set_mode(mode)
+        self._model.set_mode(mode)
         _max_iter = tqdm_(range(self.max_iter))
         _max_iter.set_description(f"Training Epoch {epoch}")
-        self.METERINTERFACE["lr"].add(self.model.get_lr()[0])
+        self.METERINTERFACE["lr"].add(self._model.get_lr()[0])
         for batch_num, (lab_img, lab_gt), (unlab_img, _) in zip(
             _max_iter, labeled_loader, unlabeled_loader
         ):
-            lab_img, lab_gt = lab_img.to(self.device), lab_gt.to(self.device)
-            lab_preds = self.model(lab_img)
+            lab_img, lab_gt = lab_img.to(self._device), lab_gt.to(self._device)
+            lab_preds = self._model(lab_img)
             sup_loss = self.kl_criterion(
                 lab_preds,
-                class2one_hot(lab_gt, C=self.model.torchnet.num_classes).float(),
+                class2one_hot(lab_gt, C=self._model.torchnet.num_classes).float(),
             )
             reg_loss = self._trainer_specific_loss(unlab_img)
             self.METERINTERFACE["traloss"].add(sup_loss.item())
             self.METERINTERFACE["traconf"].add(lab_preds.max(1)[1], lab_gt)
 
             with ZeroGradientBackwardStep(
-                sup_loss + reg_loss, self.model
+                sup_loss + reg_loss, self._model
             ) as total_loss:
                 total_loss.backward()
 
@@ -441,9 +441,9 @@ class SemiUDATrainer(SemiTrainer):
     def _trainer_specific_loss(
         self, unlab_img: Tensor, unlab_gt: Tensor, **kwargs
     ) -> Tensor:
-        unlab_img = unlab_img.to(self.device)
+        unlab_img = unlab_img.to(self._device)
         unlab_img_tf, _ = self.affine_transform(unlab_img)
-        all_preds = self.model(torch.cat([unlab_img, unlab_img_tf], dim=0))
+        all_preds = self._model(torch.cat([unlab_img, unlab_img_tf], dim=0))
         unlabel_pred, unlabel_pred_tf = torch.chunk(all_preds, 2)
         assert simplex(unlabel_pred) and simplex(unlabel_pred_tf)
         reg = self.kl_criterion(unlabel_pred_tf, unlabel_pred.detach())
