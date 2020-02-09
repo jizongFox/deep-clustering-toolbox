@@ -2,17 +2,19 @@ import atexit
 import os
 from abc import abstractmethod
 from pathlib import Path
-from typing import List, Union, Dict, Any
+from typing import Union, Dict, Any
 
 import torch
 from torch.utils.data import DataLoader
+from torch.utils.data.dataloader import _BaseDataLoaderIter
 
+from ._hooks import HookMixin
 from .. import ModelMode, PROJECT_PATH
 from ..decorator import lazy_load_checkpoint
 from ..meters import MeterInterface
 from ..model import Model
 from ..utils import flatten_dict, _warnings, dict_filter, set_environment, write_yaml
-from ..writer import SummaryWriter, DrawCSV2
+from ..writer import SummaryWriter, DataFrameDrawer
 
 
 class _Trainer:
@@ -30,7 +32,7 @@ class _Trainer:
     def __init__(
         self,
         model: Model,
-        train_loader: DataLoader,
+        train_loader: Union[DataLoader, _BaseDataLoaderIter],
         val_loader: DataLoader,
         max_epoch: int = 100,
         save_dir: str = "base",
@@ -62,20 +64,14 @@ class _Trainer:
 
         self.writer = SummaryWriter(str(self._save_dir))
         # todo: try to override the DrawCSV
-        _columns_to_draw = self.__init_meters__()
-        self.drawer = DrawCSV2(
-            columns_to_draw=_columns_to_draw,
-            save_dir=str(self._save_dir),
-            save_name="plot.png",
-            csv_name=self.wholemeter_filename,
+        self._meter_interface = MeterInterface()
+        self._dataframe_drawer = DataFrameDrawer(
+            meterinterface=self._meter_interface,
+            save_dir=self._save_dir,
+            save_name="DataFrameDrawer.png",
         )
+        # close tensorboard writer automatically.
         atexit.register(self.writer.close)
-
-    @abstractmethod
-    def __init_meters__(self) -> List[Union[str, List[str]]]:
-        METER_CONFIG = {}
-        self.METERINTERFACE = MeterInterface(METER_CONFIG)
-        return ["draw_columns_list"]
 
     @property
     @abstractmethod
@@ -91,22 +87,22 @@ class _Trainer:
         report_dict = dict_filter(report_dict)
         return report_dict
 
+    def to(self, device):
+        self._model.to(device=device)
+
     def _start_training(self):
         for epoch in range(self._start_epoch, self._max_epoch):
             self.train_loop(train_loader=self._train_loader, epoch=epoch)
             with torch.no_grad():
                 current_score = self.eval_loop(self._val_loader, epoch)
-            self.METERINTERFACE.step()
             self._model.schedulerStep()
             # save meters and checkpoints
-            SUMMARY = self.METERINTERFACE.summary()
-            SUMMARY.to_csv(self._save_dir / self.wholemeter_filename)
-            self.drawer.draw(SUMMARY)
+            self._meter_interface.step()
+            self._dataframe_drawer()
             self.save_checkpoint(self.state_dict(), epoch, current_score)
-        self.writer.close()
 
-    def to(self, device):
-        self._model.to(device=device)
+    def start_training(self):
+        return self._start_training()
 
     @abstractmethod
     def _train_loop(
@@ -191,7 +187,7 @@ class _Trainer:
         if save_best:
             torch.save(state_dict, str(self._save_dir / "best.pth"))
 
-    def load_state_dict(self, state_dict) -> None:
+    def _load_state_dict(self, state_dict) -> None:
         """
         Load state_dict for submodules having "load_state_dict" method.
         :param state_dict:
@@ -200,7 +196,7 @@ class _Trainer:
         for module_name, module in self.__dict__.items():
             if hasattr(module, "load_state_dict"):
                 try:
-                    module.load_state_dict(state_dict[module_name])
+                    module._load_state_dict(state_dict[module_name])
                 except KeyError as e:
                     print(f"Loading checkpoint error for {module_name}, {e}.")
                 except RuntimeError as e:
@@ -213,7 +209,7 @@ class _Trainer:
         :param state_dict:
         :return:
         """
-        self.load_state_dict(state_dict)
+        self._load_state_dict(state_dict)
         self._best_score = state_dict["best_score"]
         self._start_epoch = state_dict["epoch"] + 1
 
@@ -243,3 +239,7 @@ class _Trainer:
             shutil.rmtree(save_dir, ignore_errors=True)
         shutil.move(str(self._save_dir), str(save_dir))
         shutil.rmtree(str(self._save_dir), ignore_errors=True)
+
+
+class _TrainerHook(HookMixin, _Trainer):
+    pass

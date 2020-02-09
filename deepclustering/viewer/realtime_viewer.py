@@ -120,7 +120,7 @@ class multi_slice_viewer(PLTViewer):
                 self.previous_slice(ax)
             elif event.button == "down":
                 self.next_slice(ax)
-        fig.canvas.draw()
+        fig.canvas._draw()
 
     def process_key(self, event):
         # using registered key
@@ -130,7 +130,7 @@ class multi_slice_viewer(PLTViewer):
                 self.previous_slice(ax)
             elif event.key == self.down_key:
                 self.next_slice(ax)
-        fig.canvas.draw()
+        fig.canvas._draw()
 
     def previous_slice(self, ax):
         img_volume = ax.img_volume
@@ -192,7 +192,7 @@ def multi_slice_viewer_debug(
                 previous_slice(ax)
             elif event.button == "down":
                 next_slice(ax)
-        fig.canvas.draw()
+        fig.canvas._draw()
 
     def process_key(event):
         fig = event.canvas.figure
@@ -201,7 +201,7 @@ def multi_slice_viewer_debug(
             previous_slice(ax)
         elif event.key == "k":
             next_slice(ax)
-        fig.canvas.draw()
+        fig.canvas._draw()
 
     def previous_slice(ax):
         img_volume = ax.img_volume

@@ -48,7 +48,7 @@ class EMA_Model:
         self.global_step = state_dict["global_step"]
         del state_dict["alpha"]
         del state_dict["global_step"]
-        self.model.load_state_dict(state_dict)
+        self.model._load_state_dict(state_dict)
 
     @property
     def training(self):

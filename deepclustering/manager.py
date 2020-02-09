@@ -3,8 +3,7 @@ from pathlib import Path
 from pprint import pprint
 from typing import Dict, Any
 
-from deepclustering.utils import dict_merge
-from deepclustering.utils.yaml_parser import yaml_load, YAMLArgParser
+from deepclustering.utils import dict_merge, yaml_load, YAMLArgParser
 
 
 class ConfigManger:

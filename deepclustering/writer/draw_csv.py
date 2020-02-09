@@ -2,7 +2,6 @@ import argparse
 from pprint import pprint
 from typing import List, Union
 
-import matplotlib.pyplot as plt
 import pandas as pd
 
 
@@ -68,21 +67,6 @@ class DrawCSV2(object):
             lambda k: f"{k} with max:{data_frame[k].max():.3f}, min:{data_frame[k].min():.3f}"
         )
         ax.set_title("\n".join([title(k) for k in column_names]))
-
-
-class DrawCSV3:
-    def __init__(self) -> None:
-        self._total_axes_num = 0
-
-    def _draw_axe(self, meter_history: pd.DataFrame):
-        assert hasattr(
-            self, "_fig"
-        ), f"fig is not initialized, given total_axes_num={self._total_axes_num}."
-
-    def _initialize_fig(self):
-        if self._total_axes_num > 0:
-            self._fig = plt.figure(0)
-            self._axes = self._fig.add_suplots(1, self._total_axes_num)
 
 
 def arg_parser() -> argparse.Namespace:

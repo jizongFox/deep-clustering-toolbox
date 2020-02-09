@@ -29,8 +29,8 @@ def toOneHot(pred_logit, mask):
 
 
 class _DiceMeter(_Metric):
-    def __init__(self, call_function, report_axises=None, C=4) -> None:
-        super().__init__()
+    def __init__(self, call_function, C=4, report_axises=None) -> None:
+        super(_DiceMeter, self).__init__()
         assert report_axises is None or isinstance(report_axises, (list, tuple))
         if report_axises is not None:
             assert max(report_axises) <= C, (
@@ -89,6 +89,12 @@ class _DiceMeter(_Metric):
 
     def get_plot_names(self) -> List[str]:
         return [f"DSC{i}" for i in self._report_axis]
+
+    def __repr__(self):
+        string = f"C={self._C}, report_axis={self._report_axis}\n"
+        return (
+            string + "\t" + "\t".join([f"{k}:{v}" for k, v in self.summary().items()])
+        )
 
 
 class SliceDiceMeter(_DiceMeter):

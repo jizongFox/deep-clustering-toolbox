@@ -22,3 +22,5 @@ script/runs/
 build/
 dist/
 log/
+
+test/**/*.png

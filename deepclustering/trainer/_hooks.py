@@ -162,4 +162,4 @@ class HookMixin:
     def run_step(self, *args, **kwargs):
         self._before_step()
         super(HookMixin, self)._run_step(*args, **kwargs)
-        self._after_epoch()
+        self._after_step()

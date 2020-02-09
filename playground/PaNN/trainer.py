@@ -93,7 +93,7 @@ class SemiSegTrainer(_Trainer):
             # save meters and checkpoints
             SUMMARY = self.METERINTERFACE.summary()
             SUMMARY.to_csv(self._save_dir / self.wholemeter_filename)
-            self.drawer.draw(SUMMARY)
+            self.drawer._draw(SUMMARY)
             self.save_checkpoint(self.state_dict(), epoch, current_score)
         self.writer.close()
 

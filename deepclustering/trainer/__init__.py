@@ -1,2 +1,1 @@
-from ._trainer import _Trainer
-from .IICMultiheadTrainer import IICMultiHeadTrainer
+from ._trainer import _Trainer, _TrainerHook
