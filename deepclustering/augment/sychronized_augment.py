@@ -1,4 +1,3 @@
-__all__ = ["FixRandomSeed", "SequentialWrapper"]
 import random
 from typing import Callable, List, Union, Tuple
 
@@ -7,6 +6,8 @@ import torch
 from PIL import Image
 
 from .pil_augment import Identity
+
+__all__ = ["FixRandomSeed", "SequentialWrapper"]
 
 
 class FixRandomSeed:
@@ -66,7 +67,8 @@ class SequentialWrapper:
     def __repr__(self):
         return (
             f"img_transform:{self.img_transform}\n"
-            f"target_transform:{self.target_transform}."
+            f"target_transform:{self.target_transform}.\n"
+            f"is_target: {self.if_is_target}"
         )
 
     def _transform(self, is_target: bool) -> Callable:

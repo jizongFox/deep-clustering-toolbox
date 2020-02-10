@@ -18,6 +18,9 @@ class MeterInterface:
         :param meter_config: a dict of individual meter configurations
         """
         # check input meter configurations:
+
+        self._ind_meter_dicts = edict()
+        self._aggregated_meter_dicts = edict()
         if meter_config is not None:
             for k, v in meter_config.items():
                 assert isinstance(k, str), k

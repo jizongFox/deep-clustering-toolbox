@@ -5,6 +5,8 @@ from typing import Dict, Any
 
 from deepclustering.utils import dict_merge, yaml_load, YAMLArgParser
 
+__all__ = ["ConfigManger"]
+
 
 class ConfigManger:
     DEFAULT_CONFIG = ""

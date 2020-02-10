@@ -7,18 +7,19 @@ from typing import Tuple, Callable, List, Type, Dict, Union
 
 import numpy as np
 from PIL import Image
-from torch import Tensor
-from torch.utils.data import Dataset, DataLoader, Subset
-
 from deepclustering.augment import SequentialWrapper
 from deepclustering.dataloader.dataset import CombineDataset
+from deepclustering.dataloader.sampler import InfiniteRandomSampler
 from deepclustering.dataset.segmentation import (
     MedicalImageSegmentationDataset,
     PatientSampler,
 )
 from deepclustering.decorator import FixRandomSeed
+from torch import Tensor
+from torch.utils.data import Dataset, DataLoader, Subset
 
 
+# this function splits, however, we want to conserve the unlabeled dataset
 def _draw_indices(
     targets: np.ndarray,
     labeled_sample_num: int,
@@ -37,7 +38,6 @@ def _draw_indices(
     :param seed: random seed to draw indices
     :return: labeled indices and unlabeled indices
     """
-    # todo add more rubost split method to enable fairness split of dataset, and validation set.
     labeled_sample_per_class = int(labeled_sample_num / class_nums)
     validation_sample_per_class = int(validation_num / class_nums) if class_nums else 0
     targets = np.array(targets)
@@ -54,15 +54,19 @@ def _draw_indices(
             )
             val_idxs.extend(idxs[-validation_sample_per_class:])
         np.random.shuffle(train_labeled_idxs)
-        np.random.shuffle(train_unlabeled_idxs)
         np.random.shuffle(val_idxs)
+
+    #  highlight: this is to meet the UDA paper: unlabeled data is the true unlabeled_data + labeled_data, and there is no val_data
+    # train_unlabeled_idxs = train_labeled_idxs + train_unlabeled_idxs + val_idxs
+    # highlight: this leads to bad performance, using unlabeled = unlabeled + val
+    train_unlabeled_idxs = train_unlabeled_idxs + val_idxs
+    np.random.shuffle(train_unlabeled_idxs)
+    # assert train_unlabeled_idxs.__len__() == len(targets)
+    assert len(train_labeled_idxs) == labeled_sample_num
     if verbose:
         print(
             f">>>Generating {len(train_labeled_idxs)} labeled data, {len(train_unlabeled_idxs)} unlabeled data, and {len(val_idxs)} validation data."
         )
-    assert train_labeled_idxs.__len__() + train_unlabeled_idxs.__len__() + len(
-        val_idxs
-    ) == len(targets), f"{1} split wrong."
     return train_labeled_idxs, train_unlabeled_idxs, val_idxs
 
 
@@ -76,6 +80,7 @@ class SemiDataSetInterface:
         DataClass: Type[Dataset],
         data_root: str,
         labeled_sample_num: int,
+        validation_num=5000,
         seed: int = 0,
         batch_size: int = 1,
         labeled_batch_size: int = None,
@@ -90,12 +95,14 @@ class SemiDataSetInterface:
         """
         when batch_size is not `None`, we do not consider `labeled_batch_size`, `unlabeled_batch_size`, and `val_batch_size`
         when batch_size is `None`, `labeled_batch_size`,`unlabeled_batch_size` and `val_batch_size` should be all int and >=1
+        :param validation_num:
         """
         super().__init__()
         self.data_root = data_root
         self.DataClass = DataClass
         self.seed = seed
         self.labeled_sample_num = labeled_sample_num
+        self.validation_num = validation_num
         self.verbose = verbose
         self._if_use_indiv_bz: bool = self._use_individual_batch_size(
             batch_size,
@@ -132,7 +139,7 @@ class SemiDataSetInterface:
             train_set.targets,
             self.labeled_sample_num,
             class_nums=10,
-            validation_num=5000,
+            validation_num=self.validation_num,
             seed=self.seed,
             verbose=self.verbose,
         )
@@ -259,6 +266,7 @@ class SemiDataSetInterface:
         val_transforms: List[Callable[[Image.Image], Tensor]],
         test_transforms: List[Callable[[Image.Image], Tensor]],
         target_transform: Callable[[Tensor], Tensor] = None,
+        use_infinite_sampler: bool = False,
     ) -> Tuple[DataLoader, DataLoader, DataLoader, DataLoader]:
 
         _dataloader_params = dcp(self.dataloader_params)
@@ -298,12 +306,31 @@ class SemiDataSetInterface:
             _dataloader_params.update(
                 {"batch_size": self.batch_params.get("labeled_batch_size")}
             )
-        labeled_loader = DataLoader(labeled_set, **_dataloader_params)
+        if use_infinite_sampler:
+            _shuffle = _dataloader_params.get("shuffle", False)
+            _dataloader_params.update({"shuffle": False})
+            labeled_loader = DataLoader(
+                labeled_set,
+                **_dataloader_params,
+                sampler=InfiniteRandomSampler(labeled_set, shuffle=_shuffle),
+            )
+        else:
+            labeled_loader = DataLoader(labeled_set, **_dataloader_params)
         if self._if_use_indiv_bz:
             _dataloader_params.update(
                 {"batch_size": self.batch_params.get("unlabeled_batch_size")}
             )
-        unlabeled_loader = DataLoader(unlabeled_set, **_dataloader_params)
+        if use_infinite_sampler:
+            _shuffle = _dataloader_params.get("shuffle", False)
+            _dataloader_params.update({"shuffle": False})
+            unlabeled_loader = DataLoader(
+                unlabeled_set,
+                **_dataloader_params,
+                sampler=InfiniteRandomSampler(unlabeled_set, shuffle=_shuffle),
+            )
+        else:
+            unlabeled_loader = DataLoader(unlabeled_set, **_dataloader_params)
+
         _dataloader_params.update({"shuffle": False, "drop_last": False})
         if self._if_use_indiv_bz:
             _dataloader_params.update(
@@ -380,39 +407,70 @@ class MedicalDatasetSemiInterface:
         group_labeled=False,
         group_unlabeled=False,
         group_val=True,
+        use_infinite_sampler: bool = False,
     ) -> Tuple[DataLoader, DataLoader, DataLoader]:
 
         _dataloader_params = dcp(self.dataloader_params)
         labeled_set, unlabeled_set, val_set = self._create_semi_supervised_datasets(
-            labeled_transform=None, unlabeled_transform=None, val_transform=None
+            labeled_transform=labeled_transform,
+            unlabeled_transform=unlabeled_transform,
+            val_transform=val_transform,
         )
-        if labeled_transform is not None:
-            labeled_set = self.override_transforms(labeled_set, labeled_transform)
-        if unlabeled_transform is not None:
-            unlabeled_set = self.override_transforms(unlabeled_set, unlabeled_transform)
-        if val_transform is not None:
-            val_set = self.override_transforms(val_set, val_transform)
         # labeled_dataloader
         if self._if_use_indiv_bz:
             _dataloader_params.update(
                 {"batch_size": self.batch_params.get("labeled_batch_size")}
             )
-        labeled_loader = (
-            DataLoader(labeled_set, **_dataloader_params)
-            if not group_labeled
-            else self._grouped_dataloader(labeled_set, **_dataloader_params)
-        )
+        if use_infinite_sampler:
+            labeled_loader = (
+                DataLoader(
+                    labeled_set,
+                    sampler=InfiniteRandomSampler(
+                        labeled_set, shuffle=_dataloader_params.get("shuffle", False)
+                    ),
+                    **{k: v for k, v in _dataloader_params.items() if k != "shuffle"},
+                )
+                if not group_labeled
+                else self._grouped_dataloader(
+                    labeled_set, use_infinite_sampler=True, **_dataloader_params
+                )
+            )
+        else:
+            labeled_loader = (
+                DataLoader(labeled_set, **_dataloader_params)
+                if not group_labeled
+                else self._grouped_dataloader(
+                    labeled_set, use_infinite_sampler=False, **_dataloader_params
+                )
+            )
 
         # unlabeled_dataloader
         if self._if_use_indiv_bz:
             _dataloader_params.update(
                 {"batch_size": self.batch_params.get("unlabeled_batch_size")}
             )
-        unlabeled_loader = (
-            DataLoader(unlabeled_set, **_dataloader_params)
-            if not group_unlabeled
-            else self._grouped_dataloader(unlabeled_set, **_dataloader_params)
-        )
+        if use_infinite_sampler:
+            unlabeled_loader = (
+                DataLoader(
+                    unlabeled_set,
+                    sampler=InfiniteRandomSampler(
+                        unlabeled_set, shuffle=_dataloader_params.get("shuffle", False)
+                    ),
+                    **{k: v for k, v in _dataloader_params.items() if k != "shuffle"},
+                )
+                if not group_unlabeled
+                else self._grouped_dataloader(
+                    unlabeled_set, use_infinite_sampler=True, **_dataloader_params
+                )
+            )
+        else:
+            unlabeled_loader = (
+                DataLoader(unlabeled_set, **_dataloader_params)
+                if not group_unlabeled
+                else self._grouped_dataloader(
+                    unlabeled_set, use_infinite_sampler=True, **_dataloader_params
+                )
+            )
 
         # val_dataloader
         _dataloader_params.update({"shuffle": False, "drop_last": False})
@@ -470,6 +528,7 @@ class MedicalDatasetSemiInterface:
     def _grouped_dataloader(
         self,
         dataset: MedicalImageSegmentationDataset,
+        use_infinite_sampler: bool = False,
         **dataloader_params: Dict[str, Union[int, float, bool]],
     ) -> DataLoader:
         """
@@ -484,6 +543,7 @@ class MedicalDatasetSemiInterface:
             grp_regex=dataset._re_pattern,
             shuffle=dataloader_params.get("shuffle", False),
             verbose=self.verbose,
+            infinite_sampler=True if use_infinite_sampler else False,
         )
         # having a batch_sampler cannot accept batch_size > 1
         dataloader_params["batch_size"] = 1

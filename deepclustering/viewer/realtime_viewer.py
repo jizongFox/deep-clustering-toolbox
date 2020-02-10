@@ -192,7 +192,7 @@ def multi_slice_viewer_debug(
                 previous_slice(ax)
             elif event.button == "down":
                 next_slice(ax)
-        fig.canvas._draw()
+        fig.canvas.draw()
 
     def process_key(event):
         fig = event.canvas.figure
@@ -201,7 +201,7 @@ def multi_slice_viewer_debug(
             previous_slice(ax)
         elif event.key == "k":
             next_slice(ax)
-        fig.canvas._draw()
+        fig.canvas.draw()
 
     def previous_slice(ax):
         img_volume = ax.img_volume

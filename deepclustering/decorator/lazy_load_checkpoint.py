@@ -64,6 +64,6 @@ def lazy_load_checkpoint(func):
                 else:
                     raise e
 
-        self.to(self.device)
+        self.to(self._device)
 
     return wrapped_init_

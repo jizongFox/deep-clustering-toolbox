@@ -125,7 +125,7 @@ class Model:
         return self._torchnet.parameters()
 
     def __call__(self, *args, **kwargs):
-        force_simplex = kwargs.get("force_simplex", False)
+        force_simplex = kwargs.pop("force_simplex", False)
         assert isinstance(force_simplex, bool), force_simplex
         torch_logits = self._torchnet(*args, **kwargs)
         if force_simplex:

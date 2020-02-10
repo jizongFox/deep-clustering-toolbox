@@ -27,6 +27,7 @@ class _Trainer:
     ARCHIVE_PATH = str(Path(PROJECT_PATH) / "archives")
     wholemeter_filename = "wholeMeter.csv"
     checkpoint_identifier = "last.pth"
+    _METER_INITIALIZED = False
 
     @lazy_load_checkpoint
     def __init__(
@@ -63,15 +64,27 @@ class _Trainer:
             set_environment(config.get("Environment"))
 
         self.writer = SummaryWriter(str(self._save_dir))
-        # todo: try to override the DrawCSV
-        self._meter_interface = MeterInterface()
-        self._dataframe_drawer = DataFrameDrawer(
-            meterinterface=self._meter_interface,
-            save_dir=self._save_dir,
-            save_name="DataFrameDrawer.png",
-        )
+        # register meters to save results
+        self.register_meters()
+
         # close tensorboard writer automatically.
         atexit.register(self.writer.close)
+
+    @abstractmethod
+    def register_meters(self, enable_drawer=True) -> None:
+        """
+        To be overwrited using `self._meter_interface.register_meter` to add the meter
+        :return:
+        """
+        assert self._METER_INITIALIZED is False
+        self._meter_interface = MeterInterface()
+        self._METER_INITIALIZED = True
+        if enable_drawer:
+            self._dataframe_drawer = DataFrameDrawer(
+                meterinterface=self._meter_interface,
+                save_dir=self._save_dir,
+                save_name="DataFrameDrawer.png",
+            )
 
     @property
     @abstractmethod
@@ -98,7 +111,8 @@ class _Trainer:
             self._model.schedulerStep()
             # save meters and checkpoints
             self._meter_interface.step()
-            self._dataframe_drawer()
+            if hasattr(self, "_dataframe_drawer"):
+                self._dataframe_drawer()
             self.save_checkpoint(self.state_dict(), epoch, current_score)
 
     def start_training(self):
@@ -107,7 +121,7 @@ class _Trainer:
     @abstractmethod
     def _train_loop(
         self,
-        train_loader: DataLoader = None,
+        train_loader: Union[DataLoader, _BaseDataLoaderIter] = None,
         epoch: int = 0,
         mode=ModelMode.TRAIN,
         *args,
@@ -129,7 +143,7 @@ class _Trainer:
     @abstractmethod
     def _eval_loop(
         self,
-        val_loader: DataLoader = None,
+        val_loader: Union[DataLoader, _BaseDataLoaderIter] = None,
         epoch: int = 0,
         mode=ModelMode.EVAL,
         *args,

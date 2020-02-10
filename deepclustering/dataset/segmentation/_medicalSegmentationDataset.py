@@ -23,7 +23,7 @@ def default_transform(subfolders) -> SequentialWrapper:
     return SequentialWrapper(
         img_transform=ToTensor(),
         target_transform=ToLabel(),
-        if_is_target=[False] + [True] * (len(subfolders) - 1),
+        if_is_target=[False] * (len(subfolders) - 1) + [True],
     )
 
 
