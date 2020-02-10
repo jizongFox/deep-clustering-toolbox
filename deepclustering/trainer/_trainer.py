@@ -86,20 +86,6 @@ class _Trainer:
                 save_name="DataFrameDrawer.png",
             )
 
-    @property
-    @abstractmethod
-    def _training_report_dict(self):
-        report_dict = flatten_dict({})
-        report_dict = dict_filter(report_dict)
-        return report_dict
-
-    @property
-    @abstractmethod
-    def _eval_report_dict(self):
-        report_dict = flatten_dict({})
-        report_dict = dict_filter(report_dict)
-        return report_dict
-
     def to(self, device):
         self._model.to(device=device)
 

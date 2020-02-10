@@ -21,7 +21,11 @@ class MeterInterface:
 
         self._ind_meter_dicts = edict()
         self._aggregated_meter_dicts = edict()
+        # to store labels for meters
+        self._group_dicts = edict()
+
         if meter_config is not None:
+            # initialize from meter_config
             for k, v in meter_config.items():
                 assert isinstance(k, str), k
                 assert issubclass(
@@ -43,10 +47,11 @@ class MeterInterface:
     def __getitem__(self, meter_name: str) -> _Metric:
         try:
             return self._ind_meter_dicts[meter_name]
-        except AttributeError as e:
+        except Exception as e:
+            print(f"meter_interface.meter_names:{self.meter_names}")
             raise e
 
-    def register_new_meter(self, name: str, meter: _Metric) -> None:
+    def register_new_meter(self, name: str, meter: _Metric, group_name=None) -> None:
         assert isinstance(name, str), name
         assert issubclass(
             type(meter), _Metric
@@ -57,6 +62,10 @@ class MeterInterface:
         setattr(self, name, meter)
         self._aggregated_meter_dicts[name] = _AggregatedMeter()
         self._aggregated_meter_dicts[name]._current_epoch = self.current_epoch
+        if group_name:
+            if group_name not in self._group_dicts:
+                self._group_dicts[group_name] = []
+            self._group_dicts[group_name].append(name)
 
     def delete_meter(self, name: str) -> None:
         assert (
@@ -65,6 +74,9 @@ class MeterInterface:
         del self._ind_meter_dicts[name]
         del self._aggregated_meter_dicts[name]
         delattr(self, name)
+        for group, meter_namelist in self._group_dicts.keys():
+            if name in meter_namelist:
+                meter_namelist.pop(name)
 
     def delete_meters(self, name_list: List[str]):
         assert isinstance(
@@ -192,3 +204,22 @@ class MeterInterface:
         """
         if hasattr(self, "_aggregated_meter_dicts"):
             return {k: v.summary() for k, v in self._aggregated_meter_dicts.items()}
+
+    @property
+    def group(self):
+        return self._group_dicts.keys()
+
+    def current_status(self, group_name=None) -> dict:
+        """
+        return current training status from "ind_meters"
+        :param group_name:
+        :return:
+        """
+        if group_name:
+            assert group_name in self.group
+            return {
+                k: v.summary()
+                for k, v in self.individual_meters.items()
+                if k in self._group_dicts[group_name]
+            }
+        return {k: v.summary() for k, v in self.individual_meters.items()}

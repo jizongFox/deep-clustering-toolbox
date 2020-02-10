@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import List, Tuple
 
-from semi_cluster import DATA_PATH
+from deepclustering import DATA_PATH
 from sklearn.model_selection import train_test_split
 from termcolor import colored
 
