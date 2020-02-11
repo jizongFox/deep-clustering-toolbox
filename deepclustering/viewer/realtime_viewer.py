@@ -262,7 +262,7 @@ def multi_slice_viewer_debug(
         _B, *_, _H, _W = gt_volumes[0].shape
         assert (
             B == _B and H == _H and W == _W
-        ), f"img.shape: {img_volume.shape} and gt_shape: {gt_volumes.shape}"
+        ), f"img.shape: {img_volume.shape} and gt_shape: {gt_volumes[0].shape}"
     fig, axs = plt.subplots(1, max(len(gt_volumes), 1))
     if not isinstance(axs, np.ndarray):
         axs = np.array([axs])

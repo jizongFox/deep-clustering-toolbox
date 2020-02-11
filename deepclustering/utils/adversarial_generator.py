@@ -1,41 +1,83 @@
-from typing import Tuple
+from typing import Tuple, Callable, Optional
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-
+from deepclustering.utils import simplex, class2one_hot
+from deepclustering.loss import KL_div
 from deepclustering.decorator.decorator import _disable_tracking_bn_stats
 
 
 class FSGMGenerator(object):
-    def __init__(self, net: nn.Module, eplision: float = 0.05) -> None:
+    """
+    This generator gives adversarial image and noise
+    """
+
+    def __init__(
+        self,
+        net: Callable[[Tensor], Tensor] = None,
+        criterion: Callable[[Tensor, Tensor], Tensor] = KL_div(),
+        eplision: float = 0.05,
+    ) -> None:
         super().__init__()
-        self.net = net
-        self.eplision = eplision
+        self._net = net
+        self._eps = eplision
+        self._criterion = criterion
 
     def __call__(
-        self, img: Tensor, gt: Tensor, criterion: nn.Module
-    ) -> Tuple[Tensor, Tensor, Tensor]:
+        self, img: Tensor, gt: Optional[Tensor], net: Callable[[Tensor], Tensor] = None,
+    ) -> Tuple[Tensor, Tensor]:
+        """
+        generate adversarial images given a network.
+
+        :param img:
+        :param gt: can be fully supervised, semi supervised, and unsupervised when gt=None
+        :param net:
+        :return:
+        """
+
         assert img.shape.__len__() == 4
-        assert img.shape[0] >= gt.shape[0]
+        if gt is not None:
+            assert img.shape[0] >= gt.shape[0]
+
+        # set network:
+        current_net = self._net
+        if net:
+            current_net = net
+        assert current_net, current_net
+
         img.requires_grad = True
         if img.grad is not None:
             img.grad.zero_()
-        self.net.zero_grad()
-        pred = self.net(img)
-        if img.shape[0] > gt.shape[0]:
-            gt = torch.cat((gt, pred.max(1)[1][gt.shape[0] :].unsqueeze(1)), dim=0)
-        loss = criterion(pred, gt.squeeze(1))
+        current_net.zero_grad()
+        pred = current_net(img)
+        if not simplex(pred):
+            pred = pred.softmax(1)
+
+        if gt is not None:
+            if img.shape[0] > gt.shape[0]:
+                gt = torch.cat(
+                    (gt, pred.max(1)[1][gt.shape[0] :].unsqueeze(1)), dim=0
+                )  # semisupervised setting
+        else:
+            gt = pred.max(1)[1].unsqueeze(1)  # unsupervised setting
+        assert gt.shape[0] == img.shape[0]
+        loss = self._criterion(pred, class2one_hot(gt.squeeze(1), pred.shape[1]))
         loss.backward()
-        adv_img, noise = self.adversarial_fgsm(img, img.grad, epsilon=self.eplision)
-        self.net.zero_grad()
+        assert img.grad is not None, "wrong with img.grad, {}".format(img.grad)
+
+        adv_img, noise = self._adversarial_fgsm(img, img.grad, epsilon=self._eps)
+
+        current_net.zero_grad()
         img.grad.zero_()
-        return adv_img.detach(), noise.detach(), F.softmax(pred, 1)
+        img.requires_grad = False
+
+        return adv_img.detach(), noise.detach()
 
     @staticmethod
     # adversarial generation
-    def adversarial_fgsm(
+    def _adversarial_fgsm(
         image: Tensor, data_grad: Tensor, epsilon: float = 0.01
     ) -> Tuple[Tensor, Tensor]:
         """
