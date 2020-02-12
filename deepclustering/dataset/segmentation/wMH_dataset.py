@@ -13,6 +13,7 @@ from deepclustering.dataset.segmentation import (
 )
 from ..semi_helper import MedicalDatasetSemiInterface
 from ...utils.download_unzip_helper import download_and_extract_archive
+from copy import deepcopy as dcopy
 
 
 class WMHDataset(MedicalImageSegmentationDataset):
@@ -96,17 +97,24 @@ class WMHSemiInterface(MedicalDatasetSemiInterface):
             transforms=None,
             verbose=self.verbose,
         )
+        if self.labeled_ratio == 1:
+            labeled_set = dcopy(train_set)
+            unlabeled_set = dcopy(train_set)
+            print(
+                "labeled_ratio==1, return train_set as both the labeled and unlabeled datasets."
+            )
 
-        labeled_patients, unlabeled_patients = train_test_split(
-            train_set.get_group_list(),
-            test_size=self.unlabeled_ratio,
-            random_state=self.seed,
-        )
-        labeled_set = SubMedicalDatasetBasedOnIndex(train_set, labeled_patients)
-        unlabeled_set = SubMedicalDatasetBasedOnIndex(train_set, unlabeled_patients)
-        assert len(labeled_set) + len(unlabeled_set) == len(
-            train_set
-        ), "wrong on labeled/unlabeled split."
+        else:
+            labeled_patients, unlabeled_patients = train_test_split(
+                train_set.get_group_list(),
+                test_size=self.unlabeled_ratio,
+                random_state=self.seed,
+            )
+            labeled_set = SubMedicalDatasetBasedOnIndex(train_set, labeled_patients)
+            unlabeled_set = SubMedicalDatasetBasedOnIndex(train_set, unlabeled_patients)
+            assert len(labeled_set) + len(unlabeled_set) == len(
+                train_set
+            ), "wrong on labeled/unlabeled split."
         del train_set
         if self.verbose:
             print(f"labeled_dataset:{labeled_set.get_group_list().__len__()} Patients")

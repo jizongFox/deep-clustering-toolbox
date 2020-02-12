@@ -21,6 +21,7 @@ class SummaryWriter(_SummaryWriter):
         :param walltime: None
         :return:
         """
+        assert global_step is not None
         for k, v in tag_scalar_dict.items():
             # self.add_scalars(main_tag=tag, tag_scalar_dict={k: v})
             self.add_scalar(tag=f"{tag}/{k}", scalar_value=v, global_step=global_step)

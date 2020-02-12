@@ -15,7 +15,7 @@ def _repositioning_axes(fig):
         heights = np.linspace(0.05, 0.95, n + 1)
         for i, ax in enumerate(fig.axes):
             ax.set_position(
-                Bbox([[0.10, heights[i] + 0.03], [0.99, heights[i + 1] - 0.03]]),
+                Bbox([[0.10, heights[i] + 0.01], [0.99, heights[i + 1] - 0.01]]),
                 which="both",
             )
 
