@@ -11,7 +11,7 @@ from torch.utils.data.dataloader import _BaseDataLoaderIter
 from ._hooks import HookMixin
 from .. import ModelMode, PROJECT_PATH
 from ..decorator import lazy_load_checkpoint
-from ..meters import MeterInterface
+from ..meters import MeterInterface, AverageValueMeter
 from ..model import Model
 from ..utils import flatten_dict, _warnings, dict_filter, set_environment, write_yaml
 from ..writer import SummaryWriter, DataFrameDrawer
@@ -79,6 +79,9 @@ class _Trainer:
         assert self._METER_INITIALIZED is False
         self._meter_interface = MeterInterface()
         self._METER_INITIALIZED = True
+        self._meter_interface.register_new_meter(
+            "lr", AverageValueMeter(), group_name="train"
+        )
         if enable_drawer:
             self._dataframe_drawer = DataFrameDrawer(
                 meterinterface=self._meter_interface,
@@ -91,6 +94,8 @@ class _Trainer:
 
     def _start_training(self):
         for epoch in range(self._start_epoch, self._max_epoch):
+            if self._model.get_lr() is not None:
+                self._meter_interface["lr"].add(self._model.get_lr()[0])
             self.train_loop(train_loader=self._train_loader, epoch=epoch)
             with torch.no_grad():
                 current_score = self.eval_loop(self._val_loader, epoch)
