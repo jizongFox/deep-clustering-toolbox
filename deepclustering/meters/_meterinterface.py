@@ -209,7 +209,7 @@ class MeterInterface:
     def group(self):
         return self._group_dicts.keys()
 
-    def current_status(self, group_name=None) -> dict:
+    def tracking_status(self, group_name=None) -> dict:
         """
         return current training status from "ind_meters"
         :param group_name:

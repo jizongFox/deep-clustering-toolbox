@@ -201,7 +201,7 @@ class _Trainer:
         for module_name, module in self.__dict__.items():
             if hasattr(module, "load_state_dict"):
                 try:
-                    module._load_state_dict(state_dict[module_name])
+                    module.load_state_dict(state_dict[module_name])
                 except KeyError as e:
                     print(f"Loading checkpoint error for {module_name}, {e}.")
                 except RuntimeError as e:
