@@ -196,7 +196,7 @@ class BatchSampler(Sampler):
             return (len(self.sampler) + self.batch_size - 1) // self.batch_size
 
 
-class InfiniteRandomIterator(Iterator):
+class _InfiniteRandomIterator(Iterator):
     def __init__(self, data_source, shuffle=True):
         self.data_source = data_source
         self.shuffle = shuffle
@@ -228,7 +228,7 @@ class InfiniteRandomSampler(Sampler):
         self.shuffle = shuffle
 
     def __iter__(self):
-        return InfiniteRandomIterator(self.data_source, shuffle=self.shuffle)
+        return _InfiniteRandomIterator(self.data_source, shuffle=self.shuffle)
 
     def __len__(self):
         return len(self.data_source)

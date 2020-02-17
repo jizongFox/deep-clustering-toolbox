@@ -1,17 +1,16 @@
-__all__ = [
-    "weights_init",
-    "get_arch",
-    "ARCH_CALLABLES",
-    "PlaceholderNet",
-    "_register_arch",
-]
-
 from functools import partial
 from typing import *
 
 from .classification import *
 from .segmentation import *
 from ..utils.general import _register
+
+__all__ = [
+    "weights_init",
+    "get_arch",
+    "ARCH_CALLABLES",
+    "_register_arch",
+]
 
 """
 Package
@@ -38,6 +37,7 @@ _register_arch("unet_bn", UNet_bn)
 _register_arch("cnet", CorstemNet)
 _register_arch("preresnet", PreResNet)
 _register_arch("epsnetv2", ESPNetv2)
+_register_arch("attention_unet", UNet_Attention)
 # Adding default keys here to enable automatic testing
 _register_param("clusternet5g", ClusterNet5g_Param)
 _register_param("clusternet5gtwohead", ClusterNet5gTwoHead_Param)
