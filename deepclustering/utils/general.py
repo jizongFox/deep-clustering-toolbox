@@ -61,19 +61,22 @@ def set_environment(environment_dict: Dict[str, str] = None, verbose=True) -> No
 # reproducibility
 def fix_all_seed(seed):
     random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
 
 def set_benchmark(seed):
-    torch.backends.cudnn.benchmark = True
+    random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.benchmark = True
 
 
 # tqdm
@@ -208,25 +211,28 @@ def union(a: Tensor, b: Tensor) -> Tensor:
 
 
 def probs2class(probs: Tensor) -> Tensor:
-    b, _, w, h = probs.shape  # type: Tuple[int, int, int, int]
+    b, _, *wh = probs.shape  # type: Tuple[int, int, int, int]
     assert simplex(probs, 1)
     res = probs.argmax(dim=1)
-    assert res.shape == (b, w, h)
+    assert res.shape == (b, *wh)
 
     return res
 
 
-def class2one_hot(seg: Tensor, C: int) -> Tensor:
+def class2one_hot(seg: Tensor, C: int, class_dim: int = 1) -> Tensor:
+    """
+    make segmentaton mask to be onehot
+    """
     if len(seg.shape) == 2:  # Only w, h, used by the dataloader
         seg = seg.unsqueeze(dim=0)
     assert sset(seg, list(range(C)))
 
     b, *wh = seg.shape  # type:  Tuple[int, int, int]
 
-    res: Tensor = torch.stack([seg == c for c in range(C)], dim=1).type(torch.int32)
-    assert res.shape == (b, C, *wh)
+    res: Tensor = torch.stack([seg == c for c in range(C)], dim=class_dim).type(
+        torch.long
+    )
     assert one_hot(res)
-
     return res
 
 

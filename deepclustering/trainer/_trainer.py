@@ -105,6 +105,7 @@ class _Trainer:
             if hasattr(self, "_dataframe_drawer"):
                 self._dataframe_drawer()
             self.save_checkpoint(self.state_dict(), epoch, current_score)
+            self._meter_interface.summary().to_csv(self._save_dir / "wholeMeter.csv")
 
     def start_training(self):
         return self._start_training()
