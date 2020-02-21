@@ -32,7 +32,8 @@ and report script for experimental summaries.
 >- `Semi-Supervised and Task-Driven Data Augmentation`,
 >- [`Deep Co-Training for Semi-Supervised Image Segmentation`](https://arxiv.org/abs/1903.11233)
 + Discretely-constrained CNN for
->- [`Discretely-constrained deep network for weakly-supervised segmentation`](https://github.com/jizongFox/Discretly-constrained-CNN/).
+>- [`Discretely-constrained deep network for weakly-supervised segmentation`](https://github.com/jizongFox/Discretly-constrained-CNN/),  
+>- `Mutual information based segmentation on medical imaging`
 
 
 They are examples how to develop research framework with the assistance of our proposed `deep-clustering-toolbox`.
