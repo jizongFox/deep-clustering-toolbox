@@ -74,9 +74,9 @@ class MeterInterface:
         del self._ind_meter_dicts[name]
         del self._aggregated_meter_dicts[name]
         delattr(self, name)
-        for group, meter_namelist in self._group_dicts.keys():
+        for group, meter_namelist in self._group_dicts.items():
             if name in meter_namelist:
-                meter_namelist.pop(name)
+                meter_namelist.remove(name)
 
     def delete_meters(self, name_list: List[str]):
         assert isinstance(
