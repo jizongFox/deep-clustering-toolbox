@@ -2,13 +2,16 @@ from .models import Model
 
 
 class EMA_Model:
-    def __init__(self, model: Model, alpha=0.999, weight_decay=0.0) -> None:
+    def __init__(
+        self, model: Model, alpha=0.999, weight_decay=0.0, update_bn=False
+    ) -> None:
         super().__init__()
         # here we deepcopy a `Model`, including the torchmodel, optimizer and, scheduler
         # self._model = Model.initialize_from_state_dict(model.state_dict())
         self._model = model
         self._alpha = alpha
         self._weight_decay = weight_decay
+        self._update_bn = update_bn
         self._global_step = 0
         # detach the param for the ema model
         for param in self._model._torchnet.parameters():
@@ -24,15 +27,16 @@ class EMA_Model:
             ema_param.data.mul_(alpha).add_(1 - alpha, s_param.data)
             if self._weight_decay > 0:
                 ema_param.data.mul_(1 - self._weight_decay)
-        # running mean and vars for bn
-        for (name, ema_buffer), (_, s_buffer) in zip(
-            self._model._torchnet.named_buffers(),
-            student_model._torchnet.named_buffers(),
-        ):
-            if "running_mean" in name or "running_var" in name:
-                ema_buffer.data.mul_(alpha).add_(1 - alpha, s_buffer.data)
-                if self._weight_decay > 0:
-                    ema_buffer.data.mul_(1 - self._weight_decay)
+        if self._update_bn:
+            # running mean and vars for bn
+            for (name, ema_buffer), (_, s_buffer) in zip(
+                self._model._torchnet.named_buffers(),
+                student_model._torchnet.named_buffers(),
+            ):
+                if "running_mean" in name or "running_var" in name:
+                    ema_buffer.data.mul_(alpha).add_(1 - alpha, s_buffer.data)
+                    if self._weight_decay > 0:
+                        ema_buffer.data.mul_(1 - self._weight_decay)
         self._global_step += 1
 
     def train(self):
@@ -53,14 +57,23 @@ class EMA_Model:
 
         return {
             **self._model.state_dict(),
-            **{"alpha": self._alpha, "global_step": self._global_step},
+            **{
+                "alpha": self._alpha,
+                "global_step": self._global_step,
+                "update_bn": self._update_bn,
+                "weight_decay": self._weight_decay,
+            },
         }
 
     def load_state_dict(self, state_dict: dict):
         self._alpha = state_dict["alpha"]
         self._global_step = state_dict["global_step"]
+        self._update_bn = state_dict["update_bn"]
+        self._weight_decay = state_dict["weight_decay"]
         del state_dict["alpha"]
         del state_dict["global_step"]
+        del state_dict["update_bn"]
+        del state_dict["weight_decay"]
         self._model.load_state_dict(state_dict)
 
     @property
