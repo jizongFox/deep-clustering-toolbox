@@ -31,9 +31,7 @@ class TestAdversarialFSGMGenerator(TestCase):
         super().setUp()
         self._img = ToTensor()(Image.open("img1.jpg")).unsqueeze(0)
         assert self._img.shape[0] == 1 and self._img.shape[1] == 3
-        self._network = fakenetwork(deeplabv3_resnet101(aux_loss=True))
-        state_dict = torch.load("deeplabv3_resnet101_coco-586e9e4e.pth")
-        self._network.load_state_dict(state_dict)
+        self._network = fakenetwork(deeplabv3_resnet101(aux_loss=True, pretrained=True))
         self._network.eval()
 
     def test_gt(self):
@@ -44,6 +42,17 @@ class TestAdversarialFSGMGenerator(TestCase):
             block=False,
             no_contour=False,
         )
+        from copy import deepcopy as dcp
+
+        preds2 = dcp(self._network)(self._img)
+        multi_slice_viewer_debug(
+            self._img.transpose(1, 3).transpose(1, 2),
+            preds2.max(1)[1],
+            block=False,
+            no_contour=False,
+        )
+        assert torch.allclose(preds, preds2)
+
         fsgmGenerator = FSGMGenerator(net=self._network, eplision=0.01)
         adv_img, _ = fsgmGenerator(self._img, gt=None)
         assert adv_img.shape == self._img.shape

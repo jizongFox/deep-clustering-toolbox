@@ -480,7 +480,10 @@ class Multi_Slice_Viewer(object):
                     self.kwargs["plot_parameters"]["cmap"],
                     alpha=self.kwargs["plot_parameters"]["alpha"],
                 )
-        fig.canvas._draw()
+        try:
+            fig.canvas._draw()
+        except AttributeError:
+            fig.canvas.draw()
 
     def process_mouse_button(self, event):
         fig = event.canvas.figure
@@ -489,7 +492,10 @@ class Multi_Slice_Viewer(object):
                 self._change_subject(mode=self.volume.__next__)
             elif event.button == 3:
                 self._change_subject(mode=self.volume.__cache__)
-            fig.canvas._draw()
+            try:
+                fig.canvas._draw()
+            except AttributeError:
+                fig.canvas.draw()
 
     def _change_subject(self, mode):
         axs = self.axs
