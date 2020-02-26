@@ -5,6 +5,7 @@ from pathlib import Path
 from pprint import pprint
 from typing import List, Dict
 
+import numpy as np
 import pandas as pd
 
 from deepclustering.utils import merge_dict
@@ -64,11 +65,15 @@ def arg_parser() -> argparse.Namespace:
 
 
 def main(args: argparse.Namespace):
-    if hasattr(args, "top_folder"):
+    if args.top_folder is not None:
         # a top folder is provided.
         csvfile_paths: List[Path] = list(Path(args.top_folder).rglob(f"{args.file}"))
     else:
-        pass
+        # several top folders are provided:
+        csvfile_paths = []
+        for path in args.specific_folders:
+            csvfile_paths.extend(list(Path(path).rglob(f"{args.file}")))
+
     assert len(csvfile_paths) > 0, f"Found 0 {args.file} file."
     print(f"Found {len(csvfile_paths)} {args.file} files, e.g.,")
     pprint(csvfile_paths[:5])
@@ -92,11 +97,14 @@ def main(args: argparse.Namespace):
     table.to_csv(Path(args.save_dir, args.save_filename))
 
 
-extract_value = (
-    lambda file_path, class_name, is_high: pd.read_csv(file_path)[class_name].max()
-    if is_high
-    else pd.read_csv(file_path)[class_name].min()
-)
+def extract_value(file_path, class_name, is_high=True):
+    try:
+        if is_high:
+            return pd.read_csv(file_path)[class_name].max()
+        else:
+            return pd.read_csv(file_path)[class_name].min()
+    except KeyError:
+        return np.nan
 
 
 def extract_path_info(file_paths: List[Path]) -> List[List[str]]:
