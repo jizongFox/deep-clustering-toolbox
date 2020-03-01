@@ -1,5 +1,5 @@
 import functools
-from typing import Dict, List
+from typing import List, Dict, Optional, Callable
 
 import pandas as pd
 from easydict import EasyDict as edict
@@ -8,82 +8,32 @@ from ._metric import _Metric, _AggregatedMeter
 from ._utils import rename_df_columns
 
 
-class MeterInterface:
-    """
-    Interface for meters for each batch and epoch
-    """
+class MeterInteractMixin:
+    individual_meters: Dict[str, _Metric]
+    _ind_meter_dicts: Dict[str, _Metric]
+    _aggregated_meter_dicts: Dict[str, _AggregatedMeter]
+    _group_dicts: Dict[str, List[str]]
+    group: List[str]
+    meter_names: List[str]
 
-    def __init__(self, meter_config: Dict[str, _Metric] = None) -> None:
+    def tracking_status(self, group_name=None) -> dict:
         """
-        :param meter_config: a dict of individual meter configurations
+        return current training status from "ind_meters"
+        :param group_name:
+        :return:
         """
-        # check input meter configurations:
-
-        self._ind_meter_dicts = edict()
-        self._aggregated_meter_dicts = edict()
-        # to store labels for meters
-        self._group_dicts = edict()
-
-        if meter_config is not None:
-            # initialize from meter_config
-            for k, v in meter_config.items():
-                assert isinstance(k, str), k
-                assert issubclass(
-                    type(v), _Metric
-                ), f"{v.__class__.__name__} should be a subclass of {_Metric.__class__.__name__}, given {v}."  # can also check the subclasses.
-            self._ind_meter_dicts: Dict[str, _Metric] = edict(
-                meter_config
-            ) if not isinstance(meter_config, edict) else meter_config
-
-            for v in self._ind_meter_dicts.values():
-                v.reset()
-            for k, v in self._ind_meter_dicts.items():
-                setattr(self, k, v)
-
-            self._aggregated_meter_dicts: Dict[str, _AggregatedMeter] = edict(
-                {k: _AggregatedMeter() for k in self._ind_meter_dicts.keys()}
-            )
-
-    def __getitem__(self, meter_name: str) -> _Metric:
-        try:
-            return self._ind_meter_dicts[meter_name]
-        except Exception as e:
-            print(f"meter_interface.meter_names:{self.meter_names}")
-            raise e
-
-    def register_new_meter(self, name: str, meter: _Metric, group_name=None) -> None:
-        assert isinstance(name, str), name
-        assert issubclass(
-            type(meter), _Metric
-        ), f"{meter.__class__.__name__} should be a subclass of {_Metric.__class__.__name__}, given {meter}."
-
-        # add meters
-        self._ind_meter_dicts[name] = meter
-        setattr(self, name, meter)
-        self._aggregated_meter_dicts[name] = _AggregatedMeter()
-        self._aggregated_meter_dicts[name]._current_epoch = self.current_epoch
         if group_name:
-            if group_name not in self._group_dicts:
-                self._group_dicts[group_name] = []
-            self._group_dicts[group_name].append(name)
+            assert group_name in self.group
+            return {
+                k: v.summary()
+                for k, v in self.individual_meters.items()
+                if k in self._group_dicts[group_name]
+            }
+        return {k: v.summary() for k, v in self.individual_meters.items()}
 
-    def delete_meter(self, name: str) -> None:
-        assert (
-            name in self.meter_names
-        ), f"{name} should be in `meter_names`: {self.meter_names}, given {name}."
-        del self._ind_meter_dicts[name]
-        del self._aggregated_meter_dicts[name]
-        delattr(self, name)
-        for group, meter_namelist in self._group_dicts.items():
-            if name in meter_namelist:
-                meter_namelist.remove(name)
-
-    def delete_meters(self, name_list: List[str]):
-        assert isinstance(
-            name_list, list
-        ), f" name_list must be a list of str, given {name_list}."
-        for name in name_list:
-            self.delete_meter(name)
+    def add(self, meter_name, *args, **kwargs):
+        assert meter_name in self.meter_names
+        self._ind_meter_dicts[meter_name].add(*args, **kwargs)
 
     def step(self, detailed_summary=False) -> None:
         """
@@ -124,6 +74,13 @@ class MeterInterface:
     def reset(self):
         self.reset_all()
 
+
+class MeterIOMixin:
+    _aggregated_meter_dicts: Dict[str, _AggregatedMeter]
+    current_epoch: int
+    meter_names: List[str]
+    summary: Callable[[], pd.DataFrame]
+
     def state_dict(self) -> dict:
         """
         to export dict
@@ -159,6 +116,62 @@ class MeterInterface:
             assert current_epoch == self._aggregated_meter_dicts[k].current_epoch
         print(self.summary())
 
+
+class MeterInterface(MeterInteractMixin, MeterIOMixin):
+    """
+    Interface for meters for each batch and epoch
+    """
+
+    def __init__(self) -> None:
+        """
+        :param meter_config: a dict of individual meter configurations
+        """
+        self._ind_meter_dicts: Dict[str, _Metric] = edict()
+        self._aggregated_meter_dicts: Dict[str, _AggregatedMeter] = edict()
+        # to store labels for meters
+        self._group_dicts: Dict[str, List[str]] = edict()
+
+    def __getitem__(self, meter_name: str) -> _Metric:
+        try:
+            return self._ind_meter_dicts[meter_name]
+        except KeyError as e:
+            print(f"meter_interface.meter_names:{self.meter_names}")
+            raise e
+
+    def register_meter(self, name: str, meter: _Metric, group_name=None) -> None:
+        assert isinstance(name, str), name
+        assert issubclass(
+            type(meter), _Metric
+        ), f"{meter.__class__.__name__} should be a subclass of {_Metric.__class__.__name__}, given {meter}."
+
+        # add meters
+        self._ind_meter_dicts[name] = meter
+        setattr(self, name, meter)
+        self._aggregated_meter_dicts[name] = _AggregatedMeter()
+        self._aggregated_meter_dicts[name]._current_epoch = self.current_epoch
+        if group_name is not None:
+            if group_name not in self._group_dicts:
+                self._group_dicts[group_name] = []
+            self._group_dicts[group_name].append(name)
+
+    def delete_meter(self, name: str) -> None:
+        assert (
+            name in self.meter_names
+        ), f"{name} should be in `meter_names`: {self.meter_names}, given {name}."
+        del self._ind_meter_dicts[name]
+        del self._aggregated_meter_dicts[name]
+        delattr(self, name)
+        for group, meter_namelist in self._group_dicts.items():
+            if name in meter_namelist:
+                meter_namelist.remove(name)
+
+    def delete_meters(self, name_list: List[str]):
+        assert isinstance(
+            name_list, list
+        ), f" name_list must be a list of str, given {name_list}."
+        for name in name_list:
+            self.delete_meter(name)
+
     @property
     def current_epoch(self):
         return self._aggregated_meter_dicts[self.meter_names[0]].current_epoch
@@ -185,12 +198,12 @@ class MeterInterface:
             return list(self._ind_meter_dicts.keys())
 
     @property
-    def individual_meters(self):
+    def individual_meters(self) -> Optional[Dict[str, _Metric]]:
         if hasattr(self, "_ind_meter_dicts"):
             return self._ind_meter_dicts
 
     @property
-    def history_meters(self):
+    def history_meters(self) -> Dict[str, _AggregatedMeter]:
         """
 
         :return:
@@ -198,7 +211,7 @@ class MeterInterface:
         if hasattr(self, "_aggregated_meter_dicts"):
             return self._aggregated_meter_dicts
 
-    def history_summary(self):
+    def history_summary(self) -> Optional[Dict[str, pd.DataFrame]]:
         """ return a dict of history meter summary
         :return:
         """
@@ -206,20 +219,5 @@ class MeterInterface:
             return {k: v.summary() for k, v in self._aggregated_meter_dicts.items()}
 
     @property
-    def group(self):
-        return self._group_dicts.keys()
-
-    def tracking_status(self, group_name=None) -> dict:
-        """
-        return current training status from "ind_meters"
-        :param group_name:
-        :return:
-        """
-        if group_name:
-            assert group_name in self.group
-            return {
-                k: v.summary()
-                for k, v in self.individual_meters.items()
-                if k in self._group_dicts[group_name]
-            }
-        return {k: v.summary() for k, v in self.individual_meters.items()}
+    def group(self) -> List[str]:
+        return sorted(self._group_dicts.keys())

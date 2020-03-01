@@ -18,7 +18,7 @@ class TestBasicInterface(TestCase):
         print(meterinterface.summary())
         for epoch in range(10):
             if epoch == 2:
-                meterinterface.register_new_meter("avg2", AverageValueMeter())
+                meterinterface.register_meter("avg2", AverageValueMeter())
             for i in range(10):
                 meterinterface["avg1"].add(1)
                 meterinterface["dice1"].add(
@@ -42,7 +42,7 @@ class TestBasicInterface(TestCase):
 
         for epoch in range(10):
             if epoch == 2:
-                meterinterface.register_new_meter("avg2", AverageValueMeter())
+                meterinterface.register_meter("avg2", AverageValueMeter())
             for i in range(10):
                 meterinterface["avg1"].add(1)
                 meterinterface["dice1"].add(

@@ -1,6 +1,6 @@
 # hooks for callbacks, taken from detectron2
 import weakref
-from typing import List
+from typing import List, Callable
 
 
 class HookBase:
@@ -38,37 +38,61 @@ class HookBase:
             registered.
     """
 
-    def before_train(self):
+    def before_train(self, *args, **kwargs):
         """
         Called before the first iteration.
         """
         pass
 
-    def after_train(self):
+    def after_train(self, *args, **kwargs):
         """
         Called after the last iteration.
         """
         pass
 
-    def before_epoch(self):
+    def before_train_epoch(self, *args, **kwargs):
         """
         Called before the first iteration.
         """
         pass
 
-    def after_epoch(self):
+    def after_train_epoch(self, *args, **kwargs):
         """
         Called after the last iteration.
         """
         pass
 
-    def before_step(self):
+    def before_eval_epoch(self, *args, **kwargs):
+        """
+        Called before the first iteration.
+        """
+        pass
+
+    def after_eval_epoch(self, *args, **kwargs):
+        """
+        Called after the last iteration.
+        """
+        pass
+
+    def before_train_step(self, *args, **kwargs):
         """
         Called before each iteration.
         """
         pass
 
-    def after_step(self):
+    def after_train_step(self, *args, **kwargs):
+        """
+        Called after each iteration.
+        """
+        pass
+
+    def before_eval_step(self, *args, **kwargs):
+        """
+        Called before each iteration.
+        """
+        pass
+
+    def after_eval_step(self, *args, **kwargs):
         """
         Called after each iteration.
         """
@@ -102,9 +126,15 @@ class HookMixin:
         storage(EventStorage): An EventStorage that's opened during the course of training.
     """
 
+    _start_training: Callable
+    _train_loop: Callable
+    _eval_loop: Callable
+    _train_step: Callable
+    _eval_step: Callable
+
     def __init__(self, *args, **kwargs):
         super(HookMixin, self).__init__(*args, **kwargs)
-        self._hooks = []
+        self._hooks: List[HookBase] = []
 
     def register_hooks(self, hooks: List[HookBase]):
         """
@@ -120,46 +150,72 @@ class HookMixin:
             h.set_trainer(self)
         self._hooks.extend(hooks)
 
-    def _before_train(self):
+    def _before_train(self, *args, **kwargs):
         for h in self._hooks:
-            h.before_train()
+            h.before_train(*args, **kwargs)
 
-    def _after_train(self):
+    def _after_train(self, *args, **kwargs):
         for h in self._hooks:
-            h.after_train()
+            h.after_train(*args, **kwargs)
 
-    def _before_step(self):
+    def _before_train_step(self, *args, **kwargs):
         for h in self._hooks:
-            h.before_step()
+            h.before_train_step(*args, **kwargs)
 
-    def _after_step(self):
+    def _before_eval_step(self, *args, **kwargs):
         for h in self._hooks:
-            h.after_step()
+            h.before_eval_step(*args, **kwargs)
 
-    def _before_epoch(self):
+    def _after_train_step(self, *args, **kwargs):
         for h in self._hooks:
-            h.before_epoch()
+            h.after_train_step(*args, **kwargs)
 
-    def _after_epoch(self):
+    def _after_eval_step(self, *args, **kwargs):
         for h in self._hooks:
-            h.after_epoch()
+            h.after_eval_step(*args, **kwargs)
 
-    def start_training(self):
-        self._before_train()
-        super(HookMixin, self)._start_training()
-        self._after_train()
+    def _before_train_epoch(self, *args, **kwargs):
+        for h in self._hooks:
+            h.before_train_epoch(*args, **kwargs)
+
+    def _after_train_epoch(self, *args, **kwargs):
+        for h in self._hooks:
+            h.after_train_epoch(*args, **kwargs)
+
+    def _before_eval_epoch(self, *args, **kwargs):
+        for h in self._hooks:
+            h.before_eval_epoch(*args, **kwargs)
+
+    def _after_eval_epoch(self, *args, **kwargs):
+        for h in self._hooks:
+            h.after_eval_epoch(*args, **kwargs)
+
+    def start_training(self, *args, **kwargs):
+        self._before_train(*args, **kwargs)
+        result = self._start_training(*args, **kwargs)
+        self._after_train(*args, **kwargs)
+        return result
 
     def train_loop(self, *args, **kwargs):
-        self._before_epoch()
-        super(HookMixin, self)._train_loop(*args, **kwargs)
-        self._after_epoch()
+        self._before_train_epoch(*args, **kwargs)
+        result = self._train_loop(*args, **kwargs)
+        self._after_train_epoch(*args, **kwargs)
+        return result
 
-    def eval_loop(self, train_loader, epoch, mode, *args, **kwargs):
-        self._before_epoch()
-        super(HookMixin, self)._eval_loop(*args, **kwargs)
-        self._after_epoch()
+    def eval_loop(self, *args, **kwargs):
+        self._before_eval_epoch(*args, **kwargs)
+        result = self._eval_loop(*args, **kwargs)
+        self._after_eval_epoch(*args, **kwargs)
+        return result
 
-    def run_step(self, *args, **kwargs):
-        self._before_step()
-        super(HookMixin, self)._run_step(*args, **kwargs)
-        self._after_step()
+    def train_step(self, *args, **kwargs):
+        self._before_train_step(*args, **kwargs)
+        result = self._train_step(*args, **kwargs)
+        self._after_train_step(*args, **kwargs)
+        return result
+
+    def eval_step(self, *args, **kwargs):
+        self._before_eval_step(*args, **kwargs)
+        result = self._eval_step(*args, **kwargs)
+        self._after_eval_step(*args, **kwargs)
+        return result

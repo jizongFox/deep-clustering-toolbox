@@ -1,4 +1,5 @@
 import collections
+import itertools
 import numbers
 import sys
 import types
@@ -272,3 +273,31 @@ def to_float(value):
         return value.item()
     elif type(value) in (float, int):
         return float(value)
+
+
+def _find_tensors(obj):  # pragma: no cover
+    r"""
+    Recursively find all tensors contained in the specified object.
+    """
+    if isinstance(obj, torch.Tensor):
+        return [obj]
+    if isinstance(obj, (list, tuple)):
+        return itertools.chain(*map(_find_tensors, obj))
+    if isinstance(obj, dict):
+        return itertools.chain(*map(_find_tensors, obj.values()))
+    return []
+
+
+def get_a_var(obj):  # pragma: no cover
+    if isinstance(obj, torch.Tensor):
+        return obj
+
+    if isinstance(obj, (list, tuple)):
+        for result in map(get_a_var, obj):
+            if isinstance(result, torch.Tensor):
+                return result
+    if isinstance(obj, dict):
+        for result in map(get_a_var, obj.items()):
+            if isinstance(result, torch.Tensor):
+                return result
+    return None
