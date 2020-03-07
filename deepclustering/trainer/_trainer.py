@@ -13,7 +13,7 @@ from .. import ModelMode, PROJECT_PATH
 from ..decorator import lazy_load_checkpoint
 from ..meters import MeterInterface, AverageValueMeter
 from ..model import Model
-from ..utils import flatten_dict, _warnings, dict_filter, set_environment, write_yaml
+from ..utils import _warnings, set_environment, write_yaml
 from ..writer import SummaryWriter, DataFrameDrawer
 
 
@@ -154,6 +154,8 @@ class _Trainer:
         :param kwargs:
         :return:
         """
+        if self._checkpoint is None:
+            self._checkpoint = self._save_dir
         assert (
             Path(self._checkpoint).exists() and Path(self._checkpoint).is_dir()
         ), Path(self._checkpoint)

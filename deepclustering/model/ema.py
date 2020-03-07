@@ -85,3 +85,6 @@ class EMA_Model:
 
     def to(self, device):
         return self._model.to(device)
+
+    def __repr__(self):
+        return self._model.__repr__()
