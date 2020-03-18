@@ -1,3 +1,5 @@
+from typing import Union, List, Optional, Dict, OrderedDict
+
 import torch
 import torch.nn as nn
 from torch import Tensor
@@ -84,11 +86,23 @@ class KL_div(nn.Module):
     elements in the output, ``'sum'``: the output will be summed.
     """
 
-    def __init__(self, reduction="mean", eps=1e-16):
+    def __init__(self, reduction="mean", eps=1e-16, weight: Union[List[float], Tensor] = None, verbose=True):
         super().__init__()
         _check_reduction_params(reduction)
         self._eps = eps
         self._reduction = reduction
+        self._weight: Optional[Tensor] = weight
+        if weight is not None:
+            assert isinstance(weight, (list, Tensor)), type(weight)
+            if isinstance(weight, list):
+                assert assert_list(lambda x: isinstance(x, (int, float)), weight)
+                self._weight = torch.Tensor(weight).float()
+            else:
+                self._weight = weight.float()
+            # normalize weight:
+            self._weight = self._weight / self._weight.sum()
+        if verbose:
+            print(f"Initialized {self.__class__.__name__} \nwith weight={self._weight} and reduction={self._reduction}.")
 
     def forward(self, prob: Tensor, target: Tensor, **kwargs) -> Tensor:
         if not kwargs.get("disable_assert"):
@@ -97,14 +111,33 @@ class KL_div(nn.Module):
             assert simplex(target), target
             assert not target.requires_grad
             assert prob.requires_grad
-        b, c, *_ = target.shape
-        kl = (-target * torch.log((prob + self._eps) / (target + self._eps))).sum(1)
+        b, c, *hwd = target.shape
+        kl = (-target * torch.log((prob + self._eps) / (target + self._eps)))
+        if self._weight is not None:
+            assert len(self._weight) == c
+            weight = self._weight.expand(b, *hwd, -1).transpose(-1, 1).detach()
+            kl *= weight.to(kl.device)
+        kl = kl.sum(1)
         if self._reduction == "mean":
             return kl.mean()
         elif self._reduction == "sum":
             return kl.sum()
         else:
             return kl
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}\n, weight={self._weight}"
+
+    def state_dict(self, *args, **kwargs):
+        save_dict = super().state_dict(*args, **kwargs)
+        save_dict["weight"] = self._weight
+        save_dict["reduction"] = self._reduction
+        return save_dict
+
+    def load_state_dict(self, state_dict: Union[Dict[str, Tensor], OrderedDict[str, Tensor]], *args, **kwargs):
+        self._reduction = state_dict["reduction"]
+        self._weight = state_dict["weight"]
+
 
 
 class JSD_div(nn.Module):

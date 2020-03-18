@@ -99,10 +99,6 @@ class TestJSDDiv(unittest.TestCase):
             ),
         )
 
-    def test_jsd_2d(self):
-        jsd_2d_criterion = loss.JSD_div_2D()
-        jsd_map = jsd_2d_criterion(self.pred, self.target_oh)
-        assert jsd_map.shape == self.target.shape
 
 
 class TestCrossEntropyLoss(unittest.TestCase):
