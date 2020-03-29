@@ -227,8 +227,8 @@ class SemiEntropyTrainer(SemiTrainer):
 
     def __init_meters__(self) -> List[Union[str, List[str]]]:
         columns = super().__init_meters__()
-        self.METERINTERFACE.register_new_meter("marginal", AverageValueMeter())
-        self.METERINTERFACE.register_new_meter("centropy", AverageValueMeter())
+        self.METERINTERFACE.register_meter("marginal", AverageValueMeter())
+        self.METERINTERFACE.register_meter("centropy", AverageValueMeter())
         columns.extend(["marginal_mean", "centropy_mean"])
         return columns
 
@@ -306,7 +306,7 @@ class SemiPrimalDualTrainer(SemiEntropyTrainer):
 
     def __init_meters__(self) -> List[Union[str, List[str]]]:
         columns = super().__init_meters__()
-        self.METERINTERFACE.register_new_meter("residual", AverageValueMeter())
+        self.METERINTERFACE.register_meter("residual", AverageValueMeter())
         columns.append("residual_mean")
         return columns
 
@@ -431,10 +431,10 @@ class SemiUDATrainer(SemiTrainer):
 
     def __init_meters__(self) -> List[Union[str, List[str]]]:
         columns = super().__init_meters__()
-        self.METERINTERFACE.register_new_meter("uda_reg", AverageValueMeter())
-        self.METERINTERFACE.register_new_meter("entropy", AverageValueMeter())
-        self.METERINTERFACE.register_new_meter("marginal", AverageValueMeter())
-        self.METERINTERFACE.register_new_meter("unl_acc", ConfusionMatrix(5))
+        self.METERINTERFACE.register_meter("uda_reg", AverageValueMeter())
+        self.METERINTERFACE.register_meter("entropy", AverageValueMeter())
+        self.METERINTERFACE.register_meter("marginal", AverageValueMeter())
+        self.METERINTERFACE.register_meter("unl_acc", ConfusionMatrix(5))
         columns.extend(["uda_reg_mean", "marginal_mean", "entropy_mean"])
         return columns
 

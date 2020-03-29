@@ -1,6 +1,5 @@
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from .lr_scheduler import _LRScheduler, ReduceLROnPlateau
 
-from torch.optim.lr_scheduler import _LRScheduler
 
 # from .lr_scheduler import _LRScheduler
 

@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import _BaseDataLoaderIter
 
-from ._hooks import HookMixin
+from deepclustering.trainer.hooks._hooks import HookMixin
 from .. import ModelMode, PROJECT_PATH
 from ..decorator import lazy_load_checkpoint
 from ..meters import MeterInterface, AverageValueMeter
@@ -79,7 +79,7 @@ class _Trainer:
         assert self._METER_INITIALIZED is False
         self._meter_interface = MeterInterface()
         self._METER_INITIALIZED = True
-        self._meter_interface.register_new_meter(
+        self._meter_interface.register_meter(
             "lr", AverageValueMeter(), group_name="train"
         )
         if enable_drawer:
@@ -94,8 +94,6 @@ class _Trainer:
 
     def _start_training(self):
         for epoch in range(self._start_epoch, self._max_epoch):
-            if self._model.get_lr() is not None:
-                self._meter_interface["lr"].add(self._model.get_lr()[0])
             self.train_loop(train_loader=self._train_loader, epoch=epoch)
             with torch.no_grad():
                 current_score = self.eval_loop(self._val_loader, epoch)
@@ -126,11 +124,11 @@ class _Trainer:
         return self._train_loop(*args, **kwargs)
 
     @abstractmethod
-    def _run_step(self, *args, **kwargs):
+    def _train_step(self, *args, **kwargs):
         pass
 
-    def run_step(self, *args, **kwargs):
-        return self._run_step(*args, **kwargs)
+    def train_step(self, *args, **kwargs):
+        return self._train_step(*args, **kwargs)
 
     @abstractmethod
     def _eval_loop(
@@ -147,7 +145,14 @@ class _Trainer:
     def eval_loop(self, *args, **kwargs):
         return self._eval_loop(*args, **kwargs)
 
+    def _eval_step(self, *args, **kwargs):
+        pass
+
+    def eval_step(self, *args, **kwargs):
+        return self._eval_step(*args, **kwargs)
+
     def inference(self, identifier="best.pth", *args, **kwargs):
+
         """
         Inference using the checkpoint, to be override by subclasses.
         :param args:

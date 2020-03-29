@@ -165,11 +165,11 @@ class SWATrainer(SGDTrainer):
 
     def __init_meters__(self) -> List[Union[str, List[str]]]:
         _ = super().__init_meters__()
-        self.METERINTERFACE.register_new_meter("train_swa_loss", AverageValueMeter())
-        self.METERINTERFACE.register_new_meter("train_swa_acc", AverageValueMeter())
-        self.METERINTERFACE.register_new_meter("val_swa_loss", AverageValueMeter())
-        self.METERINTERFACE.register_new_meter("val_swa_acc", ConfusionMatrix(10))
-        self.METERINTERFACE.register_new_meter("train_swa_acc", ConfusionMatrix(10))
+        self.METERINTERFACE.register_meter("train_swa_loss", AverageValueMeter())
+        self.METERINTERFACE.register_meter("train_swa_acc", AverageValueMeter())
+        self.METERINTERFACE.register_meter("val_swa_loss", AverageValueMeter())
+        self.METERINTERFACE.register_meter("val_swa_acc", ConfusionMatrix(10))
+        self.METERINTERFACE.register_meter("train_swa_acc", ConfusionMatrix(10))
         return [
             ["train_loss_mean", "val_loss_mean"],
             ["train_swa_loss_mean", "val_swa_loss_mean"],
