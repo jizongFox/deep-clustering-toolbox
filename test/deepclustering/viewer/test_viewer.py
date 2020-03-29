@@ -1,4 +1,5 @@
 from unittest import TestCase
+
 import numpy as np
 import torch
 from medpy.io import load as med_load
@@ -55,3 +56,4 @@ class TestViewer(TestCase):
         multi_slice_viewer_debug(t1, l1, l2, l3, block=True)
         multi_slice_viewer_debug([t1, t2], l1, l2, l3, block=True)
         multi_slice_viewer_debug((t1, t2), l1, l2, l3, block=True)
+        multi_slice_viewer_debug((t1, t2), l1, l2, l3, block=True, no_contour=True)

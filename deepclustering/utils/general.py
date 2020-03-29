@@ -210,12 +210,9 @@ def union(a: Tensor, b: Tensor) -> Tensor:
     return a | b
 
 
-def probs2class(probs: Tensor) -> Tensor:
-    b, _, *wh = probs.shape  # type: Tuple[int, int, int, int]
-    assert simplex(probs, 1)
-    res = probs.argmax(dim=1)
-    assert res.shape == (b, *wh)
-
+def probs2class(probs: Tensor, class_dim: int = 1) -> Tensor:
+    assert simplex(probs, axis=class_dim)
+    res = probs.argmax(dim=class_dim)
     return res
 
 
@@ -232,22 +229,22 @@ def class2one_hot(seg: Tensor, C: int, class_dim: int = 1) -> Tensor:
     res: Tensor = torch.stack([seg == c for c in range(C)], dim=class_dim).type(
         torch.long
     )
-    assert one_hot(res)
+    assert one_hot(res, axis=class_dim)
     return res
 
 
-def probs2one_hot(probs: Tensor) -> Tensor:
-    _, C, *_ = probs.shape
-    assert simplex(probs)
-    res = class2one_hot(probs2class(probs), C)
+def probs2one_hot(probs: Tensor, class_dim: int = 1) -> Tensor:
+    C = probs.shape[class_dim]
+    assert simplex(probs, axis=class_dim)
+    res = class2one_hot(probs2class(probs, class_dim=class_dim), C, class_dim=class_dim)
     assert res.shape == probs.shape
-    assert one_hot(res)
+    assert one_hot(res, class_dim)
     return res
 
 
-def logit2one_hot(logit: Tensor) -> Tensor:
-    probs = F.softmax(logit, 1)
-    return probs2one_hot(probs)
+def logit2one_hot(logit: Tensor, class_dim: int = 1) -> Tensor:
+    probs = F.softmax(logit, class_dim)
+    return probs2one_hot(probs, class_dim)
 
 
 # functions

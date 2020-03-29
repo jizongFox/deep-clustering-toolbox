@@ -252,7 +252,7 @@ def is_tuple_or_list(val):
 # convert
 def to_numpy(tensor):
     if torch.is_tensor(tensor):
-        return tensor.cpu().numpy()
+        return tensor.cpu().detach().numpy()
     elif type(tensor).__module__ != "numpy":
         raise ValueError("Cannot convert {} to numpy array".format(type(tensor)))
     return tensor

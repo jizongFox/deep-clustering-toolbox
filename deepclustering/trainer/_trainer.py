@@ -151,18 +151,21 @@ class _Trainer:
     def eval_step(self, *args, **kwargs):
         return self._eval_step(*args, **kwargs)
 
-    def inference(self, *args, **kwargs):
+    def inference(self, identifier="best.pth", *args, **kwargs):
+
         """
         Inference using the checkpoint, to be override by subclasses.
         :param args:
         :param kwargs:
         :return:
         """
+        if self._checkpoint is None:
+            self._checkpoint = self._save_dir
         assert (
             Path(self._checkpoint).exists() and Path(self._checkpoint).is_dir()
         ), Path(self._checkpoint)
         state_dict = torch.load(
-            str(Path(self._checkpoint) / "best.pth"), map_location=torch.device("cpu")
+            str(Path(self._checkpoint) / identifier), map_location=torch.device("cpu")
         )
         self.load_checkpoint(state_dict)
         self._model.to(self._device)

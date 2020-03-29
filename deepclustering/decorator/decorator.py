@@ -8,8 +8,8 @@ from functools import wraps
 from threading import Thread
 
 import numpy as np
-from torch import nn
 from torch.multiprocessing import Process
+from torch.nn.modules.batchnorm import _BatchNorm
 
 
 # in order to export functions
@@ -23,7 +23,7 @@ def export(fn):
 
 
 def _extract_bn_modules(model):
-    return [m for m in model.modules() if isinstance(m, nn.BatchNorm2d)]
+    return [m for m in model.modules() if isinstance(m, _BatchNorm)]
 
 
 # in order to deal with BN tracking problem.

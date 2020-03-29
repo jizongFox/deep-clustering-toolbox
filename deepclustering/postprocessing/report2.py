@@ -38,7 +38,8 @@ def arg_parser() -> argparse.Namespace:
     parser.add_argument(
         "--file",
         type=str,
-        default="wholeMeter.csv",
+        nargs="+",
+        default=["wholeMeter.csv"],
         metavar="FILENAME",
         help=".csv file name, default `wholeMeter.csv`.",
     )
@@ -47,7 +48,7 @@ def arg_parser() -> argparse.Namespace:
         type=str2bool,
         nargs="+",
         help="is the class value is high is better. default True,"
-        "if given, high_better must have the same size as classes.",
+             "if given, high_better must have the same size as classes.",
         default=True,
     )
     parser.add_argument("--save_dir", type=str, help="save summary dir.", required=True)
@@ -67,12 +68,15 @@ def arg_parser() -> argparse.Namespace:
 def main(args: argparse.Namespace):
     if args.top_folder is not None:
         # a top folder is provided.
-        csvfile_paths: List[Path] = list(Path(args.top_folder).rglob(f"{args.file}"))
+        csvfile_paths: List[Path] = []
+        for filename in args.file:
+            csvfile_paths.extend(list(Path(args.top_folder).rglob(f"{filename}")))
     else:
         # several top folders are provided:
         csvfile_paths = []
         for path in args.specific_folders:
-            csvfile_paths.extend(list(Path(path).rglob(f"{args.file}")))
+            for filename in args.file:
+                csvfile_paths.extend(list(Path(path).rglob(f"{filename}")))
 
     assert len(csvfile_paths) > 0, f"Found 0 {args.file} file."
     print(f"Found {len(csvfile_paths)} {args.file} files, e.g.,")
@@ -114,8 +118,8 @@ def extract_path_info(file_paths: List[Path]) -> List[List[str]]:
         return parents
 
     assert (
-        set([len(split_path(str(p))) for p in file_paths])
-    ).__len__() == 1, f"File paths must have located in a structured way."
+               set([len(split_path(str(p))) for p in file_paths])
+           ).__len__() == 1, f"File paths must have located in a structured way."
     parents_path = []
     for i, p in enumerate(file_paths):
         parents_path.append(split_path(str(p)))
