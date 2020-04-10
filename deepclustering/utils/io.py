@@ -5,6 +5,11 @@ from typing import Union, Dict, Any
 import yaml
 
 
+def path2Path(path):
+    assert isinstance(path, (Path, str)), type(path)
+    return Path(path) if isinstance(path, str) else path
+
+
 def yaml_load(yaml_path: Union[Path, str], verbose=False) -> Dict[str, Any]:
     """
     load yaml file given a file string-like file path. return must be a dictionary.

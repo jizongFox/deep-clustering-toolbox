@@ -13,7 +13,7 @@ from .. import ModelMode, PROJECT_PATH
 from ..decorator import lazy_load_checkpoint
 from ..meters import MeterInterface, AverageValueMeter
 from ..model import Model
-from ..utils import _warnings, set_environment, write_yaml
+from ..utils import _warnings, set_environment, write_yaml, path2Path
 from ..writer import SummaryWriter, DataFrameDrawer
 
 
@@ -177,23 +177,31 @@ class _Trainer:
                 state_dictionary[module_name] = module.state_dict()
         return state_dictionary
 
-    def save_checkpoint(self, state_dict, current_epoch, best_score):
+    def save_checkpoint(
+        self, state_dict, current_epoch, cur_score, save_dir=None, save_name=None
+    ):
         """
         save checkpoint with adding 'epoch' and 'best_score' attributes
         :param state_dict:
         :param current_epoch:
-        :param best_score:
+        :param cur_score:
         :return:
         """
-        save_best: bool = True if float(best_score) > float(self._best_score) else False
+        save_best: bool = True if float(cur_score) > float(self._best_score) else False
         if save_best:
-            self._best_score = float(best_score)
+            self._best_score = float(cur_score)
         state_dict["epoch"] = current_epoch
         state_dict["best_score"] = float(self._best_score)
-
-        torch.save(state_dict, str(self._save_dir / "last.pth"))
-        if save_best:
-            torch.save(state_dict, str(self._save_dir / "best.pth"))
+        save_dir = self._save_dir if save_dir is None else path2Path(save_dir)
+        save_dir.mkdir(parents=True, exist_ok=True)
+        if save_name is None:
+            # regular saving
+            torch.save(state_dict, str(save_dir / "last.pth"))
+            if save_best:
+                torch.save(state_dict, str(save_dir / "best.pth"))
+        else:
+            # periodic saving
+            torch.save(state_dict, str(save_dir / save_name))
 
     def _load_state_dict(self, state_dict) -> None:
         """
