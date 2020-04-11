@@ -230,13 +230,18 @@ class _Trainer:
         self._start_epoch = state_dict["epoch"] + 1
 
     def load_checkpoint_from_path(self, checkpoint_path):
-        assert Path(checkpoint_path).exists() and Path(checkpoint_path).is_dir(), Path(
-            checkpoint_path
-        )
-        state_dict = torch.load(
-            str(Path(checkpoint_path) / self.checkpoint_identifier),
-            map_location=torch.device("cpu"),
-        )
+        checkpoint_path = path2Path(checkpoint_path)
+        assert checkpoint_path.exists(), checkpoint_path
+        if checkpoint_path.is_dir():
+            state_dict = torch.load(
+                str(Path(checkpoint_path) / self.checkpoint_identifier),
+                map_location=torch.device("cpu"),
+            )
+        else:
+            assert checkpoint_path.suffix == ".pth", checkpoint_path
+            state_dict = torch.load(
+                str(checkpoint_path), map_location=torch.device("cpu"),
+            )
         self.load_checkpoint(state_dict)
 
     def clean_up(self, wait_time=3):
