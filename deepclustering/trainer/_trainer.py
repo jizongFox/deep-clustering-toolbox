@@ -156,11 +156,16 @@ class _Trainer:
         """
         if self._checkpoint is None:
             self._checkpoint = self._save_dir
-        assert (
-            Path(self._checkpoint).exists() and Path(self._checkpoint).is_dir()
-        ), Path(self._checkpoint)
+        assert Path(self._checkpoint).exists(), Path(self._checkpoint)
+        assert (Path(self._checkpoint).is_dir() and identifier is not None) or (
+            Path(self._checkpoint).is_file() and identifier is None
+        )
+
         state_dict = torch.load(
-            str(Path(self._checkpoint) / identifier), map_location=torch.device("cpu")
+            str(Path(self._checkpoint) / identifier)
+            if identifier is not None
+            else self._checkpoint,
+            map_location=torch.device("cpu"),
         )
         self.load_checkpoint(state_dict)
         self._model.to(self._device)
