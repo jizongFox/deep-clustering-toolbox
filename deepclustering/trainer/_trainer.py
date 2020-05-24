@@ -47,7 +47,7 @@ class _Trainer:
         self._model = model
         self._train_loader = train_loader
         self._val_loader = val_loader
-        self._save_dir: Path = Path(self.RUN_PATH) / save_dir
+        self._save_dir: Path = Path(self.RUN_PATH) / str(save_dir)
         self._save_dir.mkdir(exist_ok=True, parents=True)
         self._checkpoint = checkpoint_path
         self._max_epoch = int(max_epoch)

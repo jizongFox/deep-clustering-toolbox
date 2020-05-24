@@ -1,8 +1,7 @@
 import os
+import random
 from pathlib import Path
 from typing import List, Tuple
-
-from sklearn.model_selection import train_test_split
 
 from deepclustering import DATA_PATH
 from deepclustering.augment import SequentialWrapper
@@ -13,6 +12,7 @@ from deepclustering.dataset.segmentation._patient_sampler import (
     SubMedicalDatasetBasedOnIndex,
 )
 from deepclustering.dataset.semi_helper import MedicalDatasetSemiInterface
+from deepclustering.decorator import FixRandomSeed
 from deepclustering.utils.download_unzip_helper import download_and_extract_archive
 
 
@@ -47,7 +47,7 @@ class ACDCDataset(MedicalImageSegmentationDataset):
             mode,
             subfolders,
             transforms,
-            "patient\d+_\d+_\d+",
+            "patient\d+_\d+",
             verbose,
         )
 
@@ -94,15 +94,19 @@ class ACDCSemiInterface(MedicalDatasetSemiInterface):
             transforms=None,
             verbose=self.verbose,
         )
+        with FixRandomSeed(random_seed=self.seed):
+            shuffled_patients = train_set.get_group_list()[:]
+            random.shuffle(shuffled_patients)
+            labeled_patients, unlabeled_patients = (
+                shuffled_patients[: int(len(shuffled_patients) * self.labeled_ratio)],
+                shuffled_patients[
+                    -int(len(shuffled_patients) * self.unlabeled_ratio) :
+                ],
+            )
 
-        labeled_patients, unlabeled_patients = train_test_split(
-            train_set.get_group_list(),
-            test_size=self.unlabeled_ratio,
-            random_state=self.seed,
-        )
         labeled_set = SubMedicalDatasetBasedOnIndex(train_set, labeled_patients)
         unlabeled_set = SubMedicalDatasetBasedOnIndex(train_set, unlabeled_patients)
-        assert len(labeled_set) + len(unlabeled_set) == len(
+        assert len(labeled_set) + len(unlabeled_set) <= len(
             train_set
         ), "wrong on labeled/unlabeled split."
         del train_set
