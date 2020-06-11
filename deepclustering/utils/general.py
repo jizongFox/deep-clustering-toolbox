@@ -220,8 +220,6 @@ def class2one_hot(seg: Tensor, C: int, class_dim: int = 1) -> Tensor:
     """
     make segmentaton mask to be onehot
     """
-    if len(seg.shape) == 2:  # Only w, h, used by the dataloader
-        seg = seg.unsqueeze(dim=0)
     assert sset(seg, list(range(C)))
 
     b, *wh = seg.shape  # type:  Tuple[int, int, int]

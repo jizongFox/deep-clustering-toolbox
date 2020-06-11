@@ -1,6 +1,7 @@
 import torch
 from torch import nn, Tensor
 
+from .loss import _check_reduction_params
 from ..utils import simplex, one_hot
 
 
@@ -75,102 +76,60 @@ dice_coef = MetaDice(method="2d", reduce=False)
 dice_batch = MetaDice(method="3d", reduce=False)  # used for 3d dice
 
 
-class TwoDimDiceLoss(MetaDice):
-    """Computes Dice Loss, which just 1 - DiceCoefficient described above.
-    Additionally allows per-class weights to be provided.
-    return the classwise loss average on individual images.
-    # todo: not sure how to handle with the ignore index
-    """
-
-    def __init__(
-        self, weight: Tensor = None, ignore_index: int = None, reduce: bool = False
-    ) -> None:
-        super(TwoDimDiceLoss, self).__init__("2d", weight, reduce, 1e-8)
-        self.ignore_index = ignore_index
-
-    def forward(self, pred: Tensor, target: Tensor):
-        assert simplex(pred)
-        assert one_hot(target)
-        if self.ignore_index is not None:
-            mask = target.clone().ne_(self.ignore_index).type(torch.float)
-            mask.requires_grad = False
-            pred = pred * mask
-            target = target.float() * mask
-
-        dices = super().forward(pred, target)
-        loss = (1.0 - dices).mean()
-
-        return loss, dices
-
-
-class ThreeDimDiceLoss(MetaDice):
-    def __init__(self, weight: Tensor = None, ignore_index: int = None) -> None:
-        super().__init__("3d", weight, True, 1e-8)
-        self.ignore_index = ignore_index
-
-    def forward(self, pred: Tensor, target: Tensor):
-        assert simplex(pred)
-        assert one_hot(target)
-        if self.ignore_index is not None:
-            mask = target.clone().ne_(self.ignore_index).type(torch.float)
-            mask.requires_grad = False
-            pred = pred * mask
-            target = target.float() * mask
-
-        dices = super().forward(pred, target)
-        loss = (1.0 - dices).mean()
-
-        return loss, dices
-
-
 class GeneralizedDiceLoss(nn.Module):
     """Computes Generalized Dice Loss (GDL) as described in https://arxiv.org/pdf/1707.03237.pdf
     """
 
     def __init__(
-        self, epsilon=1e-5, weight=None, ignore_index=None, sigmoid_normalization=True
+        self, epsilon=1e-8, weight=None, pow=1, ignore_index=None, reduction="mean",
     ):
         super(GeneralizedDiceLoss, self).__init__()
+        _check_reduction_params(reduction)
         self.epsilon = epsilon
-        self.register_buffer(
-            "weight", weight
-        )  # if you want to store it in the state_dict but not in the parameters()
+        self.weight = weight
         self.ignore_index = ignore_index
-        if sigmoid_normalization:
-            self.normalization = nn.Sigmoid()
-        else:
-            self.normalization = nn.Softmax(dim=1)
+        self.pow = pow
+        self.reduction = reduction
 
-    def forward(self, input, target):
-        # get probabilities from logits
-        input = self.normalization(input)
-
+    def forward(self, input: Tensor, target: Tensor):
+        """
+        input: Tensor, simplex tensor as the probability distribution
+        target: Tensor, one_hot tensor
+        """
         assert (
             input.size() == target.size()
         ), "'input' and 'target' must have the same shape"
         # so the target here is the onehot
+        assert simplex(input) and one_hot(target)
 
+        b, c, *hw = input.shape
+        if len(hw) == 0:
+            input = input.unsqueeze(-1)
+            target = target.unsqueeze(-1)
+        noreducedim = list(range(2, len(input.shape)))
+
+        target = target.float()
         # mask ignore_index if present
         if self.ignore_index is not None:
             mask = target.clone().ne_(self.ignore_index)
             mask.requires_grad = False
-
             input = input * mask
             target = target * mask
 
-        # input = flatten(input)
-        # target = flatten(target)
+        intersect = (input * target).sum(dim=noreducedim)
+        assert intersect.shape == torch.Size([b, c]), intersect.shape
+        denominator = (input.pow(self.pow) + target.pow(self.pow)).sum(dim=noreducedim)
+        assert denominator.shape == torch.Size([b, c]), intersect.shape
 
-        target = target.float()
-        target_sum = target.sum(-1)
-        class_weights = 1.0 / (target_sum * target_sum).clamp(min=self.epsilon)
-
-        intersect = (input * target).sum(-1) * class_weights
+        dices = 1 - (2 * intersect + self.epsilon) / (denominator + self.epsilon)
         if self.weight is not None:
-            weight = self.weight
-            intersect = weight * intersect
-        intersect = intersect.sum()
+            dices = self.weight * dices
 
-        denominator = ((input + target).sum(-1) * class_weights).sum()
+        if self.reduction == "none":
+            return dices
 
-        return 1.0 - 2.0 * intersect / denominator.clamp(min=self.epsilon)
+        if self.reduction == "mean":
+            return dices.mean()
+        if self.reduction == "sum":
+            return dices.sum()
+        return dices
