@@ -37,7 +37,7 @@ class PatientSampler(Sampler):
         stems: List[str] = [
             Path(filename).stem for filename in filenames
         ]  # avoid matching the extension
-        matches: List[Match] = map_(grouping_regex.match, stems)
+        matches: List[Match] = map_(grouping_regex.search, stems)
         patients: List[str] = [match.group(0) for match in matches]
 
         unique_patients: List[str] = sorted(list(set(patients)))
