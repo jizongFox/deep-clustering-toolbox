@@ -54,18 +54,19 @@ class MMWHSDataset(MedicalImageSegmentationDataset):
         )
 
 
-"""
-class ACDCSemiInterface(MedicalDatasetSemiInterface):
+class MMWHSSemiInterface(MedicalDatasetSemiInterface):
     def __init__(
         self,
         root_dir=DATA_PATH,
+        modality="ct",
         labeled_data_ratio: float = 0.2,
         unlabeled_data_ratio: float = 0.8,
         seed: int = 0,
         verbose: bool = True,
     ) -> None:
+        self.modality = modality
         super().__init__(
-            ACDCDataset,
+            MMWHSDataset,
             root_dir,
             labeled_data_ratio,
             unlabeled_data_ratio,
@@ -85,6 +86,7 @@ class ACDCSemiInterface(MedicalDatasetSemiInterface):
     ]:
         train_set = self.DataClass(
             root_dir=self.root_dir,
+            modality=self.modality,
             mode="train",
             subfolders=["img", "gt"],
             transforms=None,
@@ -92,6 +94,7 @@ class ACDCSemiInterface(MedicalDatasetSemiInterface):
         )
         val_set = self.DataClass(
             root_dir=self.root_dir,
+            modality=self.modality,
             mode="val",
             subfolders=["img", "gt"],
             transforms=None,
@@ -120,4 +123,3 @@ class ACDCSemiInterface(MedicalDatasetSemiInterface):
         if val_transform:
             val_set.set_transform(val_transform)
         return labeled_set, unlabeled_set, val_set
-"""
