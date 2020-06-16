@@ -41,7 +41,7 @@ class PatientSampler(Sampler):
         patients: List[str] = [match.group(0) for match in matches]
 
         unique_patients: List[str] = sorted(list(set(patients)))
-        assert len(unique_patients) < len(filenames)
+        assert len(unique_patients) <= len(filenames)
         if verbose:
             print(
                 f"Found {len(unique_patients)} unique patients out of {len(filenames)} images"
