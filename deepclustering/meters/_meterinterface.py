@@ -216,7 +216,7 @@ class MeterInterface:
         :return:
         """
         if group_name:
-            assert group_name in self.group
+            assert group_name in self.group, group_name
             return {
                 k: v.summary()
                 for k, v in self.individual_meters.items()

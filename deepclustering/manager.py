@@ -3,7 +3,7 @@ from pathlib import Path
 from pprint import pprint
 from typing import Dict, Any
 
-from deepclustering.utils import dict_merge, yaml_load, YAMLArgParser
+from deepclustering.utils import dict_merge, yaml_load, YAMLArgParser, os
 
 __all__ = ["ConfigManger"]
 
@@ -23,6 +23,12 @@ class ConfigManger:
             # stop running the following code, just self.parserd_args is validated
             return
         self.SET_DEFAULT_CONFIG_PATH(DEFAULT_CONFIG_PATH)
+        if self.parsed_args.get("Config"):
+            if Path(self.parsed_args["Config"]).is_dir():
+                self.parsed_args["Config"] = os.path.join(
+                    self.parsed_args["Config"], "config.yaml"
+                )
+
         self.default_config: Dict[str, Any] = yaml_load(
             self.parsed_args.get("Config", self.DEFAULT_CONFIG), verbose=verbose
         )
