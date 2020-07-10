@@ -1,3 +1,5 @@
+from typing import Dict, Any
+
 import matplotlib
 from tensorboardX import SummaryWriter as _SummaryWriter
 
@@ -25,3 +27,6 @@ class SummaryWriter(_SummaryWriter):
         for k, v in tag_scalar_dict.items():
             # self.add_scalars(main_tag=tag, tag_scalar_dict={k: v})
             self.add_scalar(tag=f"{tag}/{k}", scalar_value=v, global_step=global_step)
+
+    def write_config(self, config: Dict[str, Any]):
+        pass

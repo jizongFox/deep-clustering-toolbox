@@ -77,4 +77,6 @@ class ConfigManger:
         except AttributeError:
             # for those just use the command line
             config = self.parsed_args
-        return config
+        from collections import defaultdict
+
+        return defaultdict(lambda: None, config)

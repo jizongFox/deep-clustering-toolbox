@@ -55,7 +55,7 @@ class MeterInterface:
         assert isinstance(name, str), name
         assert issubclass(
             type(meter), _Metric
-        ), f"{meter.__class__.__name__} should be a subclass of {_Metric.__class__.__name__}, given {meter}."
+        ), f"{meter.__class__.__name__} should be a subclass of {_Metric.__name__}, given {meter}."
 
         # add meters
         self._ind_meter_dicts[name] = meter
