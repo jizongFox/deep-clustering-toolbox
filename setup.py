@@ -39,7 +39,7 @@ setup(
         "easydict",
         "matplotlib",
         "tqdm==4.32.2",
-        "py==1.8.0",
+        "py==1.10.0",
         "pytest-remotedata==0.3.1",
         "tensorboardX",
         "tensorboard",
